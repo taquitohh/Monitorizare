@@ -1,0 +1,6 @@
+Flask
+flask-cors
+PyMySQL
+networkx
+reportlab
+staticmap

@@ -1,0 +1,103 @@
+services:
+
+  web1:
+    build:
+      context: ./backend
+    container_name: web1
+    restart: unless-stopped
+    environment:
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_NAME: gps_tracking
+      DB_USER: gps_user
+      DB_PASSWORD: student2026
+      ROAD_GRAPH_FILE: /app/data/road_network.graphml
+    depends_on:
+      - database
+    expose:
+      - "5000"
+    volumes:
+      - ./raspberry/data:/app/data:ro
+    networks:
+      - internal_net
+
+  web2:
+    build:
+      context: ./backend
+    container_name: web2
+    restart: unless-stopped
+    environment:
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_NAME: gps_tracking
+      DB_USER: gps_user
+      DB_PASSWORD: student2026
+      ROAD_GRAPH_FILE: /app/data/road_network.graphml
+    depends_on:
+      - database
+    expose:
+      - "5000"
+    volumes:
+      - ./raspberry/data:/app/data:ro
+    networks:
+      - internal_net
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    restart: unless-stopped
+    expose:
+      - "8000"
+    networks:
+      - internal_net
+
+  haproxy:
+    build:
+      context: ./haproxy
+    container_name: haproxy
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - web1
+      - web2
+    ports:
+      - "80:80"
+    networks:
+      - internal_net
+
+  database:
+    image: mariadb:11
+    container_name: database
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: gps_tracking
+      MYSQL_USER: gps_user
+      MYSQL_PASSWORD: student2026
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./database/gps_tracking.sql:/docker-entrypoint-initdb.d/gps_tracking.sql
+      - db_data:/var/lib/mysql
+    networks:
+      - internal_net
+
+  raspberry:
+    build:
+      context: ./raspberry
+    container_name: raspberry
+    restart: unless-stopped
+    environment:
+      API_URL: http://haproxy/api/vehicles
+    depends_on:
+      - haproxy
+    networks:
+      - internal_net
+
+networks:
+  internal_net:
+    driver: bridge
+
+volumes:
+  db_data:

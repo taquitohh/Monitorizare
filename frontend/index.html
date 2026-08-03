@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        GPS Tracking System
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="css/style.css?v=12"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+
+</head>
+
+<body>
+
+    <header class="topbar">
+
+        <div>
+
+            <h1>
+                GPS Tracking System
+            </h1>
+
+            <p>
+                Real-time vehicle monitoring
+            </p>
+
+        </div>
+
+        <div class="system-status">
+
+            <span class="status-dot"></span>
+
+            System Online
+
+        </div>
+
+    </header>
+
+
+    <main class="dashboard">
+
+        <!-- ===========================
+             VEHICLES / INCIDENTS PANEL
+        ============================ -->
+
+        <aside class="vehicles-panel">
+
+            <div class="panel-header">
+
+                <h2 id="sidebar-title">
+                    Vehicles
+                </h2>
+
+                <span
+                    id="vehicle-count"
+                    class="vehicle-count"
+                >
+                    0
+                </span>
+
+            </div>
+
+
+            <!-- PANEL SWITCH -->
+
+            <div class="panel-switch">
+
+                <button
+                    id="vehicles-tab"
+                    class="panel-tab active"
+                    type="button"
+                >
+                    Vehicles
+                </button>
+
+                <button
+                    id="routes-tab"
+                    class="panel-tab"
+                    type="button"
+                >
+                    Incidents
+                </button>
+
+            </div>
+
+
+            <!-- ===========================
+                 VEHICLE FILTERS
+            ============================ -->
+
+            <div
+                id="vehicle-filters"
+                class="filters-row"
+            >
+
+                <label>
+                    Vehicle filters
+                </label>
+
+                <select
+                    id="type-filter"
+                    class="filter-select"
+                >
+
+                    <option value="all">
+                        Type: All
+                    </option>
+
+                    <option value="police">
+                        Police
+                    </option>
+
+                    <option value="ambulance">
+                        Ambulance
+                    </option>
+
+                    <option value="fire">
+                        Fire
+                    </option>
+
+                </select>
+
+
+                <select
+                    id="status-filter"
+                    class="filter-select"
+                >
+
+                    <option value="all">
+                        Status: All
+                    </option>
+
+                    <option value="active">
+                        Active
+                    </option>
+
+                    <option value="inactive">
+                        Inactive
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- ===========================
+                 VEHICLE LIST
+            ============================ -->
+
+            <div id="vehicles-container">
+
+                <div id="vehicles-list"></div>
+
+            </div>
+
+
+            <!-- ===========================
+                 INCIDENTS CONTAINER
+            ============================ -->
+
+            <div
+                id="routes-container"
+                hidden
+            >
+
+                <!-- INCIDENT FILTERS -->
+
+                <div
+                    id="incident-filters"
+                    class="incident-filters"
+                >
+
+                    <label>
+                        Incident filters
+                    </label>
+
+
+                    <select
+                        id="incident-status-filter"
+                        class="filter-select"
+                    >
+
+                        <option value="all">
+                            Status: All
+                        </option>
+
+                        <option value="active">
+                            Active
+                        </option>
+
+                        <option value="archived">
+                            Archived
+                        </option>
+
+                    </select>
+
+
+                    <select
+                        id="incident-type-filter"
+                        class="filter-select"
+                    >
+
+                        <option value="all">
+                            Vehicle type: All
+                        </option>
+
+                        <option value="police">
+                            Police
+                        </option>
+
+                        <option value="ambulance">
+                            Ambulance
+                        </option>
+
+                        <option value="fire">
+                            Fire
+                        </option>
+
+                    </select>
+
+
+                    <select
+                        id="incident-priority-filter"
+                        class="filter-select"
+                    >
+
+                        <option value="all">
+                            Priority: All
+                        </option>
+
+                        <option value="low">
+                            Low
+                        </option>
+
+                        <option value="medium">
+                            Medium
+                        </option>
+
+                        <option value="high">
+                            High
+                        </option>
+
+                        <option value="critical">
+                            Critical
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- INCIDENT LIST -->
+
+                <div id="routes-list">
+
+                    <p class="empty-message">
+                        No incidents found.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </aside>
+
+
+        <!-- ===========================
+             MAP
+        ============================ -->
+
+        <section class="map-panel">
+
+            <div class="panel-header">
+
+                <h2>
+                    Live Map
+                </h2>
+
+                <button
+                    id="refresh-button"
+                    type="button"
+                >
+                    Refresh
+                </button>
+
+            </div>
+
+            <div class="map-container">
+
+                <div
+                    id="map-selection-message"
+                    class="map-selection-message"
+                ></div>
+
+                <div id="map"></div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ===========================
+             VEHICLE DETAILS
+        ============================ -->
+
+        <section class="details-panel">
+
+            <h2>
+                Selected Vehicle
+            </h2>
+
+            <div id="vehicle-details">
+
+                <p class="empty-message">
+                    Select a vehicle to view details
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- ===========================
+             INCIDENT FORM
+        ============================ -->
+
+        <section class="incident-panel">
+
+            <div class="incident-header">
+
+                <div>
+
+                    <h2>
+                        New Incident
+                    </h2>
+
+                    <p>
+                        Complete the incident information,
+                        save it and select its location.
+                    </p>
+
+                </div>
+
+                <span class="incident-form-status">
+                    Draft only
+                </span>
+
+            </div>
+
+
+            <form id="incident-form">
+
+                <div class="incident-form-grid">
+
+                    <!-- SITUATION NAME -->
+
+                    <div class="form-group">
+
+                        <label for="incident-name">
+                            Situation name
+                        </label>
+
+                        <input
+                            type="text"
+                            id="incident-name"
+                            name="incidentName"
+                            placeholder="Example: Accident on Main Street"
+                            maxlength="100"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- CASE TYPE -->
+
+                    <div class="form-group">
+
+                        <label for="incident-type">
+                            Case type
+                        </label>
+
+                        <select
+                            id="incident-type"
+                            name="incidentType"
+                            required
+                        >
+
+                            <option value="">
+                                Select a case type
+                            </option>
+
+
+                            <!-- POLICE -->
+
+                            <optgroup label="Police">
+
+                                <option
+                                    value="traffic-accident"
+                                    data-vehicle-type="police"
+                                >
+                                    Traffic accident
+                                </option>
+
+                                <option
+                                    value="theft"
+                                    data-vehicle-type="police"
+                                >
+                                    Theft
+                                </option>
+
+                                <option
+                                    value="assault"
+                                    data-vehicle-type="police"
+                                >
+                                    Assault
+                                </option>
+
+                                <option
+                                    value="public-disturbance"
+                                    data-vehicle-type="police"
+                                >
+                                    Public disturbance
+                                </option>
+
+                                <option
+                                    value="missing-person"
+                                    data-vehicle-type="police"
+                                >
+                                    Missing person
+                                </option>
+
+                            </optgroup>
+
+
+                            <!-- AMBULANCE -->
+
+                            <optgroup label="Ambulance">
+
+                                <option
+                                    value="medical-emergency"
+                                    data-vehicle-type="ambulance"
+                                >
+                                    Medical emergency
+                                </option>
+
+                                <option
+                                    value="unconscious-person"
+                                    data-vehicle-type="ambulance"
+                                >
+                                    Unconscious person
+                                </option>
+
+                                <option
+                                    value="injured-person"
+                                    data-vehicle-type="ambulance"
+                                >
+                                    Injured person
+                                </option>
+
+                                <option
+                                    value="cardiac-emergency"
+                                    data-vehicle-type="ambulance"
+                                >
+                                    Cardiac emergency
+                                </option>
+
+                                <option
+                                    value="urgent-medical-transport"
+                                    data-vehicle-type="ambulance"
+                                >
+                                    Urgent medical transport
+                                </option>
+
+                            </optgroup>
+
+
+                            <!-- FIRE DEPARTMENT -->
+
+                            <optgroup label="Fire Department">
+
+                                <option
+                                    value="building-fire"
+                                    data-vehicle-type="fire"
+                                >
+                                    Building fire
+                                </option>
+
+                                <option
+                                    value="vehicle-fire"
+                                    data-vehicle-type="fire"
+                                >
+                                    Vehicle fire
+                                </option>
+
+                                <option
+                                    value="vegetation-fire"
+                                    data-vehicle-type="fire"
+                                >
+                                    Vegetation fire
+                                </option>
+
+                                <option
+                                    value="gas-leak"
+                                    data-vehicle-type="fire"
+                                >
+                                    Gas leak
+                                </option>
+
+                                <option
+                                    value="explosion"
+                                    data-vehicle-type="fire"
+                                >
+                                    Explosion
+                                </option>
+
+                            </optgroup>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- PRIORITY -->
+
+                    <div class="form-group">
+
+                        <label for="incident-priority">
+                            Priority
+                        </label>
+
+                        <select
+                            id="incident-priority"
+                            name="incidentPriority"
+                        >
+
+                            <option value="low">
+                                Low
+                            </option>
+
+                            <option
+                                value="medium"
+                                selected
+                            >
+                                Medium
+                            </option>
+
+                            <option value="high">
+                                High
+                            </option>
+
+                            <option value="critical">
+                                Critical
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- REQUIRED VEHICLE -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Required vehicle
+                        </label>
+
+                        <div
+                            id="required-vehicle"
+                            class="required-vehicle"
+                        >
+                            Select a case type
+                        </div>
+
+                    </div>
+
+
+                    <!-- DETAILS -->
+
+                    <div class="form-group form-group-full">
+
+                        <label for="incident-details">
+                            Details
+                        </label>
+
+                        <textarea
+                            id="incident-details"
+                            name="incidentDetails"
+                            rows="5"
+                            maxlength="1000"
+                            placeholder="Describe the incident and include any relevant information..."
+                        ></textarea>
+
+                        <div class="textarea-footer">
+
+                            <span>
+                                After saving, select the location on the map.
+                            </span>
+
+                            <span id="incident-details-count">
+                                0 / 1000
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- FORM ACTIONS -->
+
+                <div class="incident-actions">
+
+                    <button
+                        type="reset"
+                        id="clear-incident-button"
+                        class="secondary-button"
+                    >
+                        Clear form
+                    </button>
+
+                    <button
+                        type="submit"
+                        id="submit-incident-button"
+                    >
+                        Save incident
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+
+        <!-- ===========================
+             VEHICLE RECOMMENDATION
+        ============================ -->
+
+        <section
+            id="recommendation-panel"
+            class="recommendation-panel"
+            hidden
+        >
+
+            <div class="recommendation-header">
+
+                <div>
+
+                    <h2>
+                        Recommended Vehicle
+                    </h2>
+
+                    <p>
+                        The closest active vehicle matching
+                        the incident requirements.
+                    </p>
+
+                </div>
+
+                <span
+                    id="recommendation-status"
+                    class="recommendation-status"
+                >
+                    Waiting
+                </span>
+
+            </div>
+
+            <div
+                id="recommendation-content"
+                class="recommendation-content"
+            ></div>
+
+            <div class="recommendation-actions">
+
+                <button
+                    type="button"
+                    id="cancel-assignment-button"
+                    class="secondary-button"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="button"
+                    id="confirm-assignment-button"
+                >
+                    Confirm assignment
+                </button>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- ===========================
+         SCRIPTS
+    ============================ -->
+
+    <!-- ===========================
+     SCRIPTS
+============================ -->
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script src="js/api.js?v=10"></script>
+
+<script src="js/state.js?v=1"></script>
+<script src="js/helpers.js?v=1"></script>
+
+<script src="js/map.js?v=12"></script>
+
+<script src="js/vehicles-ui.js?v=1"></script>
+<script src="js/incidents-ui.js?v=1"></script>
+<script src="js/incident-form.js?v=1"></script>
+<script src="js/recommendation.js?v=1"></script>
+
+<script src="js/app.js?v=16"></script>
+
+</body>
+
+</html>

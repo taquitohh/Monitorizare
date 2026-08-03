@@ -1,0 +1,9 @@
+DATABASE_HOST = "database"
+
+DATABASE_PORT = 3306
+
+DATABASE_NAME = "gps_tracking"
+
+DATABASE_USER = "gps_user"
+
+DATABASE_PASSWORD = "student2026"
