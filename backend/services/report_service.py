@@ -81,7 +81,7 @@ class IncidentReportService:
                 incident
             ),
             author="GPS Tracking System",
-            subject="Incident activity report"
+            subject="Raport de activitate al incidentului"
         )
 
         story = []
@@ -267,7 +267,7 @@ class IncidentReportService:
             ),
 
             Paragraph(
-                "Incident Activity Report",
+                "Raport de activitate al incidentului",
                 self.styles["Heading2"]
             ),
 
@@ -281,7 +281,7 @@ class IncidentReportService:
                     f"<b>Incident:</b> "
                     f"{incident_code}"
                     "<br/>"
-                    f"<b>Report generated:</b> "
+                    f"<b>Raport generat:</b> "
                     f"{self._format_datetime(generated_at)}"
                 ),
                 self.subtitle_style
@@ -300,7 +300,7 @@ class IncidentReportService:
         rows = [
             [
                 self._label_cell(
-                    "Incident code"
+                    "Cod incident"
                 ),
                 self._value_cell(
                     incident.get(
@@ -310,7 +310,7 @@ class IncidentReportService:
             ],
             [
                 self._label_cell(
-                    "Title"
+                    "Titlu"
                 ),
                 self._value_cell(
                     incident.get(
@@ -320,7 +320,7 @@ class IncidentReportService:
             ],
             [
                 self._label_cell(
-                    "Incident type"
+                    "Tip incident"
                 ),
                 self._value_cell(
                     self._format_readable_value(
@@ -332,7 +332,7 @@ class IncidentReportService:
             ],
             [
                 self._label_cell(
-                    "Required vehicle"
+                    "Vehicul necesar"
                 ),
                 self._value_cell(
                     self._format_readable_value(
@@ -344,7 +344,7 @@ class IncidentReportService:
             ],
             [
                 self._label_cell(
-                    "Priority"
+                    "Prioritate"
                 ),
                 self._value_cell(
                     self._format_readable_value(
@@ -356,7 +356,7 @@ class IncidentReportService:
             ],
             [
                 self._label_cell(
-                    "Final status"
+                    "Stare finală"
                 ),
                 self._value_cell(
                     self._format_readable_value(
@@ -368,21 +368,21 @@ class IncidentReportService:
             ],
             [
                 self._label_cell(
-                    "Assigned vehicle"
+                    "Vehicul asignat"
                 ),
                 self._value_cell(
                     incident.get(
                         "assigned_vehicle_code"
                     )
                     or
-                    "Not assigned"
+                    "Neatribuit"
                 )
             ]
         ]
 
         return [
             Paragraph(
-                "1. Incident summary",
+                "1. Rezumat incident",
                 self.section_title_style
             ),
 
@@ -410,12 +410,12 @@ class IncidentReportService:
                 "details"
             )
             or
-            "No additional details were provided."
+            "Nu au fost furnizate detalii suplimentare."
         )
 
         return [
             Paragraph(
-                "2. Incident description",
+                "2. Descriere incident",
                 self.section_title_style
             ),
 
@@ -460,7 +460,7 @@ class IncidentReportService:
         rows = [
             [
                 self._label_cell(
-                    "Incident latitude"
+                    "Latitudine incident"
                 ),
                 self._value_cell(
                     latitude
@@ -468,7 +468,7 @@ class IncidentReportService:
             ],
             [
                 self._label_cell(
-                    "Incident longitude"
+                    "Longitudine incident"
                 ),
                 self._value_cell(
                     longitude
@@ -494,7 +494,7 @@ class IncidentReportService:
 
                 rows.append([
                     self._label_cell(
-                        "Vehicle start latitude"
+                        "Latitudine pornire vehicul"
                     ),
                     self._value_cell(
                         self._format_coordinate(
@@ -507,7 +507,7 @@ class IncidentReportService:
 
                 rows.append([
                     self._label_cell(
-                        "Vehicle start longitude"
+                        "Longitudine pornire vehicul"
                     ),
                     self._value_cell(
                         self._format_coordinate(
@@ -518,7 +518,7 @@ class IncidentReportService:
 
         return [
             Paragraph(
-                "3. Location information",
+                "3. Informații despre locație",
                 self.section_title_style
             ),
 
@@ -544,7 +544,7 @@ class IncidentReportService:
         rows = [
             [
                 self._label_cell(
-                    "Created"
+                    "Creat"
                 ),
                 self._value_cell(
                     self._format_datetime(
@@ -556,7 +556,7 @@ class IncidentReportService:
             ],
             [
                 self._label_cell(
-                    "Last updated"
+                    "Ultima actualizare"
                 ),
                 self._value_cell(
                     self._format_datetime(
@@ -568,7 +568,7 @@ class IncidentReportService:
             ],
             [
                 self._label_cell(
-                    "Vehicle dispatched"
+                    "Vehicul dispecerat"
                 ),
                 self._value_cell(
                     self._format_datetime(
@@ -580,7 +580,7 @@ class IncidentReportService:
             ],
             [
                 self._label_cell(
-                    "Incident resolved"
+                    "Incident rezolvat"
                 ),
                 self._value_cell(
                     self._format_datetime(
@@ -594,7 +594,7 @@ class IncidentReportService:
 
         return [
             Paragraph(
-                "4. Activity timeline",
+                "4. Cronologia activității",
                 self.section_title_style
             ),
 
@@ -793,7 +793,7 @@ class IncidentReportService:
 
                 rows.append([
                     self._label_cell(
-                        "Route start"
+                        "Start rută"
                     ),
                     self._value_cell(
                         (
@@ -811,7 +811,7 @@ class IncidentReportService:
 
                 rows.append([
                     self._label_cell(
-                        "Route end"
+                        "Sfârșit rută"
                     ),
                     self._value_cell(
                         (
@@ -825,17 +825,17 @@ class IncidentReportService:
 
             rows.append([
                 self._label_cell(
-                    "Route information"
+                    "Informații despre rută"
                 ),
                 self._value_cell(
-                    "Detailed route data is not available "
-                    "for this report."
+                    "Datele detaliate despre rută nu sunt disponibile "
+                    "pentru acest raport."
                 )
             ])
 
         return [
             Paragraph(
-                "6. Route information",
+                "6. Informații despre rută",
                 self.section_title_style
             ),
 
@@ -860,7 +860,7 @@ class IncidentReportService:
 
         elements = [
             Paragraph(
-                "7. Travelled route",
+                "7. Ruta parcursă",
                 self.section_title_style
             )
         ]
@@ -1150,23 +1150,23 @@ class IncidentReportService:
         vehicle_code = self._safe_text(
             incident.get(
                 "assigned_vehicle_code",
-                "No vehicle"
+                "Neatribuit"
             )
         )
 
         conclusion = (
             f"Incident <b>{incident_code}</b> "
-            f"finished with status <b>{status}</b>. "
-            f"The assigned response vehicle was "
+            f"s-a încheiat cu starea <b>{status}</b>. "
+            f"Vehiculul de intervenție asignat a fost "
             f"<b>{vehicle_code}</b>. "
-            "The timestamps and operational details "
-            "included in this document were obtained "
-            "from the GPS Tracking System database."
+            "Marcajele de timp și detaliile operaționale "
+            "incluse în acest document au fost obținute "
+            "din baza de date a sistemului de monitorizare GPS."
         )
 
         return [
             Paragraph(
-                "8. Conclusion",
+                "8. Concluzie",
                 self.section_title_style
             ),
 

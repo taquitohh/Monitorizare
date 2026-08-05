@@ -1,0 +1,109 @@
+.panel-switch {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.panel-tab {
+    flex: 1;
+    border: 1px solid #d1d5db;
+    background: #f9fafb;
+    color: #374151;
+    border-radius: 999px;
+    padding: 8px 12px;
+}
+
+.panel-tab.active {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+}
+
+.filters-row,
+.incident-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.filter-select,
+input,
+select,
+textarea {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: #ffffff;
+}
+
+.vehicle-count {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-radius: 999px;
+    padding: 4px 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.vehicle-card,
+.incident-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: #f9fafb;
+}
+
+.vehicle-card.selected,
+.incident-card.selected {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+
+.vehicle-card.recommended {
+    border-color: #10b981;
+    background: #ecfdf5;
+}
+
+.secondary-button {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 10px 14px;
+}
+
+button[type="submit"],
+button[type="button"] {
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 14px;
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ===========================
+   STĂRI VEHICULE
+=========================== */
+
+.status-active {
+    color: #059669;
+    font-weight: 700;
+}
+
+.status-busy {
+    color: #d97706;
+    font-weight: 700;
+}
+
+.status-inactive {
+    color: #dc2626;
+    font-weight: 700;
+}

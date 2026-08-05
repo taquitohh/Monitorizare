@@ -1,32 +1,23 @@
-# GPS Tracking System
+# Frontend
 
-A distributed GPS vehicle tracking application.
+Acest folder conține interfața web a aplicației de monitorizare GPS.
 
-## Architecture
+## Rol
 
-The project consists of:
+- afișează vehiculele și incidentele pe interfață;
+- permite selectarea locațiilor incidentelor pe hartă;
+- comunică cu backend-ul prin API;
+- afișează informații în timp real despre starea sistemului.
 
-- Raspberry Pi devices for GPS data generation
-- Web servers for the application
-- HAProxy for load balancing
-- MariaDB database
-- Docker containers
+## Structură
 
-## Current structure
+- index.html – structura principală a paginii.
+- css/ – stiluri organizate pe componente și funcționalitate.
+- js/ – logica aplicației: hartă, API, incidente, recomandări și stare UI.
+- assets/images/ – imagini și resurse grafice.
 
-The application contains:
+## Rulare
 
-- Frontend
-- Backend API
-- Vehicle data
-- Database configuration
+Frontend-ul este servit de Docker Compose împreună cu restul aplicației.
 
-## Network
-
-| Device | IP |
-|---|---|
-| Raspberry Pi | 10.235.1.20 |
-| HAProxy | 10.235.1.50 |
-| Web1 | 10.235.1.51 |
-| Web2 | 10.235.1.52 |
-| Database | 10.235.1.60 |
+Dacă vrei să îl rulezi separat pentru dezvoltare, poți deschide folderul în browser sau folosi un server static simplu.

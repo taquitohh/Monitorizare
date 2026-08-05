@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ro">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Panou șofer - Sistem de monitorizare GPS
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="css/base.css?v=1"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/driver.css?v=3s"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+
+</head>
+
+<body class="driver-page">
+
+    <!-- ===========================
+         BARA SUPERIOARĂ
+    ============================ -->
+
+    <header class="driver-navbar">
+
+        <div class="driver-brand">
+
+            <div
+                id="driver-brand-icon"
+                class="driver-brand-icon"
+            >
+                GPS
+            </div>
+
+            <div>
+
+                <h1>
+                    Sistem de monitorizare GPS
+                </h1>
+
+                <p>
+                    Panou operațional pentru șofer
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="driver-navbar-right">
+
+            <div class="driver-system-status">
+
+                <span
+                    id="driver-system-dot"
+                    class="driver-system-dot"
+                ></span>
+
+                <span id="driver-system-text">
+                    Sistem activ
+                </span>
+
+            </div>
+
+            <div class="driver-user-info">
+
+                <strong id="driver-user-name">
+                    Se încarcă...
+                </strong>
+
+                <span id="driver-user-role">
+                    Șofer
+                </span>
+
+            </div>
+
+            <button
+                type="button"
+                id="driver-refresh-button"
+                class="driver-navbar-button"
+            >
+                Reîmprospătează
+            </button>
+
+            <button
+                type="button"
+                id="driver-logout-button"
+                class="driver-navbar-button driver-logout-button"
+            >
+                Deconectare
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- ===========================
+         CONȚINUT
+    ============================ -->
+
+    <main class="driver-main">
+
+        <!-- ===========================
+             REZUMAT OPERAȚIONAL
+        ============================ -->
+
+        <section class="driver-summary-panel">
+
+            <div class="driver-summary-header">
+
+                <div>
+
+                    <span class="driver-section-label">
+                        Stare operațională
+                    </span>
+
+                    <h2 id="driver-vehicle-code">
+                        Se încarcă vehiculul...
+                    </h2>
+
+                </div>
+
+                <div class="driver-summary-badges">
+
+                    <span
+                        id="driver-vehicle-status"
+                        class="driver-badge"
+                    >
+                        Se verifică
+                    </span>
+
+                    <span
+                        id="driver-mission-status"
+                        class="driver-badge driver-badge-neutral"
+                    >
+                        În așteptare
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div
+                id="driver-summary-content"
+                class="driver-summary-content"
+            >
+
+                <p class="driver-empty-message">
+                    Se încarcă informațiile vehiculului.
+                </p>
+
+            </div>
+
+            <div
+                id="driver-mission-report"
+                class="driver-mission-report"
+                hidden
+            ></div>
+
+        </section>
+
+
+        <!-- ===========================
+             ZONA HARTĂ ȘI VEHICULE
+        ============================ -->
+
+        <section class="driver-workspace">
+
+            <!-- LISTĂ VEHICULE -->
+
+            <aside class="driver-vehicles-panel">
+
+                <div class="driver-panel-header">
+
+                    <div>
+
+                        <span class="driver-section-label">
+                            Vehicule similare
+                        </span>
+
+                        <h2>
+                            Echipaje
+                        </h2>
+
+                    </div>
+
+                    <span
+                        id="driver-vehicle-count"
+                        class="driver-count"
+                    >
+                        0
+                    </span>
+
+                </div>
+
+                <div class="driver-filters">
+
+                    <label for="driver-status-filter">
+                        Filtrare după stare
+                    </label>
+
+                    <select id="driver-status-filter">
+
+                        <option value="all">
+                            Toate vehiculele
+                        </option>
+
+                        <option value="active">
+                            Disponibile
+                        </option>
+
+                        <option value="inactive">
+                            Indisponibile
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div
+                    id="driver-vehicles-list"
+                    class="driver-vehicles-list"
+                >
+
+                    <p class="driver-empty-message">
+                        Se încarcă vehiculele.
+                    </p>
+
+                </div>
+
+            </aside>
+
+
+            <!-- HARTĂ -->
+
+            <section class="driver-map-panel">
+
+                <div class="driver-panel-header">
+
+                    <div>
+
+                        <span class="driver-section-label">
+                            Monitorizare GPS
+                        </span>
+
+                        <h2>
+                            Hartă și traseu
+                        </h2>
+
+                    </div>
+
+                    <span
+                        id="driver-map-status"
+                        class="driver-map-status"
+                    >
+                        Se încarcă
+                    </span>
+
+                </div>
+
+                <div class="driver-map-container">
+
+                    <div id="driver-map"></div>
+
+                    <div
+                        id="driver-map-message"
+                        class="driver-map-message"
+                    >
+                        Se pregătește harta...
+                    </div>
+
+                </div>
+
+            </section>
+
+        </section>
+
+    </main>
+
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script src="js/auth.js?v=2"></script>
+    <script src="js/driver-api.js?v=1"></script>
+    <script src="js/driver.js?v=3"></script>
+
+</body>
+
+</html>

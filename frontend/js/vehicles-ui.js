@@ -350,7 +350,7 @@ function displayVehicles(
 
         list.innerHTML = `
             <p class="empty-message">
-                No vehicles match the selected filters.
+                Nu există vehicule care să corespundă filtrelor selectate.
             </p>
         `;
 
@@ -404,9 +404,11 @@ function displayVehicles(
                 </div>
 
                 <div class="vehicle-status">
-                    <strong>Type:</strong>
+                    <strong>Tip:</strong>
                     ${escapeHtml(
-                        vehicle.vehicle_type
+                        getReadableStatus(
+                            vehicle.vehicle_type
+                        )
                     )}
                 </div>
 
@@ -418,8 +420,10 @@ function displayVehicles(
                         )}
                     "
                 >
-                    ● ${escapeHtml(
-                        vehicle.status
+                   ● ${escapeHtml(
+                        getReadableStatus(
+                            vehicle.status
+                        )
                     )}
                 </div>
             `;
@@ -564,7 +568,7 @@ function displayVehicleDetails(
             <div class="detail-item">
 
                 <div class="detail-label">
-                    Vehicle
+                    Vehicul
                 </div>
 
                 <div class="detail-value">
@@ -578,12 +582,14 @@ function displayVehicleDetails(
             <div class="detail-item">
 
                 <div class="detail-label">
-                    Type
+                    Tip
                 </div>
 
                 <div class="detail-value">
                     ${escapeHtml(
-                        vehicle.vehicle_type
+                        getReadableStatus(
+                            vehicle.vehicle_type
+                        )
                     )}
                 </div>
 
@@ -597,7 +603,9 @@ function displayVehicleDetails(
 
                 <div class="detail-value">
                     ${escapeHtml(
-                        vehicle.status
+                        getReadableStatus(
+                            vehicle.status
+                        )
                     )}
                 </div>
 
@@ -606,7 +614,7 @@ function displayVehicleDetails(
             <div class="detail-item">
 
                 <div class="detail-label">
-                    Speed
+                    Viteza
                 </div>
 
                 <div class="detail-value">
@@ -621,7 +629,7 @@ function displayVehicleDetails(
             <div class="detail-item">
 
                 <div class="detail-label">
-                    Latitude
+                    Latitudine
                 </div>
 
                 <div class="detail-value">
@@ -635,7 +643,7 @@ function displayVehicleDetails(
             <div class="detail-item">
 
                 <div class="detail-label">
-                    Longitude
+                    Longitudine
                 </div>
 
                 <div class="detail-value">
@@ -649,7 +657,7 @@ function displayVehicleDetails(
             <div class="detail-item">
 
                 <div class="detail-label">
-                    Last Update
+                    Ultima Actualizare
                 </div>
 
                 <div class="detail-value">
@@ -681,7 +689,7 @@ function resetVehicleDetails() {
 
         details.innerHTML = `
             <p class="empty-message">
-                Select a vehicle to view details
+                Selectează un vehicul pentru a vedea detaliile acestuia.
             </p>
         `;
 

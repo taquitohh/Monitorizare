@@ -377,7 +377,7 @@ function displayIncidents() {
 
         list.innerHTML = `
             <div class="routes-empty-state">
-                No incidents match the selected filters.
+                Nu există incidente care să corespundă filtrelor selectate.
             </div>
         `;
 
@@ -435,7 +435,7 @@ function createIncidentCard(
     const vehicleCode =
         incident.assigned_vehicle_code
         ||
-        "Not assigned";
+            "Neatribuit";
 
     const vehicleName =
         incident.assigned_vehicle_code
@@ -444,7 +444,7 @@ function createIncidentCard(
                 incident.assigned_vehicle_code
             )
             :
-            "Not assigned";
+                "Neatribuit";
 
     const createdAt =
         formatIncidentDate(
@@ -499,7 +499,7 @@ function createIncidentCard(
         <div class="route-card-info">
 
             <div>
-                <strong>Database status:</strong>
+                <strong>Stare în baza de date:</strong>
                 ${escapeHtml(
                     getReadableStatus(
                         incident.status
@@ -508,7 +508,7 @@ function createIncidentCard(
             </div>
 
             <div>
-                <strong>Case type:</strong>
+                <strong>Tip incident:</strong>
                 ${escapeHtml(
                     getReadableStatus(
                         incident.incident_type
@@ -517,7 +517,7 @@ function createIncidentCard(
             </div>
 
             <div>
-                <strong>Required vehicle:</strong>
+                <strong>Vehicul necesar:</strong>
                 ${escapeHtml(
                     getReadableStatus(
                         incident.required_vehicle_type
@@ -526,7 +526,7 @@ function createIncidentCard(
             </div>
 
             <div>
-                <strong>Priority:</strong>
+                <strong>Prioritate:</strong>
                 ${escapeHtml(
                     getReadableStatus(
                         incident.priority
@@ -535,21 +535,21 @@ function createIncidentCard(
             </div>
 
             <div>
-                <strong>Vehicle:</strong>
+                <strong>Vehicul:</strong>
                 ${escapeHtml(
                     vehicleName
                 )}
             </div>
 
             <div>
-                <strong>Vehicle code:</strong>
+                <strong>Cod vehicul:</strong>
                 ${escapeHtml(
                     vehicleCode
                 )}
             </div>
 
             <div>
-                <strong>Created:</strong>
+                <strong>Creat:</strong>
                 ${escapeHtml(
                     createdAt
                 )}
@@ -560,7 +560,7 @@ function createIncidentCard(
                     ?
                     `
                         <div>
-                            <strong>Dispatched:</strong>
+                            <strong>Dispecat:</strong>
                             ${escapeHtml(
                                 dispatchedAt
                             )}
@@ -575,7 +575,7 @@ function createIncidentCard(
                     ?
                     `
                         <div>
-                            <strong>Resolved:</strong>
+                            <strong>Rezolvat:</strong>
                             ${escapeHtml(
                                 resolvedAt
                             )}
@@ -599,7 +599,7 @@ function createIncidentCard(
                             type="button"
                             class="route-view-button"
                         >
-                            View live route
+                            Vezi ruta live
                         </button>
                     `
                     :
@@ -619,12 +619,12 @@ function createIncidentCard(
                 title="${
                     reportAvailable
                         ?
-                        "Open PDF report"
+                        "Deschide raportul PDF"
                         :
-                        "The report becomes available after the incident is archived"
+                        "Raportul devine disponibil după arhivarea incidentului"
                 }"
             >
-                Report
+                Raport
             </button>
 
         </div>
@@ -723,7 +723,7 @@ function showIncidentOnMap(
     ) {
 
         alert(
-            "This incident does not have a saved location."
+            "Acest incident nu are o locație salvată."
         );
 
         return;

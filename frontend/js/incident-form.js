@@ -121,7 +121,7 @@ function initializeIncidentForm() {
             if (!title) {
 
                 alert(
-                    "Please enter the situation name."
+                    "Te rugăm să introduci numele evenimentului."
                 );
 
                 incidentName.focus();
@@ -136,7 +136,7 @@ function initializeIncidentForm() {
             ) {
 
                 alert(
-                    "Please select a case type."
+                    "Te rugăm să selectezi un tip de incident."
                 );
 
                 incidentType.focus();
@@ -149,12 +149,12 @@ function initializeIncidentForm() {
                 true;
 
             submitButton.textContent =
-                "Saving...";
+                "Se salvează...";
 
             if (formStatus) {
 
                 formStatus.textContent =
-                    "Saving...";
+                    "Se salvează...";
 
             }
 
@@ -225,7 +225,7 @@ function initializeIncidentForm() {
                 if (formStatus) {
 
                     formStatus.textContent =
-                        "Select location";
+                        "Selectează locația";
 
                 }
 
@@ -251,7 +251,7 @@ function initializeIncidentForm() {
                 if (formStatus) {
 
                     formStatus.textContent =
-                        "Save failed";
+                        "Salvarea a eșuat";
 
                 }
 
@@ -263,7 +263,7 @@ function initializeIncidentForm() {
                     false;
 
                 submitButton.textContent =
-                    "Save incident";
+                    "Salvează incidentul";
 
             }
 
@@ -281,7 +281,7 @@ function initializeIncidentForm() {
                         "required-vehicle";
 
                     requiredVehicle.textContent =
-                        "Select a case type";
+                        "Selectează un tip de incident";
 
                     incidentDetailsCount.textContent =
                         "0 / 1000";
@@ -321,7 +321,7 @@ function updateRequiredVehicle(
     if (!vehicleType) {
 
         requiredVehicle.textContent =
-            "Select a case type";
+            "Selectează un tip de incident";
 
         return;
 
@@ -329,13 +329,13 @@ function updateRequiredVehicle(
 
     const labels = {
         police:
-            "Police vehicle",
+            "Vehicul de poliție",
 
         ambulance:
-            "Ambulance",
+            "Ambulanță",
 
         fire:
-            "Fire vehicle"
+            "Vehicul de pompieri"
     };
 
     requiredVehicle.classList.add(

@@ -1,20 +1,46 @@
 from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
+from routes.auth import auth_bp
+from routes.driver import driver_bp
 
-import math
 import os
 import uuid
 
 import pymysql
 
-from route_service import RouteService
-from report_service import IncidentReportService
+from services.route_service import RouteService
+from services.report_service import IncidentReportService
+from utils.validation import calculate_haversine_distance, validate_coordinates
+from services.incident_service import IncidentService
 
 app = Flask(__name__)
 
+
+app.config.update(
+    SECRET_KEY=os.getenv(
+        "SECRET_KEY",
+        "cheie-locala-de-dezvoltare"
+    ),
+
+    SESSION_COOKIE_HTTPONLY=True,
+
+    SESSION_COOKIE_SAMESITE="Lax",
+
+    # Rămâne False cât timp folosim
+    # http://localhost fără HTTPS.
+    SESSION_COOKIE_SECURE=False,
+
+    PERMANENT_SESSION_LIFETIME=3600
+)
+
 CORS(app)
 
-
+app.register_blueprint(
+    auth_bp
+)
+app.register_blueprint(
+    driver_bp
+)
 DB_CONFIG = {
     "host": os.getenv("DB_HOST"),
     "user": os.getenv("DB_USER"),
@@ -43,69 +69,6 @@ def get_db_connection():
 
     return pymysql.connect(
         **DB_CONFIG
-    )
-
-
-# =====================================
-# HAVERSINE DISTANCE
-# =====================================
-
-def calculate_haversine_distance(
-    latitude_1,
-    longitude_1,
-    latitude_2,
-    longitude_2
-):
-
-    earth_radius_km = 6371.0
-
-    latitude_difference = math.radians(
-        latitude_2 - latitude_1
-    )
-
-    longitude_difference = math.radians(
-        longitude_2 - longitude_1
-    )
-
-    latitude_1_radians = math.radians(
-        latitude_1
-    )
-
-    latitude_2_radians = math.radians(
-        latitude_2
-    )
-
-    value = (
-        math.sin(
-            latitude_difference / 2
-        ) ** 2
-        +
-        math.cos(
-            latitude_1_radians
-        )
-        *
-        math.cos(
-            latitude_2_radians
-        )
-        *
-        math.sin(
-            longitude_difference / 2
-        ) ** 2
-    )
-
-    angle = (
-        2
-        *
-        math.atan2(
-            math.sqrt(value),
-            math.sqrt(1 - value)
-        )
-    )
-
-    return (
-        earth_radius_km
-        *
-        angle
     )
 
 
@@ -300,24 +263,12 @@ def receive_vehicle():
                 "Vehicle id is required."
         }), 400
 
-    if not -90 <= latitude <= 90:
-
+    try:
+        validate_coordinates(latitude, longitude)
+    except ValueError as error:
         return jsonify({
-            "status":
-                "error",
-
-            "message":
-                "Latitude is invalid."
-        }), 400
-
-    if not -180 <= longitude <= 180:
-
-        return jsonify({
-            "status":
-                "error",
-
-            "message":
-                "Longitude is invalid."
+            "status": "error",
+            "message": str(error)
         }), 400
 
     if status not in allowed_statuses:
@@ -358,7 +309,7 @@ def receive_vehicle():
                 VALUES (
                     %s,
                     %s,
-                    %s
+                    %s  
                 )
 
                 ON DUPLICATE KEY UPDATE
@@ -366,7 +317,17 @@ def receive_vehicle():
                         VALUES(vehicle_type),
 
                     status =
-                        VALUES(status)
+                        CASE
+
+                            WHEN vehicles.status = 'busy'
+                                THEN 'busy'
+
+                            WHEN vehicles.status = 'inactive'
+                                THEN 'inactive'
+
+                            ELSE VALUES(status)
+
+                        END
             """, (
                 vehicle_code,
                 vehicle_type,
@@ -502,126 +463,15 @@ def create_incident():
                 "Request body is missing."
         }), 400
 
-    title = str(
-        data.get(
-            "title",
-            ""
-        )
-    ).strip()
-
-    incident_type = str(
-        data.get(
-            "incident_type",
-            ""
-        )
-    ).strip().lower()
-
-    required_vehicle_type = str(
-        data.get(
-            "required_vehicle_type",
-            ""
-        )
-    ).strip().lower()
-
-    priority = str(
-        data.get(
-            "priority",
-            "medium"
-        )
-    ).strip().lower()
-
-    details = str(
-        data.get(
-            "details",
-            ""
-        )
-    ).strip()
-
-    allowed_vehicle_types = {
-        "police",
-        "ambulance",
-        "fire"
-    }
-
-    allowed_priorities = {
-        "low",
-        "medium",
-        "high",
-        "critical"
-    }
-
-    if not title:
-
+    try:
+        payload = IncidentService.validate_incident_payload(data)
+    except ValueError as error:
         return jsonify({
-            "status":
-                "error",
-
-            "message":
-                "Situation name is required."
+            "status": "error",
+            "message": str(error)
         }), 400
 
-    if len(title) > 100:
-
-        return jsonify({
-            "status":
-                "error",
-
-            "message":
-                "Situation name cannot exceed "
-                "100 characters."
-        }), 400
-
-    if not incident_type:
-
-        return jsonify({
-            "status":
-                "error",
-
-            "message":
-                "Incident type is required."
-        }), 400
-
-    if (
-        required_vehicle_type
-        not in allowed_vehicle_types
-    ):
-
-        return jsonify({
-            "status":
-                "error",
-
-            "message":
-                "Required vehicle type is invalid."
-        }), 400
-
-    if priority not in allowed_priorities:
-
-        return jsonify({
-            "status":
-                "error",
-
-            "message":
-                "Priority is invalid."
-        }), 400
-
-    if len(details) > 1000:
-
-        return jsonify({
-            "status":
-                "error",
-
-            "message":
-                "Details cannot exceed "
-                "1000 characters."
-        }), 400
-
-    incident_code = (
-        "INCIDENT-"
-        +
-        uuid.uuid4()
-        .hex[:12]
-        .upper()
-    )
+    incident_code = payload["incident_code"]
 
     connection = get_db_connection()
 
@@ -656,11 +506,11 @@ def create_incident():
                 )
             """, (
                 incident_code,
-                title,
-                incident_type,
-                required_vehicle_type,
-                priority,
-                details or None
+                payload["title"],
+                payload["incident_type"],
+                payload["required_vehicle_type"],
+                payload["priority"],
+                payload["details"] or None
             ))
 
             incident_id = (
@@ -779,24 +629,12 @@ def update_incident_location(
                 "must be valid numbers."
         }), 400
 
-    if not -90 <= latitude <= 90:
-
+    try:
+        validate_coordinates(latitude, longitude)
+    except ValueError as error:
         return jsonify({
-            "status":
-                "error",
-
-            "message":
-                "Latitude is invalid."
-        }), 400
-
-    if not -180 <= longitude <= 180:
-
-        return jsonify({
-            "status":
-                "error",
-
-            "message":
-                "Longitude is invalid."
+            "status": "error",
+            "message": str(error)
         }), 400
 
     connection = get_db_connection()
@@ -1286,6 +1124,16 @@ def assign_vehicle(
             """, (
                 vehicle_id,
                 incident_id
+            ))
+            cursor.execute("""
+            UPDATE vehicles
+
+                SET
+                    status = 'busy'
+
+                WHERE id = %s
+            """, (
+                vehicle_id,
             ))
 
             connection.commit()
@@ -1853,6 +1701,17 @@ def mark_incident_arrived(
                 WHERE id = %s
             """, (
                 incident_id,
+            ))
+
+            cursor.execute("""
+                UPDATE vehicles
+
+                SET
+                    status = 'active'
+
+                WHERE id = %s
+            """, (
+                incident["assigned_vehicle_id"],
             ))
 
             connection.commit()

@@ -1,0 +1,680 @@
+:root {
+    --driver-primary: #2563eb;
+    --driver-primary-dark: #1d4ed8;
+    --driver-primary-light: #eff6ff;
+    --driver-primary-border: #bfdbfe;
+
+    --driver-background: #f3f4f6;
+    --driver-surface: #ffffff;
+    --driver-text: #111827;
+    --driver-muted: #6b7280;
+    --driver-border: #e5e7eb;
+
+    --driver-success: #059669;
+    --driver-danger: #dc2626;
+    --driver-warning: #d97706;
+}
+
+.driver-page {
+    min-height: 100vh;
+    margin: 0;
+    background: var(--driver-background);
+    color: var(--driver-text);
+}
+
+/* ===========================
+   TEME VEHICULE
+=========================== */
+
+.driver-page.theme-police {
+    --driver-primary: #2563eb;
+    --driver-primary-dark: #1d4ed8;
+    --driver-primary-light: #eff6ff;
+    --driver-primary-border: #bfdbfe;
+}
+
+.driver-page.theme-ambulance {
+    --driver-primary: #dc2626;
+    --driver-primary-dark: #b91c1c;
+    --driver-primary-light: #fef2f2;
+    --driver-primary-border: #fecaca;
+}
+
+.driver-page.theme-fire {
+    --driver-primary: #ea580c;
+    --driver-primary-dark: #c2410c;
+    --driver-primary-light: #fff7ed;
+    --driver-primary-border: #fed7aa;
+}
+
+/* ===========================
+   NAVBAR
+=========================== */
+
+.driver-navbar {
+    min-height: 76px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    padding: 14px 26px;
+    background: #171717;
+    color: #ffffff;
+    border-bottom: 4px solid var(--driver-primary);
+    box-shadow:
+        0 6px 18px
+        rgba(0, 0, 0, 0.18);
+}
+
+.driver-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.driver-brand-icon {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 13px;
+    background: var(--driver-primary);
+    color: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+}
+
+.driver-brand h1 {
+    margin: 0;
+    font-size: 1.18rem;
+}
+
+.driver-brand p {
+    margin: 4px 0 0;
+    color: #d1d5db;
+    font-size: 0.87rem;
+}
+
+.driver-navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.driver-system-status {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: #d1fae5;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.driver-system-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow:
+        0 0 0 4px
+        rgba(16, 185, 129, 0.14);
+}
+
+.driver-system-dot.error {
+    background: #ef4444;
+    box-shadow:
+        0 0 0 4px
+        rgba(239, 68, 68, 0.14);
+}
+
+.driver-user-info {
+    display: flex;
+    flex-direction: column;
+    padding-left: 14px;
+    border-left: 1px solid #404040;
+    text-align: right;
+}
+
+.driver-user-info strong {
+    font-size: 0.92rem;
+}
+
+.driver-user-info span {
+    margin-top: 3px;
+    color: var(--driver-primary-border);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.driver-navbar-button {
+    border: 1px solid #525252;
+    border-radius: 9px;
+    padding: 9px 12px;
+    background: #262626;
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.driver-navbar-button:hover {
+    background: #404040;
+}
+
+.driver-navbar-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.driver-logout-button {
+    border-color: var(--driver-primary);
+}
+
+/* ===========================
+   LAYOUT
+=========================== */
+
+.driver-main {
+    padding: 20px 24px 28px;
+}
+
+.driver-summary-panel,
+.driver-vehicles-panel,
+.driver-map-panel {
+    background: var(--driver-surface);
+    border: 1px solid var(--driver-border);
+    border-radius: 16px;
+    box-shadow:
+        0 8px 24px
+        rgba(15, 23, 42, 0.06);
+}
+
+.driver-summary-panel {
+    padding: 20px;
+    margin-bottom: 18px;
+    border-top: 4px solid var(--driver-primary);
+}
+
+.driver-summary-header,
+.driver-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+}
+
+.driver-summary-header h2,
+.driver-panel-header h2 {
+    margin: 5px 0 0;
+    color: var(--driver-text);
+}
+
+.driver-section-label {
+    color: var(--driver-primary);
+    font-size: 0.75rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.driver-summary-badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.driver-badge {
+    border-radius: 999px;
+    padding: 7px 11px;
+    background: #dcfce7;
+    color: #047857;
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+.driver-badge.inactive {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.driver-badge-neutral {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+.driver-badge-mission {
+    background: var(--driver-primary-light);
+    color: var(--driver-primary-dark);
+}
+
+.driver-summary-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 28px;
+    margin-top: 17px;
+    padding-top: 17px;
+    border-top: 1px solid var(--driver-border);
+}
+
+.driver-summary-item {
+    min-width: 150px;
+}
+
+.driver-summary-item span {
+    display: block;
+    color: var(--driver-muted);
+    font-size: 0.8rem;
+}
+
+.driver-summary-item strong {
+    display: block;
+    margin-top: 4px;
+    color: var(--driver-text);
+}
+
+.driver-mission-report {
+    margin-top: 18px;
+    padding: 17px;
+    border: 1px solid var(--driver-primary-border);
+    border-radius: 13px;
+    background: var(--driver-primary-light);
+}
+
+.driver-mission-report h3 {
+    margin: 0 0 13px;
+    color: var(--driver-primary-dark);
+}
+
+.driver-mission-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.driver-mission-item span {
+    display: block;
+    color: var(--driver-muted);
+    font-size: 0.78rem;
+}
+
+.driver-mission-item strong {
+    display: block;
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+.driver-mission-details {
+    grid-column: 1 / -1;
+}
+
+.driver-workspace {
+    display: grid;
+    grid-template-columns: 330px minmax(0, 1fr);
+    gap: 18px;
+}
+
+.driver-vehicles-panel,
+.driver-map-panel {
+    min-width: 0;
+    padding: 18px;
+}
+
+.driver-count {
+    min-width: 30px;
+    border-radius: 999px;
+    padding: 5px 9px;
+    background: var(--driver-primary-light);
+    color: var(--driver-primary-dark);
+    text-align: center;
+    font-weight: 900;
+}
+
+.driver-filters {
+    margin: 16px 0 13px;
+}
+
+.driver-filters label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--driver-muted);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.driver-filters select {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 10px 11px;
+    background: #ffffff;
+}
+
+.driver-vehicles-list {
+    max-height: 570px;
+    overflow-y: auto;
+    padding-right: 3px;
+}
+
+.driver-vehicle-card {
+    margin-bottom: 10px;
+    padding: 12px;
+    border: 1px solid var(--driver-border);
+    border-radius: 12px;
+    background: #fafafa;
+    cursor: pointer;
+}
+
+.driver-vehicle-card:hover,
+.driver-vehicle-card.selected {
+    border-color: var(--driver-primary);
+    background: var(--driver-primary-light);
+}
+
+.driver-vehicle-card.own-vehicle {
+    border-left: 5px solid var(--driver-primary);
+}
+
+.driver-vehicle-card-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.driver-vehicle-code {
+    font-weight: 900;
+}
+
+.driver-vehicle-state {
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.driver-vehicle-state.active {
+    color: var(--driver-success);
+}
+
+.driver-vehicle-state.inactive {
+    color: var(--driver-danger);
+}
+
+.driver-vehicle-card-details {
+    margin-top: 8px;
+    color: var(--driver-muted);
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+
+.driver-map-status {
+    border-radius: 999px;
+    padding: 5px 9px;
+    background: #f3f4f6;
+    color: #4b5563;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.driver-map-container {
+    position: relative;
+    min-height: 570px;
+    margin-top: 14px;
+}
+
+#driver-map {
+    width: 100%;
+    height: 570px;
+    border-radius: 13px;
+    overflow: hidden;
+}
+
+.driver-map-message {
+    position: absolute;
+    top: 13px;
+    left: 13px;
+    z-index: 1000;
+    max-width: 300px;
+    border-radius: 9px;
+    padding: 9px 11px;
+    background: rgba(255, 255, 255, 0.94);
+    color: #374151;
+    box-shadow:
+        0 5px 16px
+        rgba(15, 23, 42, 0.14);
+    font-size: 0.84rem;
+}
+
+.driver-map-message:empty {
+    display: none;
+}
+
+.driver-empty-message {
+    color: var(--driver-muted);
+    line-height: 1.5;
+}
+
+/* ===========================
+   RESPONSIVE
+=========================== */
+
+@media (max-width: 1050px) {
+    .driver-navbar {
+        align-items: flex-start;
+    }
+
+    .driver-navbar-right {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .driver-workspace {
+        grid-template-columns: 280px minmax(0, 1fr);
+    }
+
+    .driver-mission-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 800px) {
+    .driver-navbar {
+        flex-direction: column;
+        padding: 15px 18px;
+    }
+
+    .driver-navbar-right {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .driver-user-info {
+        margin-left: auto;
+    }
+
+    .driver-main {
+        padding: 16px;
+    }
+
+    .driver-workspace {
+        grid-template-columns: 1fr;
+    }
+
+    .driver-vehicles-list {
+        max-height: 300px;
+    }
+}
+
+@media (max-width: 570px) {
+    .driver-navbar-right {
+        align-items: stretch;
+    }
+
+    .driver-system-status {
+        width: 100%;
+    }
+
+    .driver-user-info {
+        width: 100%;
+        margin-left: 0;
+        padding-left: 0;
+        border-left: none;
+        text-align: left;
+    }
+
+    .driver-navbar-button {
+        flex: 1;
+    }
+
+    .driver-summary-header {
+        flex-direction: column;
+    }
+
+    .driver-summary-badges {
+        justify-content: flex-start;
+    }
+
+    .driver-mission-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .driver-mission-details {
+        grid-column: auto;
+    }
+
+    #driver-map,
+    .driver-map-container {
+        height: 430px;
+        min-height: 430px;
+    }
+}
+
+/* ===========================
+   MARKERE VEHICULE ȘOFER
+=========================== */
+
+.driver-vehicle-marker-wrapper {
+    background: transparent;
+    border: none;
+}
+
+.driver-vehicle-map-marker {
+    position: relative;
+
+    width: 42px;
+    height: 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 4px solid #ffffff;
+    border-radius: 50% 50% 50% 0;
+
+    box-shadow:
+        0 5px 12px
+        rgba(0, 0, 0, 0.35);
+
+    transform: rotate(-45deg);
+}
+
+.driver-vehicle-map-marker-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 21px;
+    line-height: 1;
+
+    transform: rotate(45deg);
+}
+
+.driver-vehicle-map-marker-police {
+    background: #1976d2;
+}
+
+.driver-vehicle-map-marker-ambulance {
+    background: #d32f2f;
+}
+
+.driver-vehicle-map-marker-fire {
+    background: #f59e0b;
+}
+
+
+/* ===========================
+   VEHICULUL PROPRIU
+=========================== */
+
+.driver-map-marker-own {
+    width: 56px;
+    height: 56px;
+
+    border: 5px solid #ffffff;
+
+    outline:
+        4px solid
+        #111827;
+
+    box-shadow:
+        0 0 0 4px
+        rgba(255, 255, 255, 0.75),
+
+        0 8px 18px
+        rgba(0, 0, 0, 0.45);
+}
+
+.driver-map-marker-own
+.driver-vehicle-map-marker-icon {
+    font-size: 28px;
+}
+
+.driver-map-marker-label {
+    position: absolute;
+
+    left: 50%;
+    bottom: -24px;
+
+    transform:
+        translateX(-50%)
+        rotate(45deg);
+
+    min-width: 34px;
+
+    padding:
+        3px 7px;
+
+    border:
+        2px solid
+        #ffffff;
+
+    border-radius:
+        999px;
+
+    background:
+        #111827;
+
+    color:
+        #ffffff;
+
+    font-size:
+        10px;
+
+    font-weight:
+        900;
+
+    letter-spacing:
+        0.08em;
+
+    text-align:
+        center;
+
+    box-shadow:
+        0 3px 8px
+        rgba(0, 0, 0, 0.28);
+}
+
+.driver-vehicle-state.busy {
+    color: #d97706;
+}

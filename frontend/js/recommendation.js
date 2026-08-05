@@ -79,14 +79,14 @@ async function loadRecommendedVehicle(
         false;
 
     status.textContent =
-        "Searching...";
+        "Se caută...";
 
     confirmButton.disabled =
         true;
 
     content.innerHTML = `
         <p>
-            Searching for the closest eligible vehicle...
+            Se caută cel mai apropiat vehicul eligibil...
         </p>
     `;
 
@@ -103,7 +103,7 @@ async function loadRecommendedVehicle(
         if (!recommendedVehicle) {
 
             throw new Error(
-                "The server did not return a vehicle."
+                "Serverul nu a returnat un vehicul."
             );
 
         }
@@ -125,7 +125,7 @@ async function loadRecommendedVehicle(
             recommendedVehicle.vehicle_code;
 
         status.textContent =
-            "Recommended";
+            "Recomandat";
 
         confirmButton.disabled =
             false;
@@ -136,7 +136,7 @@ async function loadRecommendedVehicle(
                 <div>
 
                     <div class="recommended-label">
-                        Vehicle
+                        Vehicul
                     </div>
 
                     <div class="recommended-value">
@@ -150,7 +150,7 @@ async function loadRecommendedVehicle(
                 <div>
 
                     <div class="recommended-label">
-                        Type
+                        Tip
                     </div>
 
                     <div class="recommended-value">
@@ -164,14 +164,11 @@ async function loadRecommendedVehicle(
                 <div>
 
                     <div class="recommended-label">
-                        Status
+                        Stare
                     </div>
 
                     <div
-                        class="
-                            recommended-value
-                            status-active
-                        "
+                        class="recommended-value status-active"
                     >
                         ● ${escapeHtml(
                             recommendedVehicle.status
@@ -183,7 +180,7 @@ async function loadRecommendedVehicle(
                 <div>
 
                     <div class="recommended-label">
-                        Direct distance
+                        Distanță directă
                     </div>
 
                     <div class="recommended-value">
@@ -219,7 +216,7 @@ async function loadRecommendedVehicle(
     catch (error) {
 
         console.error(
-            "Recommended vehicle error:",
+            "Eroare vehicul recomandat:",
             error
         );
 
@@ -236,7 +233,7 @@ async function loadRecommendedVehicle(
             null;
 
         status.textContent =
-            "Unavailable";
+            "Indisponibil";
 
         confirmButton.disabled =
             true;
@@ -296,7 +293,7 @@ async function confirmRecommendedVehicle() {
             true;
 
         confirmButton.textContent =
-            "Assigning...";
+            "Se atribuie...";
 
     }
 
@@ -310,7 +307,7 @@ async function confirmRecommendedVehicle() {
     if (status) {
 
         status.textContent =
-            "Assigning...";
+            "Se atribuie...";
 
     }
 
@@ -328,7 +325,7 @@ async function confirmRecommendedVehicle() {
         if (status) {
 
             status.textContent =
-                "Calculating route...";
+                "Se calculează ruta...";
 
         }
 
@@ -378,9 +375,9 @@ async function confirmRecommendedVehicle() {
         showVehiclesSidebar();
 
         alert(
-            `Vehicle assigned to ${incident.incident_code}.\n\n`
+            `Vehiculul a fost atribuit la ${incident.incident_code}.\n\n`
             +
-            "The mission is available in Incidents."
+            "Misiunea este disponibilă în secțiunea Incidente."
         );
 
     }
@@ -399,7 +396,7 @@ async function confirmRecommendedVehicle() {
         if (status) {
 
             status.textContent =
-                "Operation failed";
+                "Operațiunea a eșuat";
 
         }
 
@@ -416,7 +413,7 @@ async function confirmRecommendedVehicle() {
                 false;
 
             confirmButton.textContent =
-                "Confirm assignment";
+                "Confirmă asignarea";
 
         }
 

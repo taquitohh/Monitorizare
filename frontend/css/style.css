@@ -1581,3 +1581,100 @@ button:hover{
     }
 
 }
+.topbar-user-area {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.current-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.current-user-info {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+}
+
+#current-user-name {
+    font-weight: 700;
+}
+
+#current-user-role {
+    color: #6b7280;
+    font-size: 0.82rem;
+}
+
+#logout-button {
+    white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+    .topbar {
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .topbar-user-area {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+    }
+
+    .system-status {
+        display: none;
+    }
+}
+
+/* ===========================
+   MARKERE VEHICULE PE HARTĂ
+=========================== */
+
+.vehicle-marker-wrapper {
+    background: transparent;
+    border: none;
+}
+
+.vehicle-map-marker {
+    width: 42px;
+    height: 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 4px solid #ffffff;
+    border-radius: 50% 50% 50% 0;
+
+    box-shadow:
+        0 5px 12px
+        rgba(0, 0, 0, 0.35);
+
+    transform: rotate(-45deg);
+}
+
+.vehicle-map-marker-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 21px;
+    line-height: 1;
+
+    transform: rotate(45deg);
+}
+
+.vehicle-map-marker-police {
+    background: #1976d2;
+}
+
+.vehicle-map-marker-ambulance {
+    background: #d32f2f;
+}
+
+.vehicle-map-marker-fire {
+    background: #f59e0b;
+}

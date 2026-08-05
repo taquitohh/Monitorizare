@@ -12,6 +12,7 @@ services:
       DB_USER: gps_user
       DB_PASSWORD: student2026
       ROAD_GRAPH_FILE: /app/data/road_network.graphml
+      SECRET_KEY: student2026
     depends_on:
       - database
     expose:
@@ -33,6 +34,7 @@ services:
       DB_USER: gps_user
       DB_PASSWORD: student2026
       ROAD_GRAPH_FILE: /app/data/road_network.graphml
+      SECRET_KEY: student2026
     depends_on:
       - database
     expose:
@@ -78,7 +80,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ./database/gps_tracking.sql:/docker-entrypoint-initdb.d/gps_tracking.sql
+      - ./database/init:/docker-entrypoint-initdb.d:ro
       - db_data:/var/lib/mysql
     networks:
       - internal_net

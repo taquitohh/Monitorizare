@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="ro">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Sistem de monitorizare GPS
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="css/base.css?v=1"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/layout.css?v=1"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/components.css?v=1"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/map.css?v=1"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/style.css?v=15"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+
+</head>
+
+<body>
+
+    <header class="topbar">
+
+        <div>
+
+            <h1>
+                Sistem de monitorizare GPS
+            </h1>
+
+            <p>
+                Monitorizare în timp real a vehiculelor
+            </p>
+
+        </div>
+
+        <div class="topbar-user-area">
+
+            <div class="system-status">
+
+                <span class="status-dot"></span>
+
+                Sistem online
+
+            </div>
+
+            <div class="current-user">
+
+                <div class="current-user-info">
+
+                    <span id="current-user-name">
+                        Se încarcă...
+                    </span>
+
+                    <span id="current-user-role">
+                        -
+                    </span>
+
+                </div>
+
+                <button
+                    type="button"
+                    id="logout-button"
+                    class="secondary-button"
+                >
+                    Deconectare
+                </button>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+    <main class="dashboard">
+
+        <!-- ===========================
+             VEHICLES / INCIDENTS PANEL
+        ============================ -->
+
+        <aside class="vehicles-panel">
+
+            <div class="panel-header">
+
+                <h2 id="sidebar-title">
+                    Vehicule
+                </h2>
+
+                <span
+                    id="vehicle-count"
+                    class="vehicle-count"
+                >
+                    0
+                </span>
+
+            </div>
+
+
+            <!-- PANEL SWITCH -->
+
+            <div class="panel-switch">
+
+                <button
+                    id="vehicles-tab"
+                    class="panel-tab active"
+                    type="button"
+                >
+                    Vehicule
+                </button>
+
+                <button
+                    id="routes-tab"
+                    class="panel-tab"
+                    type="button"
+                >
+                    Incidente
+                </button>
+
+            </div>
+
+
+            <!-- ===========================
+                 VEHICLE FILTERS
+            ============================ -->
+
+            <div
+                id="vehicle-filters"
+                class="filters-row"
+            >
+
+                <label>
+                    Filtre vehicule
+                </label>
+
+                <select
+                    id="type-filter"
+                    class="filter-select"
+                >
+
+                    <option value="all">
+                        Tip: Toate
+                    </option>
+
+                    <option value="police">
+                        Poliție
+                    </option>
+
+                    <option value="ambulance">
+                        Ambulanță
+                    </option>
+
+                    <option value="fire">
+                        Pompieri
+                    </option>
+
+                </select>
+
+
+                <select
+                    id="status-filter"
+                    class="filter-select"
+                >
+
+                    <option value="all">
+                        Stare: Toate
+                    </option>
+
+                    <option value="active">
+                        Disponibile
+                    </option>
+
+                    <option value="busy">
+                        În misiune
+                    </option>
+
+                    <option value="inactive">
+                        Indisponibile
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- ===========================
+                 VEHICLE LIST
+            ============================ -->
+
+            <div id="vehicles-container">
+
+                <div id="vehicles-list"></div>
+
+            </div>
+
+
+            <!-- ===========================
+                 INCIDENTS CONTAINER
+            ============================ -->
+
+            <div
+                id="routes-container"
+                hidden
+            >
+
+                <!-- INCIDENT FILTERS -->
+
+                <div
+                    id="incident-filters"
+                    class="incident-filters"
+                >
+
+                    <label>
+                        Filtre incidente
+                    </label>
+
+
+                    <select
+                        id="incident-status-filter"
+                        class="filter-select"
+                    >
+
+                        <option value="all">
+                            Stare: Toate
+                        </option>
+
+                        <option value="active">
+                            Activ
+                        </option>
+
+                        <option value="archived">
+                            Arhivate
+                        </option>
+
+                    </select>
+
+
+                    <select
+                        id="incident-type-filter"
+                        class="filter-select"
+                    >
+
+                        <option value="all">
+                            Tip vehicul: Toate
+                        </option>
+
+                        <option value="police">
+                            Poliție
+                        </option>
+
+                        <option value="ambulance">
+                            Ambulanță
+                        </option>
+
+                        <option value="fire">
+                            Pompieri
+                        </option>
+
+                    </select>
+
+
+                    <select
+                        id="incident-priority-filter"
+                        class="filter-select"
+                    >
+
+                        <option value="all">
+                            Prioritate: Toate
+                        </option>
+
+                        <option value="low">
+                            Scăzută
+                        </option>
+
+                        <option value="medium">
+                            Medie
+                        </option>
+
+                        <option value="high">
+                            Ridicată
+                        </option>
+
+                        <option value="critical">
+                            Critică
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- INCIDENT LIST -->
+
+                <div id="routes-list">
+
+                    <p class="empty-message">
+                        Nu au fost găsite incidente.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </aside>
+
+
+        <!-- ===========================
+             MAP
+        ============================ -->
+
+        <section class="map-panel">
+
+            <div class="panel-header">
+
+                <h2>
+                    Hartă live
+                </h2>
+
+                <button
+                    id="refresh-button"
+                    type="button"
+                >
+                    Reîmprospătează
+                </button>
+
+            </div>
+
+            <div class="map-container">
+
+                <div
+                    id="map-selection-message"
+                    class="map-selection-message"
+                ></div>
+
+                <div id="map"></div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ===========================
+             VEHICLE DETAILS
+        ============================ -->
+
+        <section class="details-panel">
+
+            <h2>
+                Vehicul selectat
+            </h2>
+
+            <div id="vehicle-details">
+
+                <p class="empty-message">
+                    Selectează un vehicul pentru a vedea detalii
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- ===========================
+             INCIDENT FORM
+        ============================ -->
+
+        <section class="incident-panel">
+
+            <div class="incident-header">
+
+                <div>
+
+                    <h2>
+                        Incident nou
+                    </h2>
+
+                    <p>
+                        Completează informațiile despre incident,
+                        salvează-l și selectează locația acestuia.
+                    </p>
+
+                </div>
+
+                <span class="incident-form-status">
+                    Doar schiță
+                </span>
+
+            </div>
+
+
+            <form id="incident-form">
+
+                <div class="incident-form-grid">
+
+                    <!-- SITUATION NAME -->
+
+                    <div class="form-group">
+
+                        <label for="incident-name">
+                            Nume eveniment
+                        </label>
+
+                        <input
+                            type="text"
+                            id="incident-name"
+                            name="incidentName"
+                            placeholder="Exemplu: Accident pe strada principală"
+                            maxlength="100"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- CASE TYPE -->
+
+                    <div class="form-group">
+
+                        <label for="incident-type">
+                            Tip incident
+                        </label>
+
+                        <select
+                            id="incident-type"
+                            name="incidentType"
+                            required
+                        >
+
+                            <option value="">
+                                Selectează un tip de incident
+                            </option>
+
+
+                            <!-- POLICE -->
+
+                            <optgroup label="Poliție">
+
+                                <option
+                                    value="traffic-accident"
+                                    data-vehicle-type="police"
+                                >
+                                    Accident rutier
+                                </option>
+
+                                <option
+                                    value="theft"
+                                    data-vehicle-type="police"
+                                >
+                                    Furt
+                                </option>
+
+                                <option
+                                    value="assault"
+                                    data-vehicle-type="police"
+                                >
+                                    Agresiune
+                                </option>
+
+                                <option
+                                    value="public-disturbance"
+                                    data-vehicle-type="police"
+                                >
+                                    Tulburarea ordinii publice
+                                </option>
+
+                                <option
+                                    value="missing-person"
+                                    data-vehicle-type="police"
+                                >
+                                    Persoană dispărută
+                                </option>
+
+                            </optgroup>
+
+
+                            <!-- AMBULANCE -->
+
+                            <optgroup label="Ambulanță">
+
+                                <option
+                                    value="medical-emergency"
+                                    data-vehicle-type="ambulance"
+                                >
+                                    Urgență medicală
+                                </option>
+
+                                <option
+                                    value="unconscious-person"
+                                    data-vehicle-type="ambulance"
+                                >
+                                    Persoană inconștientă
+                                </option>
+
+                                <option
+                                    value="injured-person"
+                                    data-vehicle-type="ambulance"
+                                >
+                                    Persoană rănită
+                                </option>
+
+                                <option
+                                    value="cardiac-emergency"
+                                    data-vehicle-type="ambulance"
+                                >
+                                    Urgență cardiacă
+                                </option>
+
+                                <option
+                                    value="urgent-medical-transport"
+                                    data-vehicle-type="ambulance"
+                                >
+                                    Transport medical urgent
+                                </option>
+
+                            </optgroup>
+
+
+                            <!-- FIRE DEPARTMENT -->
+
+                            <optgroup label="Pompieri">
+
+                                <option
+                                    value="building-fire"
+                                    data-vehicle-type="fire"
+                                >
+                                    Incendiu la clădire
+                                </option>
+
+                                <option
+                                    value="vehicle-fire"
+                                    data-vehicle-type="fire"
+                                >
+                                    Incendiu la vehicul
+                                </option>
+
+                                <option
+                                    value="vegetation-fire"
+                                    data-vehicle-type="fire"
+                                >
+                                    Incendiu de vegetație
+                                </option>
+
+                                <option
+                                    value="gas-leak"
+                                    data-vehicle-type="fire"
+                                >
+                                    Scurgere de gaz
+                                </option>
+
+                                <option
+                                    value="explosion"
+                                    data-vehicle-type="fire"
+                                >
+                                    Explozie
+                                </option>
+
+                            </optgroup>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- PRIORITY -->
+
+                    <div class="form-group">
+
+                        <label for="incident-priority">
+                            Prioritate
+                        </label>
+
+                        <select
+                            id="incident-priority"
+                            name="incidentPriority"
+                        >
+
+                            <option value="low">
+                                Scăzută
+                            </option>
+
+                            <option
+                                value="medium"
+                                selected
+                            >
+                                Medie
+                            </option>
+
+                            <option value="high">
+                                Ridicată
+                            </option>
+
+                            <option value="critical">
+                                Critică
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- REQUIRED VEHICLE -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Vehicul necesar
+                        </label>
+
+                        <div
+                            id="required-vehicle"
+                            class="required-vehicle"
+                        >
+                            Selectează un tip de incident
+                        </div>
+
+                    </div>
+
+
+                    <!-- DETAILS -->
+
+                    <div class="form-group form-group-full">
+
+                        <label for="incident-details">
+                            Detalii
+                        </label>
+
+                        <textarea
+                            id="incident-details"
+                            name="incidentDetails"
+                            rows="5"
+                            maxlength="1000"
+                            placeholder="Descrie incidentul și include orice informație relevantă..."
+                        ></textarea>
+
+                        <div class="textarea-footer">
+
+                            <span>
+                                După salvare, selectează locația pe hartă.
+                            </span>
+
+                            <span id="incident-details-count">
+                                0 / 1000
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- FORM ACTIONS -->
+
+                <div class="incident-actions">
+
+                    <button
+                        type="reset"
+                        id="clear-incident-button"
+                        class="secondary-button"
+                    >
+                        Șterge formular
+                    </button>
+
+                    <button
+                        type="submit"
+                        id="submit-incident-button"
+                    >
+                        Salvează incidentul
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+
+        <!-- ===========================
+             VEHICLE RECOMMENDATION
+        ============================ -->
+
+        <section
+            id="recommendation-panel"
+            class="recommendation-panel"
+            hidden
+        >
+
+            <div class="recommendation-header">
+
+                <div>
+
+                    <h2>
+                        Vehicul recomandat
+                    </h2>
+
+                    <p>
+                        Cel mai apropiat vehicul activ care corespunde
+                        cerințelor incidentului.
+                    </p>
+
+                </div>
+
+                <span
+                    id="recommendation-status"
+                    class="recommendation-status"
+                >
+                    În așteptare
+                </span>
+
+            </div>
+
+            <div
+                id="recommendation-content"
+                class="recommendation-content"
+            ></div>
+
+            <div class="recommendation-actions">
+
+                <button
+                    type="button"
+                    id="cancel-assignment-button"
+                    class="secondary-button"
+                >
+                    Anulează
+                </button>
+
+                <button
+                    type="button"
+                    id="confirm-assignment-button"
+                >
+                    Confirmă asignarea
+                </button>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- ===========================
+         SCRIPTS
+    ============================ -->
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script src="js/auth.js?v=2"></script>
+<script src="js/api.js?v=10"></script>
+
+<script src="js/state.js?v=1"></script>
+<script src="js/helpers.js?v=1"></script>
+
+<script src="js/map.js?v=13"></script>
+
+<script src="js/vehicles-ui.js?v=1"></script>
+<script src="js/incidents-ui.js?v=1"></script>
+<script src="js/incident-form.js?v=1"></script>
+<script src="js/recommendation.js?v=1"></script>
+<script src="js/ui-controller.js?v=1"></script>
+
+<script src="js/bootstrap.js?v=2"></script>
+
+</body>
+
+</html>

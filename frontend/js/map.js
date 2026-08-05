@@ -17,55 +17,70 @@ let routeEndMarker = null;
 // VEHICLE ICONS
 // =========================
 
+// =========================
+// VEHICLE ICONS
+// =========================
+
+function createVehicleIcon(
+    vehicleType,
+    emoji
+) {
+
+    return L.divIcon({
+
+        className:
+            "vehicle-marker-wrapper",
+
+        html: `
+            <div class="
+                vehicle-map-marker
+                vehicle-map-marker-${vehicleType}
+            ">
+                <span class="vehicle-map-marker-icon">
+                    ${emoji}
+                </span>
+            </div>
+        `,
+
+        iconSize: [
+            46,
+            52
+        ],
+
+        iconAnchor: [
+            23,
+            52
+        ],
+
+        popupAnchor: [
+            0,
+            -46
+        ]
+
+    });
+
+}
+
+
 const icons = {
 
-    police: new L.Icon({
+    police:
+        createVehicleIcon(
+            "police",
+            "🚓"
+        ),
 
-        iconUrl:
-            "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
+    ambulance:
+        createVehicleIcon(
+            "ambulance",
+            "🚑"
+        ),
 
-        shadowUrl:
-            "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-
-        iconSize: [25, 41],
-
-        iconAnchor: [12, 41],
-
-        popupAnchor: [1, -34]
-
-    }),
-
-    ambulance: new L.Icon({
-
-        iconUrl:
-            "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
-
-        shadowUrl:
-            "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-
-        iconSize: [25, 41],
-
-        iconAnchor: [12, 41],
-
-        popupAnchor: [1, -34]
-
-    }),
-
-    fire: new L.Icon({
-
-        iconUrl:
-            "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png",
-
-        shadowUrl:
-            "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-
-        iconSize: [25, 41],
-
-        iconAnchor: [12, 41],
-
-        popupAnchor: [1, -34]
-
-    })
+    fire:
+        createVehicleIcon(
+            "fire",
+            "🚒"
+        )
 
 };
 
@@ -228,27 +243,27 @@ function getVehiclePopupContent(
 
             <br><br>
 
-            <strong>Type:</strong>
-            ${vehicle.vehicle_type}
+            <strong>Tip:</strong>
+            ${getReadableStatus(vehicle.vehicle_type)}
 
             <br>
 
-            <strong>Status:</strong>
-            ${vehicle.status}
+            <strong>Stare:</strong>
+            ${getReadableStatus(vehicle.status)}
 
             <br>
 
-            <strong>Speed:</strong>
+            <strong>Viteză:</strong>
             ${vehicle.speed ?? "-"} km/h
 
             <br>
 
-            <strong>Latitude:</strong>
+            <strong>Latitudine:</strong>
             ${latitude.toFixed(6)}
 
             <br>
 
-            <strong>Longitude:</strong>
+            <strong>Longitudine:</strong>
             ${longitude.toFixed(6)}
 
         </div>
@@ -302,7 +317,6 @@ function updateVehicleMarker(
         }
 
         return null;
-
     }
 
     const position = [

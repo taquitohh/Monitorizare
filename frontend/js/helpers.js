@@ -55,6 +55,61 @@ function getReadableStatus(
     status
 ) {
 
+    const normalizedStatus =
+        String(
+            status || ""
+        ).toLowerCase();
+
+    const translations = {
+        active:
+            "Disponibil",
+
+        busy:
+            "În misiune",
+
+        inactive:
+            "Indisponibil",
+
+        archived:
+            "Arhivat",
+
+        pending:
+            "În așteptare",
+
+        assigned:
+            "Asignat",
+
+        unassigned:
+            "Neatribuit",
+
+        low:
+            "Scăzută",
+
+        medium:
+            "Medie",
+
+        high:
+            "Ridicată",
+
+        critical:
+            "Critică",
+
+        police:
+            "Poliție",
+
+        ambulance:
+            "Ambulanță",
+
+        fire:
+            "Pompieri"
+    };
+
+    if (translations[normalizedStatus]) {
+
+        return translations[normalizedStatus];
+
+    }
+
     return String(
         status || ""
     )
