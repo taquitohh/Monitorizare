@@ -1,91 +1,63 @@
 <!DOCTYPE html>
 <html lang="ro">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
-
     <title>
         Sistem de monitorizare GPS
     </title>
-
     <link
         rel="stylesheet"
-        href="css/base.css?v=1"
+        href="css/base.css?v=2"
     >
-
     <link
         rel="stylesheet"
-        href="css/layout.css?v=1"
+        href="css/layout.css?v=2"
     >
-
     <link
         rel="stylesheet"
-        href="css/components.css?v=1"
+        href="css/components.css?v=19"
     >
-
     <link
         rel="stylesheet"
-        href="css/map.css?v=1"
+        href="css/map.css?v=3"
     >
-
     <link
         rel="stylesheet"
-        href="css/style.css?v=15"
+        href="css/style.css?v=16"
     >
-
     <link
         rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     >
-
 </head>
-
 <body>
-
     <header class="topbar">
-
         <div>
-
             <h1>
                 Sistem de monitorizare GPS
             </h1>
-
             <p>
                 Monitorizare în timp real a vehiculelor
             </p>
-
         </div>
-
         <div class="topbar-user-area">
-
             <div class="system-status">
-
                 <span class="status-dot"></span>
-
                 Sistem online
-
             </div>
-
             <div class="current-user">
-
                 <div class="current-user-info">
-
                     <span id="current-user-name">
                         Se încarcă...
                     </span>
-
                     <span id="current-user-role">
                         -
                     </span>
-
                 </div>
-
                 <button
                     type="button"
                     id="logout-button"
@@ -93,42 +65,27 @@
                 >
                     Deconectare
                 </button>
-
             </div>
-
         </div>
-
     </header>
-
-
     <main class="dashboard">
-
         <!-- ===========================
              VEHICLES / INCIDENTS PANEL
         ============================ -->
-
         <aside class="vehicles-panel">
-
             <div class="panel-header">
-
                 <h2 id="sidebar-title">
                     Vehicule
                 </h2>
-
                 <span
                     id="vehicle-count"
                     class="vehicle-count"
                 >
                     0
                 </span>
-
             </div>
-
-
             <!-- PANEL SWITCH -->
-
             <div class="panel-switch">
-
                 <button
                     id="vehicles-tab"
                     class="panel-tab active"
@@ -136,7 +93,6 @@
                 >
                     Vehicule
                 </button>
-
                 <button
                     id="routes-tab"
                     class="panel-tab"
@@ -144,290 +100,464 @@
                 >
                     Incidente
                 </button>
-
+                <button
+                    id="requests-tab"
+                    class="panel-tab"
+                    type="button"
+                >
+                    Cereri
+                </button>
             </div>
-
-
             <!-- ===========================
                  VEHICLE FILTERS
             ============================ -->
-
             <div
                 id="vehicle-filters"
                 class="filters-row"
             >
-
                 <label>
                     Filtre vehicule
                 </label>
-
                 <select
                     id="type-filter"
                     class="filter-select"
                 >
-
                     <option value="all">
                         Tip: Toate
                     </option>
-
                     <option value="police">
                         Poliție
                     </option>
-
                     <option value="ambulance">
                         Ambulanță
                     </option>
-
                     <option value="fire">
                         Pompieri
                     </option>
-
                 </select>
-
-
                 <select
                     id="status-filter"
                     class="filter-select"
                 >
-
                     <option value="all">
                         Stare: Toate
                     </option>
-
                     <option value="active">
                         Disponibile
                     </option>
-
                     <option value="busy">
                         În misiune
                     </option>
-
                     <option value="inactive">
                         Indisponibile
                     </option>
-
                 </select>
-
             </div>
-
-
             <!-- ===========================
                  VEHICLE LIST
             ============================ -->
-
             <div id="vehicles-container">
-
                 <div id="vehicles-list"></div>
-
             </div>
-
-
             <!-- ===========================
                  INCIDENTS CONTAINER
             ============================ -->
-
             <div
                 id="routes-container"
                 hidden
             >
-
                 <!-- INCIDENT FILTERS -->
-
                 <div
                     id="incident-filters"
                     class="incident-filters"
                 >
-
                     <label>
                         Filtre incidente
                     </label>
-
-
                     <select
                         id="incident-status-filter"
                         class="filter-select"
                     >
-
                         <option value="all">
                             Stare: Toate
                         </option>
-
                         <option value="active">
                             Activ
                         </option>
-
                         <option value="archived">
                             Arhivate
                         </option>
-
                     </select>
-
-
                     <select
                         id="incident-type-filter"
                         class="filter-select"
                     >
-
                         <option value="all">
                             Tip vehicul: Toate
                         </option>
-
                         <option value="police">
                             Poliție
                         </option>
-
                         <option value="ambulance">
                             Ambulanță
                         </option>
-
                         <option value="fire">
                             Pompieri
                         </option>
-
                     </select>
-
-
                     <select
                         id="incident-priority-filter"
                         class="filter-select"
                     >
-
                         <option value="all">
                             Prioritate: Toate
                         </option>
-
                         <option value="low">
                             Scăzută
                         </option>
-
                         <option value="medium">
                             Medie
                         </option>
-
                         <option value="high">
                             Ridicată
                         </option>
-
                         <option value="critical">
                             Critică
                         </option>
-
                     </select>
-
                 </div>
-
-
                 <!-- INCIDENT LIST -->
-
                 <div id="routes-list">
-
                     <p class="empty-message">
                         Nu au fost găsite incidente.
                     </p>
-
                 </div>
-
             </div>
+            <!-- ===========================
+                 CERERI DE ÎNTĂRIRI
+            ============================ -->
+            <div
+                id="requests-container"
+                hidden
+            >
+                <div
+                    id="reinforcement-request-filters"
+                    class="incident-filters"
+                >
+                    <label>
+                        Filtre cereri
+                    </label>
+                    <select
+                            id="reinforcement-request-status-filter"
+                            class="filter-select"
+                        >
+                            <option value="all">
+                                Stare: Toate
+                            </option>
 
+                            <option value="active">
+                                Active
+                            </option>
+
+                            <option value="archived">
+                                Arhivate
+                            </option>
+                        </select>
+                    <select
+                        id="reinforcement-request-type-filter"
+                        class="filter-select"
+                    >
+                        <option value="all">
+                            Tip: Toate
+                        </option>
+                        <option value="police">
+                            Poliție
+                        </option>
+                        <option value="ambulance">
+                            Ambulanță
+                        </option>
+                        <option value="fire">
+                            Pompieri
+                        </option>
+                    </select>
+                </div>
+                <div id="reinforcement-requests-list">
+                    <p class="empty-message">
+                        Nu există cereri de întăriri.
+                    </p>
+                </div>
+            </div>
         </aside>
-
-
         <!-- ===========================
              MAP
         ============================ -->
-
         <section class="map-panel">
-
             <div class="panel-header">
-
                 <h2>
                     Hartă live
                 </h2>
-
                 <button
                     id="refresh-button"
                     type="button"
                 >
                     Reîmprospătează
                 </button>
-
             </div>
-
             <div class="map-container">
-
                 <div
                     id="map-selection-message"
                     class="map-selection-message"
                 ></div>
-
                 <div id="map"></div>
-
             </div>
-
         </section>
-
-
         <!-- ===========================
              VEHICLE DETAILS
         ============================ -->
-
-        <section class="details-panel">
-
+        <section
+            id="vehicle-details-panel"
+            class="details-panel"
+        >
             <h2>
                 Vehicul selectat
             </h2>
-
             <div id="vehicle-details">
-
                 <p class="empty-message">
                     Selectează un vehicul pentru a vedea detalii
                 </p>
-
             </div>
-
         </section>
-
-
+        <!-- ===========================
+             ANALIZĂ CERERE DE ÎNTĂRIRI
+        ============================ -->
+        <section
+            id="reinforcement-request-review-panel"
+            class="details-panel reinforcement-request-review-panel"
+            hidden
+        >
+            <div class="reinforcement-review-panel-header">
+                <div>
+                    <span class="reinforcement-request-label">
+                        Cerere selectată
+                    </span>
+                    <h2 id="reinforcement-review-panel-title">
+                        Analiză cerere de întăriri
+                    </h2>
+                </div>
+                <button
+                    type="button"
+                    id="reinforcement-review-panel-close"
+                    class="secondary-button"
+                >
+                    Închide
+                </button>
+            </div>
+            <div
+                id="reinforcement-review-panel-summary"
+                class="reinforcement-review-panel-summary"
+            >
+                <p class="empty-message">
+                    Selectează o cerere pentru a o analiza.
+                </p>
+            </div>
+            <div class="reinforcement-review-panel-resources">
+                <div class="reinforcement-review-resource police">
+                    <div class="reinforcement-review-resource-heading">
+                        <span class="reinforcement-review-resource-icon">
+                            🚓
+                        </span>
+                        <div>
+                            <strong>
+                                Poliție
+                            </strong>
+                            <span>
+                                Echipaje suplimentare
+                            </span>
+                        </div>
+                    </div>
+                    <div class="reinforcement-request-quantity-control">
+                        <button
+                            type="button"
+                            class="reinforcement-quantity-button"
+                            data-action="decrease"
+                            data-target="reinforcement-review-police"
+                            aria-label="Scade numărul echipajelor de poliție"
+                        >
+                            −
+                        </button>
+                        <input
+                            type="number"
+                            id="reinforcement-review-police"
+                            class="reinforcement-resource-quantity"
+                            data-vehicle-type="police"
+                            min="0"
+                            max="20"
+                            step="1"
+                            value="0"
+                        >
+                        <button
+                            type="button"
+                            class="reinforcement-quantity-button"
+                            data-action="increase"
+                            data-target="reinforcement-review-police"
+                            aria-label="Crește numărul echipajelor de poliție"
+                        >
+                            +
+                        </button>
+                    </div>
+                </div>
+                <div class="reinforcement-review-resource ambulance">
+                    <div class="reinforcement-review-resource-heading">
+                        <span class="reinforcement-review-resource-icon">
+                            🚑
+                        </span>
+                        <div>
+                            <strong>
+                                Ambulanță
+                            </strong>
+                            <span>
+                                Echipaje medicale
+                            </span>
+                        </div>
+                    </div>
+                    <div class="reinforcement-request-quantity-control">
+                        <button
+                            type="button"
+                            class="reinforcement-quantity-button"
+                            data-action="decrease"
+                            data-target="reinforcement-review-ambulance"
+                            aria-label="Scade numărul ambulanțelor"
+                        >
+                            −
+                        </button>
+                        <input
+                            type="number"
+                            id="reinforcement-review-ambulance"
+                            class="reinforcement-resource-quantity"
+                            data-vehicle-type="ambulance"
+                            min="0"
+                            max="20"
+                            step="1"
+                            value="0"
+                        >
+                        <button
+                            type="button"
+                            class="reinforcement-quantity-button"
+                            data-action="increase"
+                            data-target="reinforcement-review-ambulance"
+                            aria-label="Crește numărul ambulanțelor"
+                        >
+                            +
+                        </button>
+                    </div>
+                </div>
+                <div class="reinforcement-review-resource fire">
+                    <div class="reinforcement-review-resource-heading">
+                        <span class="reinforcement-review-resource-icon">
+                            🚒
+                        </span>
+                        <div>
+                            <strong>
+                                Pompieri
+                            </strong>
+                            <span>
+                                Autospeciale de intervenție
+                            </span>
+                        </div>
+                    </div>
+                    <div class="reinforcement-request-quantity-control">
+                        <button
+                            type="button"
+                            class="reinforcement-quantity-button"
+                            data-action="decrease"
+                            data-target="reinforcement-review-fire"
+                            aria-label="Scade numărul autospecialelor"
+                        >
+                            −
+                        </button>
+                        <input
+                            type="number"
+                            id="reinforcement-review-fire"
+                            class="reinforcement-resource-quantity"
+                            data-vehicle-type="fire"
+                            min="0"
+                            max="20"
+                            step="1"
+                            value="0"
+                        >
+                        <button
+                            type="button"
+                            class="reinforcement-quantity-button"
+                            data-action="increase"
+                            data-target="reinforcement-review-fire"
+                            aria-label="Crește numărul autospecialelor"
+                        >
+                            +
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <label class="reinforcement-review-message-label">
+                <span>
+                    Mesaj pentru șofer
+                </span>
+                <textarea
+                    id="reinforcement-review-message"
+                    rows="4"
+                    maxlength="1000"
+                    placeholder="Adaugă un mesaj opțional despre decizie..."
+                ></textarea>
+                <small>
+                    Mesajul va apărea în panoul șoferului și în raportul misiunii.
+                </small>
+            </label>
+            <div
+                id="reinforcement-review-feedback"
+                class="reinforcement-request-review-feedback"
+                hidden
+            ></div>
+            <div class="reinforcement-review-panel-actions">
+                <button
+                    type="button"
+                    id="reinforcement-review-reject-button"
+                    class="reinforcement-danger-button"
+                >
+                    Respinge cererea
+                </button>
+                <button
+                    type="button"
+                    id="reinforcement-review-accept-button"
+                    class="reinforcement-success-button"
+                >
+                    Acceptă cererea
+                </button>
+            </div>
+        </section>
         <!-- ===========================
              INCIDENT FORM
         ============================ -->
-
         <section class="incident-panel">
-
             <div class="incident-header">
-
                 <div>
-
                     <h2>
                         Incident nou
                     </h2>
-
                     <p>
                         Completează informațiile despre incident,
                         salvează-l și selectează locația acestuia.
                     </p>
-
                 </div>
-
                 <span class="incident-form-status">
                     Doar schiță
                 </span>
-
             </div>
-
-
             <form id="incident-form">
-
                 <div class="incident-form-grid">
-
                     <!-- SITUATION NAME -->
-
                     <div class="form-group">
-
                         <label for="incident-name">
                             Nume eveniment
                         </label>
-
                         <input
                             type="text"
                             id="incident-name"
@@ -436,222 +566,320 @@
                             maxlength="100"
                             required
                         >
-
                     </div>
-
-
-                    <!-- CASE TYPE -->
-
-                    <div class="form-group">
-
-                        <label for="incident-type">
-                            Tip incident
-                        </label>
-
-                        <select
-                            id="incident-type"
-                            name="incidentType"
-                            required
-                        >
-
-                            <option value="">
-                                Selectează un tip de incident
-                            </option>
-
-
-                            <!-- POLICE -->
-
-                            <optgroup label="Poliție">
-
-                                <option
-                                    value="traffic-accident"
-                                    data-vehicle-type="police"
+                    <!-- TIPURI INCIDENT -->
+                    <div class="form-group form-group-full">
+                        <div class="incident-type-heading-row">
+                            <label>
+                                Tipuri incident
+                            </label>
+                            <div
+                                id="incident-type-selector"
+                                class="incident-type-selector"
+                            >
+                                <button
+                                    type="button"
+                                    id="incident-type-toggle"
+                                    class="incident-type-toggle"
+                                    aria-expanded="false"
                                 >
-                                    Accident rutier
-                                </option>
-
-                                <option
-                                    value="theft"
-                                    data-vehicle-type="police"
+                                    <span id="incident-type-toggle-text">
+                                        Selectează unul sau mai multe tipuri
+                                    </span>
+                                    <span aria-hidden="true">
+                                        ▾
+                                    </span>
+                                </button>
+                                <div
+                                    id="incident-type-options"
+                                    class="incident-type-options"
+                                    hidden
                                 >
-                                    Furt
-                                </option>
-
-                                <option
-                                    value="assault"
-                                    data-vehicle-type="police"
-                                >
-                                    Agresiune
-                                </option>
-
-                                <option
-                                    value="public-disturbance"
-                                    data-vehicle-type="police"
-                                >
-                                    Tulburarea ordinii publice
-                                </option>
-
-                                <option
-                                    value="missing-person"
-                                    data-vehicle-type="police"
-                                >
-                                    Persoană dispărută
-                                </option>
-
-                            </optgroup>
-
-
-                            <!-- AMBULANCE -->
-
-                            <optgroup label="Ambulanță">
-
-                                <option
-                                    value="medical-emergency"
-                                    data-vehicle-type="ambulance"
-                                >
-                                    Urgență medicală
-                                </option>
-
-                                <option
-                                    value="unconscious-person"
-                                    data-vehicle-type="ambulance"
-                                >
-                                    Persoană inconștientă
-                                </option>
-
-                                <option
-                                    value="injured-person"
-                                    data-vehicle-type="ambulance"
-                                >
-                                    Persoană rănită
-                                </option>
-
-                                <option
-                                    value="cardiac-emergency"
-                                    data-vehicle-type="ambulance"
-                                >
-                                    Urgență cardiacă
-                                </option>
-
-                                <option
-                                    value="urgent-medical-transport"
-                                    data-vehicle-type="ambulance"
-                                >
-                                    Transport medical urgent
-                                </option>
-
-                            </optgroup>
-
-
-                            <!-- FIRE DEPARTMENT -->
-
-                            <optgroup label="Pompieri">
-
-                                <option
-                                    value="building-fire"
-                                    data-vehicle-type="fire"
-                                >
-                                    Incendiu la clădire
-                                </option>
-
-                                <option
-                                    value="vehicle-fire"
-                                    data-vehicle-type="fire"
-                                >
-                                    Incendiu la vehicul
-                                </option>
-
-                                <option
-                                    value="vegetation-fire"
-                                    data-vehicle-type="fire"
-                                >
-                                    Incendiu de vegetație
-                                </option>
-
-                                <option
-                                    value="gas-leak"
-                                    data-vehicle-type="fire"
-                                >
-                                    Scurgere de gaz
-                                </option>
-
-                                <option
-                                    value="explosion"
-                                    data-vehicle-type="fire"
-                                >
-                                    Explozie
-                                </option>
-
-                            </optgroup>
-
-                        </select>
-
+                                    <fieldset class="incident-type-group">
+                                        <legend>
+                                            🚓 Poliție
+                                        </legend>
+                                        <label class="incident-type-option">
+                                            <input
+                                                type="checkbox"
+                                                value="traffic-accident"
+                                                data-label="Accident rutier"
+                                                data-vehicle-type="police"
+                                            >
+                                            <span>Accident rutier</span>
+                                        </label>
+                                        <label class="incident-type-option">
+                                            <input
+                                                type="checkbox"
+                                                value="theft"
+                                                data-label="Furt"
+                                                data-vehicle-type="police"
+                                            >
+                                            <span>Furt</span>
+                                        </label>
+                                        <label class="incident-type-option">
+                                            <input
+                                                type="checkbox"
+                                                value="assault"
+                                                data-label="Agresiune"
+                                                data-vehicle-type="police"
+                                            >
+                                            <span>Agresiune</span>
+                                        </label>
+                                        <label class="incident-type-option">
+                                            <input
+                                                type="checkbox"
+                                                value="public-disturbance"
+                                                data-label="Tulburarea ordinii publice"
+                                                data-vehicle-type="police"
+                                            >
+                                            <span>Tulburarea ordinii publice</span>
+                                        </label>
+                                        <label class="incident-type-option">
+                                            <input
+                                                type="checkbox"
+                                                value="missing-person"
+                                                data-label="Persoană dispărută"
+                                                data-vehicle-type="police"
+                                            >
+                                            <span>Persoană dispărută</span>
+                                        </label>
+                                    </fieldset>
+                                    <fieldset class="incident-type-group">
+                                        <legend>
+                                            🚑 Ambulanță
+                                        </legend>
+                                        <label class="incident-type-option">
+                                            <input
+                                                type="checkbox"
+                                                value="medical-emergency"
+                                                data-label="Urgență medicală"
+                                                data-vehicle-type="ambulance"
+                                            >
+                                            <span>Urgență medicală</span>
+                                        </label>
+                                        <label class="incident-type-option">
+                                            <input
+                                                type="checkbox"
+                                                value="unconscious-person"
+                                                data-label="Persoană inconștientă"
+                                                data-vehicle-type="ambulance"
+                                            >
+                                            <span>Persoană inconștientă</span>
+                                        </label>
+                                        <label class="incident-type-option">
+                                            <input
+                                                type="checkbox"
+                                                value="injured-person"
+                                                data-label="Persoană rănită"
+                                                data-vehicle-type="ambulance"
+                                            >
+                                            <span>Persoană rănită</span>
+                                        </label>
+                                        <label class="incident-type-option">
+                                            <input
+                                                type="checkbox"
+                                                value="cardiac-emergency"
+                                                data-label="Urgență cardiacă"
+                                                data-vehicle-type="ambulance"
+                                            >
+                                            <span>Urgență cardiacă</span>
+                                        </label>
+                                        <label class="incident-type-option">
+                                            <input
+                                                type="checkbox"
+                                                value="urgent-medical-transport"
+                                                data-label="Transport medical urgent"
+                                                data-vehicle-type="ambulance"
+                                            >
+                                            <span>Transport medical urgent</span>
+                                        </label>
+                                    </fieldset>
+                                    <fieldset class="incident-type-group">
+                                        <legend>
+                                            🚒 Pompieri
+                                        </legend>
+                                        <label class="incident-type-option">
+                                            <input
+                                                type="checkbox"
+                                                value="building-fire"
+                                                data-label="Incendiu la clădire"
+                                                data-vehicle-type="fire"
+                                            >
+                                            <span>Incendiu la clădire</span>
+                                        </label>
+                                        <label class="incident-type-option">
+                                            <input
+                                                type="checkbox"
+                                                value="vehicle-fire"
+                                                data-label="Incendiu la vehicul"
+                                                data-vehicle-type="fire"
+                                            >
+                                            <span>Incendiu la vehicul</span>
+                                        </label>
+                                        <label class="incident-type-option">
+                                            <input
+                                                type="checkbox"
+                                                value="vegetation-fire"
+                                                data-label="Incendiu de vegetație"
+                                                data-vehicle-type="fire"
+                                            >
+                                            <span>Incendiu de vegetație</span>
+                                        </label>
+                                        <label class="incident-type-option">
+                                            <input
+                                                type="checkbox"
+                                                value="gas-leak"
+                                                data-label="Scurgere de gaz"
+                                                data-vehicle-type="fire"
+                                            >
+                                            <span>Scurgere de gaz</span>
+                                        </label>
+                                        <label class="incident-type-option">
+                                            <input
+                                                type="checkbox"
+                                                value="explosion"
+                                                data-label="Explozie"
+                                                data-vehicle-type="fire"
+                                            >
+                                            <span>Explozie</span>
+                                        </label>
+                                    </fieldset>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            id="selected-incident-types"
+                            class="selected-incident-types"
+                        ></div>
                     </div>
-
-
                     <!-- PRIORITY -->
-
                     <div class="form-group">
-
                         <label for="incident-priority">
                             Prioritate
                         </label>
-
                         <select
                             id="incident-priority"
                             name="incidentPriority"
                         >
-
                             <option value="low">
                                 Scăzută
                             </option>
-
                             <option
                                 value="medium"
                                 selected
                             >
                                 Medie
                             </option>
-
                             <option value="high">
                                 Ridicată
                             </option>
-
                             <option value="critical">
                                 Critică
                             </option>
-
                         </select>
-
                     </div>
-
-
                     <!-- REQUIRED VEHICLE -->
-
-                    <div class="form-group">
-
+                    <!-- RESURSE NECESARE -->
+                    <div class="form-group form-group-full">
                         <label>
-                            Vehicul necesar
+                            Resurse necesare
                         </label>
-
+                        <p class="resource-help-text">
+                            Selectează numărul de vehicule necesare pentru fiecare categorie.
+                        </p>
+                        <div class="incident-resource-grid">
+                            <div class="incident-resource-card police">
+                                <div class="incident-resource-header">
+                                    <span class="incident-resource-icon">
+                                        🚓
+                                    </span>
+                                    <div>
+                                        <strong>Poliție</strong>
+                                        <span>
+                                            Echipaje de poliție
+                                        </span>
+                                    </div>
+                                </div>
+                                <label for="resource-police">
+                                    Număr vehicule
+                                </label>
+                                <input
+                                    type="number"
+                                    id="resource-police"
+                                    class="incident-resource-quantity"
+                                    data-vehicle-type="police"
+                                    min="0"
+                                    max="20"
+                                    step="1"
+                                    value="0"
+                                >
+                            </div>
+                            <div class="incident-resource-card ambulance">
+                                <div class="incident-resource-header">
+                                    <span class="incident-resource-icon">
+                                        🚑
+                                    </span>
+                                    <div>
+                                        <strong>Ambulanță</strong>
+                                        <span>
+                                            Echipaje medicale
+                                        </span>
+                                    </div>
+                                </div>
+                                <label for="resource-ambulance">
+                                    Număr vehicule
+                                </label>
+                                <input
+                                    type="number"
+                                    id="resource-ambulance"
+                                    class="incident-resource-quantity"
+                                    data-vehicle-type="ambulance"
+                                    min="0"
+                                    max="20"
+                                    step="1"
+                                    value="0"
+                                >
+                            </div>
+                            <div class="incident-resource-card fire">
+                                <div class="incident-resource-header">
+                                    <span class="incident-resource-icon">
+                                        🚒
+                                    </span>
+                                    <div>
+                                        <strong>Pompieri</strong>
+                                        <span>
+                                            Autospeciale de intervenție
+                                        </span>
+                                    </div>
+                                </div>
+                                <label for="resource-fire">
+                                    Număr vehicule
+                                </label>
+                                <input
+                                    type="number"
+                                    id="resource-fire"
+                                    class="incident-resource-quantity"
+                                    data-vehicle-type="fire"
+                                    min="0"
+                                    max="20"
+                                    step="1"
+                                    value="0"
+                                >
+                            </div>
+                        </div>
                         <div
                             id="required-vehicle"
-                            class="required-vehicle"
+                            class="required-vehicle resource-summary"
                         >
-                            Selectează un tip de incident
+                            Nu a fost selectat niciun vehicul.
                         </div>
-
                     </div>
-
-
                     <!-- DETAILS -->
-
                     <div class="form-group form-group-full">
-
                         <label for="incident-details">
                             Detalii
                         </label>
-
                         <textarea
                             id="incident-details"
                             name="incidentDetails"
@@ -659,28 +887,18 @@
                             maxlength="1000"
                             placeholder="Descrie incidentul și include orice informație relevantă..."
                         ></textarea>
-
                         <div class="textarea-footer">
-
                             <span>
                                 După salvare, selectează locația pe hartă.
                             </span>
-
                             <span id="incident-details-count">
                                 0 / 1000
                             </span>
-
                         </div>
-
                     </div>
-
                 </div>
-
-
                 <!-- FORM ACTIONS -->
-
                 <div class="incident-actions">
-
                     <button
                         type="reset"
                         id="clear-incident-button"
@@ -688,62 +906,45 @@
                     >
                         Șterge formular
                     </button>
-
                     <button
                         type="submit"
                         id="submit-incident-button"
                     >
                         Salvează incidentul
                     </button>
-
                 </div>
-
             </form>
-
         </section>
-
-
         <!-- ===========================
              VEHICLE RECOMMENDATION
         ============================ -->
-
         <section
             id="recommendation-panel"
             class="recommendation-panel"
             hidden
         >
-
             <div class="recommendation-header">
-
                 <div>
-
                     <h2>
                         Vehicul recomandat
                     </h2>
-
                     <p>
                         Cel mai apropiat vehicul activ care corespunde
                         cerințelor incidentului.
                     </p>
-
                 </div>
-
                 <span
                     id="recommendation-status"
                     class="recommendation-status"
                 >
                     În așteptare
                 </span>
-
             </div>
-
             <div
                 id="recommendation-content"
                 class="recommendation-content"
             ></div>
-
             <div class="recommendation-actions">
-
                 <button
                     type="button"
                     id="cancel-assignment-button"
@@ -751,43 +952,32 @@
                 >
                     Anulează
                 </button>
-
                 <button
                     type="button"
                     id="confirm-assignment-button"
                 >
                     Confirmă asignarea
                 </button>
-
             </div>
-
         </section>
-
     </main>
-
-
     <!-- ===========================
-         SCRIPTS
+         SCRIPTURI
     ============================ -->
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script src="js/auth.js?v=2"></script>
-<script src="js/api.js?v=10"></script>
-
-<script src="js/state.js?v=1"></script>
-<script src="js/helpers.js?v=1"></script>
-
-<script src="js/map.js?v=13"></script>
-
-<script src="js/vehicles-ui.js?v=1"></script>
-<script src="js/incidents-ui.js?v=1"></script>
-<script src="js/incident-form.js?v=1"></script>
-<script src="js/recommendation.js?v=1"></script>
-<script src="js/ui-controller.js?v=1"></script>
-
-<script src="js/bootstrap.js?v=2"></script>
-
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    ></script>
+    <script src="js/auth.js?v=9"></script>
+    <script src="js/state.js?v=7"></script>
+    <script src="js/helpers.js?v=4"></script>
+    <script src="js/api.js?v=17"></script>
+    <script src="js/map.js?v=22"></script>
+    <script src="js/reinforcement-requests-ui.js?v=7"></script>
+    <script src="js/vehicles-ui.js?v=5"></script>
+    <script src="js/incidents-ui.js?v=5"></script>
+    <script src="js/incident-form.js?v=8"></script>
+    <script src="js/recommendation.js?v=4"></script>
+    <script src="js/ui-controller.js?v=10"></script>
+    <script src="js/bootstrap.js?v=6"></script>
 </body>
-
 </html>

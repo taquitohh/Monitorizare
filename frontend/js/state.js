@@ -23,14 +23,39 @@ let incidentLocationSelectionActive = false;
 
 let incidentLocationSaving = false;
 
+/* =====================================
+   STARE CERERI DE ÎNTĂRIRI
+===================================== */
+
+let allReinforcementRequests = [];
+
+let filteredReinforcementRequests = [];
+
+let selectedReinforcementRequestId = null;
+
+let reinforcementRequestsLoading = false;
+
+/* =====================================
+   FILTRE CERERI DE ÎNTĂRIRI
+===================================== */
+
+const reinforcementRequestFilters = {
+    status:
+        "all",
+
+    vehicleType:
+        "all"
+};
 
 /* =====================================
    RECOMMENDATION STATE
 ===================================== */
 
-let recommendedVehicle = null;
+window.recommendedVehicle = null;
 
-let recommendedVehicleDistance = null;
+window.recommendedVehicles = [];
+
+window.recommendedVehicleDistance = null;
 
 let recommendationModeActive = false;
 

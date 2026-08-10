@@ -5,52 +5,64 @@
 const AUTH_TOKEN_STORAGE_KEY =
     "gps_access_token";
 
+const LOGIN_PAGE_URL =
+    "/index.html";
+
+const ADMIN_PAGE_URL =
+    "/admin.html";
+
+const DISPATCHER_PAGE_URL =
+    "/dispatcher.html";
+
+const DRIVER_PAGE_URL =
+    "/driver.html";
+
 
 /* =====================================
    TOKEN TAB CURENT
 ===================================== */
 
 window.getAccessToken =
-    function () {
+function () {
 
-        return sessionStorage.getItem(
-            AUTH_TOKEN_STORAGE_KEY
-        );
+    return sessionStorage.getItem(
+        AUTH_TOKEN_STORAGE_KEY
+    );
 
-    };
+};
 
 
 window.setAccessToken =
-    function (
-        accessToken
-    ) {
+function (
+    accessToken
+) {
 
-        if (!accessToken) {
-
-            sessionStorage.removeItem(
-                AUTH_TOKEN_STORAGE_KEY
-            );
-
-            return;
-
-        }
-
-        sessionStorage.setItem(
-            AUTH_TOKEN_STORAGE_KEY,
-            accessToken
-        );
-
-    };
-
-
-window.clearAccessToken =
-    function () {
+    if (!accessToken) {
 
         sessionStorage.removeItem(
             AUTH_TOKEN_STORAGE_KEY
         );
 
-    };
+        return;
+
+    }
+
+    sessionStorage.setItem(
+        AUTH_TOKEN_STORAGE_KEY,
+        accessToken
+    );
+
+};
+
+
+window.clearAccessToken =
+function () {
+
+    sessionStorage.removeItem(
+        AUTH_TOKEN_STORAGE_KEY
+    );
+
+};
 
 
 /* =====================================
@@ -58,27 +70,30 @@ window.clearAccessToken =
 ===================================== */
 
 window.getAuthorizationHeaders =
-    function (
-        additionalHeaders = {}
-    ) {
+function (
+    additionalHeaders = {}
+) {
 
-        const headers = {
-            ...additionalHeaders
-        };
-
-        const accessToken =
-            window.getAccessToken();
-
-        if (accessToken) {
-
-            headers.Authorization =
-                `Bearer ${accessToken}`;
-
-        }
-
-        return headers;
-
+    const headers = {
+        ...additionalHeaders
     };
+
+
+    const accessToken =
+        window.getAccessToken();
+
+
+    if (accessToken) {
+
+        headers.Authorization =
+            `Bearer ${accessToken}`;
+
+    }
+
+
+    return headers;
+
+};
 
 
 /* =====================================
@@ -103,29 +118,34 @@ window.authApi = {
                         "application/json"
                 },
 
-                body: JSON.stringify({
-                    username:
-                        username,
+                body:
+                    JSON.stringify({
+                        username:
+                            username,
 
-                    password:
-                        password
-                })
+                        password:
+                            password
+                    })
             }
         );
+
 
         const data =
             await readAuthResponse(
                 response
             );
 
+
         if (!response.ok) {
 
             throw new Error(
-                data.message ||
+                data.message
+                ||
                 "Autentificarea nu a reușit."
             );
 
         }
+
 
         if (!data.access_token) {
 
@@ -135,9 +155,20 @@ window.authApi = {
 
         }
 
+
+        if (!data.user) {
+
+            throw new Error(
+                "Serverul nu a returnat utilizatorul autentificat."
+            );
+
+        }
+
+
         window.setAccessToken(
             data.access_token
         );
+
 
         return data;
 
@@ -145,9 +176,6 @@ window.authApi = {
 
 
     async logout() {
-
-        const accessToken =
-            window.getAccessToken();
 
         try {
 
@@ -163,19 +191,23 @@ window.authApi = {
                 }
             );
 
+
             const data =
                 await readAuthResponse(
                     response
                 );
 
+
             if (!response.ok) {
 
                 throw new Error(
-                    data.message ||
+                    data.message
+                    ||
                     "Deconectarea nu a reușit."
                 );
 
             }
+
 
             return data;
 
@@ -183,11 +215,7 @@ window.authApi = {
 
         finally {
 
-            if (accessToken) {
-
-                window.clearAccessToken();
-
-            }
+            window.clearAccessToken();
 
         }
 
@@ -198,6 +226,7 @@ window.authApi = {
 
         const accessToken =
             window.getAccessToken();
+
 
         if (!accessToken) {
 
@@ -210,6 +239,7 @@ window.authApi = {
             };
 
         }
+
 
         try {
 
@@ -225,14 +255,17 @@ window.authApi = {
                 }
             );
 
+
             const data =
                 await readAuthResponse(
                     response
                 );
 
+
             if (!response.ok) {
 
                 window.clearAccessToken();
+
 
                 return {
                     authenticated:
@@ -244,7 +277,20 @@ window.authApi = {
 
             }
 
-            return data;
+
+            return {
+                authenticated:
+                    Boolean(
+                        data.authenticated
+                        ??
+                        data.user
+                    ),
+
+                user:
+                    data.user
+                    ||
+                    null
+            };
 
         }
 
@@ -254,6 +300,7 @@ window.authApi = {
                 "Sesiunea nu a putut fi verificată:",
                 error
             );
+
 
             return {
                 authenticated:
@@ -275,50 +322,66 @@ window.authApi = {
 ===================================== */
 
 window.requireAuthenticatedUser =
-    async function (
-        allowedRoles = []
+async function (
+    allowedRoles = []
+) {
+
+    const authentication =
+        await window.authApi
+            .getCurrentUser();
+
+
+    if (
+        !authentication.authenticated
+        ||
+        !authentication.user
     ) {
 
-        const authentication =
-            await window.authApi
-                .getCurrentUser();
+        window.location.replace(
+            LOGIN_PAGE_URL
+        );
 
-        if (
-            !authentication.authenticated
+        return null;
+
+    }
+
+
+    const user =
+        authentication.user;
+
+
+    const normalizedRole =
+        String(
+            user.role
             ||
-            !authentication.user
-        ) {
+            ""
+        ).trim().toLowerCase();
 
-            window.location.replace(
-                "/"
-            );
 
-            return null;
+    user.role =
+        normalizedRole;
 
-        }
 
-        const user =
-            authentication.user;
+    if (
+        allowedRoles.length > 0
+        &&
+        !allowedRoles.includes(
+            normalizedRole
+        )
+    ) {
 
-        if (
-            allowedRoles.length > 0
-            &&
-            !allowedRoles.includes(
-                user.role
-            )
-        ) {
+        window.redirectUserByRole(
+            user
+        );
 
-            redirectUserByRole(
-                user
-            );
+        return null;
 
-            return null;
+    }
 
-        }
 
-        return user;
+    return user;
 
-    };
+};
 
 
 /* =====================================
@@ -326,51 +389,102 @@ window.requireAuthenticatedUser =
 ===================================== */
 
 window.redirectUserByRole =
-    function (
-        user
-    ) {
+function (
+    user
+) {
 
-        if (!user) {
-
-            window.location.replace(
-                "/"
-            );
-
-            return;
-
-        }
-
-        if (
-            user.role === "administrator"
-            ||
-            user.role === "dispatcher"
-        ) {
-
-            window.location.replace(
-                "/dispatcher.html"
-            );
-
-            return;
-
-        }
-
-        if (
-            user.role === "driver"
-        ) {
-
-            window.location.replace(
-                "/driver.html"
-            );
-
-            return;
-
-        }
+    if (!user) {
 
         window.location.replace(
-            "/"
+            LOGIN_PAGE_URL
         );
 
-    };
+        return;
+
+    }
+
+
+    const role =
+        String(
+            user.role
+            ||
+            ""
+        )
+            .trim()
+            .toLowerCase();
+
+
+    console.log(
+        "Redirect utilizator:",
+        {
+            username:
+                user.username,
+
+            role:
+                role
+        }
+    );
+
+
+    switch (role) {
+
+        case "administrator":
+
+            window.location.replace(
+                ADMIN_PAGE_URL
+            );
+
+            return;
+
+
+        case "dispatcher":
+
+            window.location.replace(
+                DISPATCHER_PAGE_URL
+            );
+
+            return;
+
+
+        case "driver":
+
+            window.location.replace(
+                DRIVER_PAGE_URL
+            );
+
+            return;
+
+
+        default:
+
+            console.error(
+                "Rol necunoscut:",
+                role
+            );
+
+            window.location.replace(
+                LOGIN_PAGE_URL
+            );
+
+    }
+
+};
+
+
+/* =====================================
+   REDIRECȚIONARE LA LOGIN
+===================================== */
+
+window.redirectToLogin =
+function () {
+
+    window.clearAccessToken();
+
+    window.location.replace(
+        LOGIN_PAGE_URL
+    );
+
+};
 
 
 /* =====================================
@@ -378,28 +492,43 @@ window.redirectUserByRole =
 ===================================== */
 
 window.getRoleDisplayName =
-    function (
-        role
-    ) {
+function (
+    role
+) {
 
-        const names = {
-            administrator:
-                "Administrator",
-
-            dispatcher:
-                "Dispecer",
-
-            driver:
-                "Șofer"
-        };
-
-        return (
-            names[role]
+    const normalizedRole =
+        String(
+            role
             ||
-            "Utilizator"
-        );
+            ""
+        )
+            .trim()
+            .toLowerCase();
+
+
+    const names = {
+
+        administrator:
+            "Administrator",
+
+        dispatcher:
+            "Dispecer",
+
+        driver:
+            "Șofer"
 
     };
+
+
+    return (
+        names[
+            normalizedRole
+        ]
+        ||
+        "Utilizator"
+    );
+
+};
 
 
 /* =====================================

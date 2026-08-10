@@ -808,7 +808,7 @@ class AuthService:
             f"VEHICLE-{vehicle_number}"
         )
 
-    # =====================================
+        # =====================================
     # DASHBOARD ȘOFER
     # =====================================
 
@@ -839,6 +839,10 @@ class AuthService:
         try:
 
             with connection.cursor() as cursor:
+
+                # =====================================
+                # UTILIZATOR
+                # =====================================
 
                 cursor.execute(
                     """
@@ -886,6 +890,10 @@ class AuthService:
                         user["username"]
                     )
                 )
+
+                # =====================================
+                # VEHICULUL ȘOFERULUI
+                # =====================================
 
                 cursor.execute(
                     """
@@ -946,6 +954,10 @@ class AuthService:
                     vehicle["vehicle_type"]
                 )
 
+                # =====================================
+                # MISIUNEA ACTIVĂ
+                # =====================================
+
                 cursor.execute(
                     """
                     SELECT
@@ -962,12 +974,24 @@ class AuthService:
                         i.created_at,
                         i.updated_at,
                         i.dispatched_at,
-                        i.resolved_at
+                        i.resolved_at,
 
-                    FROM incidents i
+                        ia.assignment_type,
+                        ia.status AS assignment_status,
+                        ia.assigned_at
+
+                    FROM incident_assignments ia
+
+                    INNER JOIN incidents i
+                        ON i.id = ia.incident_id
 
                     WHERE
-                        i.assigned_vehicle_id = %s
+                        ia.vehicle_id = %s
+
+                        AND ia.status IN (
+                            'assigned',
+                            'in_progress'
+                        )
 
                         AND i.status IN (
                             'assigned',
@@ -975,8 +999,8 @@ class AuthService:
                         )
 
                     ORDER BY
-                        i.dispatched_at DESC,
-                        i.created_at DESC
+                        ia.assigned_at DESC,
+                        ia.id DESC
 
                     LIMIT 1
                     """,
@@ -988,6 +1012,10 @@ class AuthService:
                 mission = (
                     cursor.fetchone()
                 )
+
+                # =====================================
+                # VEHICULE DE ACELAȘI TIP
+                # =====================================
 
                 cursor.execute(
                     """
@@ -1042,6 +1070,753 @@ class AuthService:
                     "same_type_vehicles":
                         same_type_vehicles
                 }
+
+        finally:
+
+            connection.close()
+
+
+        # =====================================
+    # CREARE CERERE DE ÎNTĂRIRI
+    # =====================================
+
+    @staticmethod
+    def create_reinforcement_request(
+        user_id,
+        requested_message=None
+    ):
+
+        try:
+
+            user_id = int(
+                user_id
+            )
+
+        except (
+            TypeError,
+            ValueError
+        ):
+
+            raise ValueError(
+                "Identificatorul utilizatorului nu este valid."
+            )
+
+        requested_message = str(
+            requested_message
+            or
+            ""
+        ).strip()
+
+        if len(requested_message) > 1000:
+
+            raise ValueError(
+                (
+                    "Mesajul cererii de întăriri "
+                    "nu poate depăși 1000 de caractere."
+                )
+            )
+
+        connection = (
+            AuthService.get_db_connection()
+        )
+
+        try:
+
+            with connection.cursor() as cursor:
+
+                # =====================================
+                # UTILIZATOR
+                # =====================================
+
+                cursor.execute(
+                    """
+                    SELECT
+                        id,
+                        username,
+                        display_name,
+                        role,
+                        is_active
+
+                    FROM users
+
+                    WHERE id = %s
+
+                    LIMIT 1
+                    """,
+                    (
+                        user_id,
+                    )
+                )
+
+                user = (
+                    cursor.fetchone()
+                )
+
+                if not user:
+
+                    raise ValueError(
+                        "Contul șoferului nu a fost găsit."
+                    )
+
+                if not user["is_active"]:
+
+                    raise PermissionError(
+                        "Contul utilizatorului este inactiv."
+                    )
+
+                if user["role"] != "driver":
+
+                    raise PermissionError(
+                        (
+                            "Cererea de întăriri poate fi "
+                            "trimisă doar de un șofer."
+                        )
+                    )
+
+                vehicle_code = (
+                    AuthService
+                    .get_vehicle_code_from_driver_username(
+                        user["username"]
+                    )
+                )
+
+
+                # =====================================
+                # VEHICUL
+                # =====================================
+
+                cursor.execute(
+                    """
+                    SELECT
+                        id,
+                        vehicle_code,
+                        name,
+                        vehicle_type,
+                        status
+
+                    FROM vehicles
+
+                    WHERE vehicle_code = %s
+
+                    LIMIT 1
+
+                    FOR UPDATE
+                    """,
+                    (
+                        vehicle_code,
+                    )
+                )
+
+                vehicle = (
+                    cursor.fetchone()
+                )
+
+                if not vehicle:
+
+                    raise ValueError(
+                        (
+                            "Vehiculul asociat contului "
+                            "nu a fost găsit."
+                        )
+                    )
+
+
+                # =====================================
+                # MISIUNE ACTIVĂ
+                # =====================================
+
+                cursor.execute(
+                    """
+                    SELECT
+                        i.id AS incident_id,
+                        i.incident_code,
+                        i.title,
+                        i.priority,
+                        i.status AS incident_status,
+
+                        ia.id AS assignment_id,
+                        ia.assignment_type,
+                        ia.status AS assignment_status,
+                        ia.assigned_at
+
+                    FROM incident_assignments ia
+
+                    INNER JOIN incidents i
+                        ON i.id = ia.incident_id
+
+                    WHERE
+                        ia.vehicle_id = %s
+
+                        AND ia.status IN (
+                            'assigned',
+                            'in_progress'
+                        )
+
+                        AND i.status IN (
+                            'assigned',
+                            'in_progress'
+                        )
+
+                    ORDER BY
+                        ia.assigned_at DESC,
+                        ia.id DESC
+
+                    LIMIT 1
+
+                    FOR UPDATE
+                    """,
+                    (
+                        vehicle["id"],
+                    )
+                )
+
+                mission = (
+                    cursor.fetchone()
+                )
+
+                if not mission:
+
+                    raise ValueError(
+                        (
+                            "Întăririle pot fi solicitate "
+                            "doar în timpul unei misiuni active."
+                        )
+                    )
+
+
+                # =====================================
+                # INSERARE CERERE NOUĂ
+                # =====================================
+
+               
+
+                cursor.execute(
+                    """
+                    INSERT INTO reinforcement_requests (
+                        incident_id,
+                        requested_by_vehicle_id,
+                        requested_vehicle_type,
+                        requested_quantity,
+                        requested_message,
+                        assigned_quantity,
+                        status
+                    )
+                    VALUES (
+                        %s,
+                        %s,
+                        %s,
+                        1,
+                        %s,
+                        0,
+                        'pending'
+                    )
+                    """,
+                    (
+                        mission["incident_id"],
+                        vehicle["id"],
+                        vehicle["vehicle_type"],
+                        (
+                            requested_message
+                            if requested_message
+                            else None
+                        )
+                    )
+                )
+
+                reinforcement_request_id = (
+                    cursor.lastrowid
+                )
+
+
+                # =====================================
+                # CITIRE CERERE CREATĂ
+                # =====================================
+
+                cursor.execute(
+                    """
+                    SELECT
+                        id,
+                        incident_id,
+                        requested_by_vehicle_id,
+                        requested_vehicle_type,
+                        requested_quantity,
+                        requested_message,
+                        assigned_quantity,
+                        status,
+                        failure_message,
+                        dispatcher_message,
+                        reviewed_by_user_id,
+                        reviewed_at,
+                        created_at,
+                        updated_at,
+                        completed_at
+
+                    FROM reinforcement_requests
+
+                    WHERE id = %s
+
+                    LIMIT 1
+                    """,
+                    (
+                        reinforcement_request_id,
+                    )
+                )
+
+                reinforcement_request = (
+                    cursor.fetchone()
+                )
+
+            connection.commit()
+
+            return {
+                "created":
+                    True,
+
+                "request":
+                    reinforcement_request,
+
+                "incident": {
+                    "id":
+                        mission["incident_id"],
+
+                    "incident_code":
+                        mission["incident_code"],
+
+                    "title":
+                        mission["title"],
+
+                    "priority":
+                        mission["priority"]
+                },
+
+                "vehicle": {
+                    "id":
+                        vehicle["id"],
+
+                    "vehicle_code":
+                        vehicle["vehicle_code"],
+
+                    "name":
+                        vehicle["name"],
+
+                    "vehicle_type":
+                        vehicle["vehicle_type"]
+                }
+            }
+
+        except Exception:
+
+            connection.rollback()
+
+            raise
+
+        finally:
+
+            connection.close()
+
+
+    # =====================================
+    # ULTIMA CERERE DE ÎNTĂRIRI A ȘOFERULUI
+    # =====================================
+
+    @staticmethod
+    def get_latest_driver_reinforcement_request(
+        user_id
+    ):
+
+        try:
+
+            user_id = int(
+                user_id
+            )
+
+        except (
+            TypeError,
+            ValueError
+        ):
+
+            return None
+
+        connection = (
+            AuthService.get_db_connection()
+        )
+
+        try:
+
+            with connection.cursor() as cursor:
+
+                # =====================================
+                # UTILIZATOR
+                # =====================================
+
+                cursor.execute(
+                    """
+                    SELECT
+                        username,
+                        role,
+                        is_active
+
+                    FROM users
+
+                    WHERE id = %s
+
+                    LIMIT 1
+                    """,
+                    (
+                        user_id,
+                    )
+                )
+
+                user = (
+                    cursor.fetchone()
+                )
+
+                if (
+                    not user
+                    or
+                    not user["is_active"]
+                    or
+                    user["role"] != "driver"
+                ):
+
+                    return None
+
+                vehicle_code = (
+                    AuthService
+                    .get_vehicle_code_from_driver_username(
+                        user["username"]
+                    )
+                )
+
+                cursor.execute(
+                    """
+                    SELECT
+                        id,
+                        vehicle_code
+
+                    FROM vehicles
+
+                    WHERE vehicle_code = %s
+
+                    LIMIT 1
+                    """,
+                    (
+                        vehicle_code,
+                    )
+                )
+
+                vehicle = (
+                    cursor.fetchone()
+                )
+
+                if not vehicle:
+
+                    return None
+
+                # =====================================
+                # ULTIMA CERERE
+                # =====================================
+
+                cursor.execute(
+                    """
+                    SELECT
+                        rr.id,
+                        rr.incident_id,
+                        rr.requested_by_vehicle_id,
+                        rr.requested_vehicle_type,
+                        rr.requested_quantity,
+                        rr.requested_message,
+                        rr.assigned_quantity,
+                        rr.status,
+                        rr.failure_message,
+                        rr.dispatcher_message,
+                        rr.reviewed_by_user_id,
+                        rr.reviewed_at,
+                        rr.created_at,
+                        rr.updated_at,
+                        rr.completed_at,
+
+                        i.incident_code,
+                        i.title AS incident_title,
+
+                        reviewer.display_name
+                            AS reviewed_by_display_name
+
+                    FROM reinforcement_requests rr
+
+                    INNER JOIN incidents i
+                        ON i.id = rr.incident_id
+
+                    LEFT JOIN users reviewer
+                        ON reviewer.id = rr.reviewed_by_user_id
+
+                    WHERE
+                        rr.requested_by_vehicle_id = %s
+
+                    ORDER BY
+                        rr.created_at DESC,
+                        rr.id DESC
+
+                    LIMIT 1
+                    """,
+                    (
+                        vehicle["id"],
+                    )
+                )
+
+                reinforcement_request = (
+                    cursor.fetchone()
+                )
+
+                if not reinforcement_request:
+
+                    return None
+
+                # =====================================
+                # RESURSE APROBATE
+                # =====================================
+
+                cursor.execute(
+                    """
+                    SELECT
+                        id,
+                        reinforcement_request_id,
+                        vehicle_type,
+                        requested_quantity,
+                        approved_quantity,
+                        assigned_quantity,
+                        created_at,
+                        updated_at
+
+                    FROM reinforcement_request_resources
+
+                    WHERE reinforcement_request_id = %s
+
+                    ORDER BY
+                        FIELD(
+                            vehicle_type,
+                            'police',
+                            'ambulance',
+                            'fire'
+                        ),
+                        id
+                    """,
+                    (
+                        reinforcement_request["id"],
+                    )
+                )
+
+                reinforcement_request["resources"] = (
+                    cursor.fetchall()
+                )
+
+                return reinforcement_request
+
+        finally:
+
+            connection.close()
+
+    # =====================================
+    # ISTORIC CERERI DE ÎNTĂRIRI ȘOFER
+    # =====================================
+
+    @staticmethod
+    def get_driver_reinforcement_request_history(
+        user_id
+    ):
+
+        try:
+
+            user_id = int(
+                user_id
+            )
+
+        except (
+            TypeError,
+            ValueError
+        ):
+
+            return []
+
+        connection = (
+            AuthService.get_db_connection()
+        )
+
+        try:
+
+            with connection.cursor() as cursor:
+
+                # =====================================
+                # UTILIZATOR
+                # =====================================
+
+                cursor.execute(
+                    """
+                    SELECT
+                        username,
+                        role,
+                        is_active
+
+                    FROM users
+
+                    WHERE id = %s
+
+                    LIMIT 1
+                    """,
+                    (
+                        user_id,
+                    )
+                )
+
+                user = (
+                    cursor.fetchone()
+                )
+
+                if (
+                    not user
+                    or
+                    not user["is_active"]
+                    or
+                    user["role"] != "driver"
+                ):
+
+                    return []
+
+                vehicle_code = (
+                    AuthService
+                    .get_vehicle_code_from_driver_username(
+                        user["username"]
+                    )
+                )
+
+                # =====================================
+                # VEHICUL
+                # =====================================
+
+                cursor.execute(
+                    """
+                    SELECT
+                        id,
+                        vehicle_code
+
+                    FROM vehicles
+
+                    WHERE vehicle_code = %s
+
+                    LIMIT 1
+                    """,
+                    (
+                        vehicle_code,
+                    )
+                )
+
+                vehicle = (
+                    cursor.fetchone()
+                )
+
+                if not vehicle:
+
+                    return []
+
+                # =====================================
+                # TOATE CERERILE ȘOFERULUI
+                # =====================================
+
+                cursor.execute(
+                    """
+                    SELECT
+                        rr.id,
+                        rr.incident_id,
+                        rr.requested_by_vehicle_id,
+                        rr.requested_vehicle_type,
+                        rr.requested_quantity,
+                        rr.requested_message,
+                        rr.assigned_quantity,
+                        rr.status,
+                        rr.failure_message,
+                        rr.dispatcher_message,
+                        rr.reviewed_by_user_id,
+                        rr.reviewed_at,
+                        rr.created_at,
+                        rr.updated_at,
+                        rr.completed_at,
+
+                        i.incident_code,
+                        i.title AS incident_title,
+                        i.status AS incident_status,
+
+                        reviewer.display_name
+                            AS reviewed_by_display_name
+
+                    FROM reinforcement_requests rr
+
+                    INNER JOIN incidents i
+                        ON i.id = rr.incident_id
+
+                    LEFT JOIN users reviewer
+                        ON reviewer.id = rr.reviewed_by_user_id
+
+                    WHERE
+                        rr.requested_by_vehicle_id = %s
+
+                    ORDER BY
+                        rr.created_at DESC,
+                        rr.id DESC
+                    """,
+                    (
+                        vehicle["id"],
+                    )
+                )
+
+                reinforcement_requests = (
+                    cursor.fetchall()
+                )
+
+                if not reinforcement_requests:
+
+                    return []
+
+                # =====================================
+                # RESURSE PENTRU FIECARE CERERE
+                # =====================================
+
+                for reinforcement_request in reinforcement_requests:
+
+                    cursor.execute(
+                        """
+                        SELECT
+                            id,
+                            reinforcement_request_id,
+                            vehicle_type,
+                            requested_quantity,
+                            approved_quantity,
+                            assigned_quantity,
+                            created_at,
+                            updated_at
+
+                        FROM reinforcement_request_resources
+
+                        WHERE reinforcement_request_id = %s
+
+                        ORDER BY
+                            FIELD(
+                                vehicle_type,
+                                'police',
+                                'ambulance',
+                                'fire'
+                            ),
+                            id
+                        """,
+                        (
+                            reinforcement_request["id"],
+                        )
+                    )
+
+                    reinforcement_request["resources"] = (
+                        cursor.fetchall()
+                    )
+
+                return reinforcement_requests
 
         finally:
 

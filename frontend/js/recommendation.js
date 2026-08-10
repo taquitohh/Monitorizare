@@ -1,5 +1,5 @@
 /* =====================================
-   INITIALIZE RECOMMENDATION PANEL
+   INITIALIZARE PANOU RECOMANDARE
 ===================================== */
 
 function initializeRecommendationPanel() {
@@ -37,7 +37,7 @@ function initializeRecommendationPanel() {
 
 
 /* =====================================
-   LOAD RECOMMENDED VEHICLE
+   ÎNCĂRCARE VEHICULE RECOMANDATE
 ===================================== */
 
 async function loadRecommendedVehicle(
@@ -86,142 +86,262 @@ async function loadRecommendedVehicle(
 
     content.innerHTML = `
         <p>
-            Se caută cel mai apropiat vehicul eligibil...
+            Se caută cele mai apropiate vehicule disponibile...
         </p>
     `;
 
     try {
 
         const result =
-            await window.getRecommendedVehicle(
-                incidentId
-            );
+            await window
+                .getRecommendedVehicle(
+                    incidentId
+                );
 
-        recommendedVehicle =
-            result.vehicle;
+        recommendedVehicles =
+            Array.isArray(
+                result.vehicles
+            )
+                ? result.vehicles
+                : [];
 
-        if (!recommendedVehicle) {
+        if (
+            recommendedVehicles.length === 0
+        ) {
 
             throw new Error(
-                "Serverul nu a returnat un vehicul."
+                "Nu a fost găsit niciun vehicul disponibil."
             );
 
         }
 
-        recommendedVehicle.displayName =
-            getVehicleDisplayName(
-                recommendedVehicle.vehicle_code
+        recommendedVehicles =
+            recommendedVehicles.map(
+                function (
+                    vehicle
+                ) {
+
+                    return {
+                        ...vehicle,
+
+                        displayName:
+                            getVehicleDisplayName(
+                                vehicle.vehicle_code
+                            ),
+
+                        distance_km:
+                            Number(
+                                vehicle.distance_km
+                            )
+                    };
+
+                }
             );
 
+        recommendedVehicle =
+            recommendedVehicles[0];
+
         recommendedVehicleDistance =
-            Number(
-                result.distance_km
-            );
+            recommendedVehicle
+                .distance_km;
 
         recommendationModeActive =
             true;
 
         selectedVehicleId =
-            recommendedVehicle.vehicle_code;
+            null;
 
-        status.textContent =
-            "Recomandat";
+        const missingResources =
+            Array.isArray(
+                result.missing_resources
+            )
+                ? result.missing_resources
+                : [];
 
-        confirmButton.disabled =
-            false;
+        if (
+            missingResources.length > 0
+        ) {
+
+            status.textContent =
+                "Resurse insuficiente";
+
+            confirmButton.disabled =
+                true;
+
+        }
+
+        else {
+
+            status.textContent =
+                `${recommendedVehicles.length} vehicule`;
+
+            confirmButton.disabled =
+                false;
+
+        }
+
+        const vehicleCards =
+            recommendedVehicles.map(
+                function (
+                    vehicle
+                ) {
+
+                    return `
+                        <div class="recommended-vehicle-card">
+
+                            <div>
+                                <div class="recommended-label">
+                                    Vehicul
+                                </div>
+
+                                <div class="recommended-value">
+                                    ${escapeHtml(
+                                        vehicle.displayName
+                                    )}
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="recommended-label">
+                                    Tip
+                                </div>
+
+                                <div class="recommended-value">
+                                    ${escapeHtml(
+                                        getReadableStatus(
+                                            vehicle.vehicle_type
+                                        )
+                                    )}
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="recommended-label">
+                                    Stare
+                                </div>
+
+                                <div class="recommended-value status-active">
+                                    ● Disponibil
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="recommended-label">
+                                    Distanță directă
+                                </div>
+
+                                <div class="recommended-value">
+                                    ${
+                                        Number.isFinite(
+                                            vehicle.distance_km
+                                        )
+                                            ?
+                                            vehicle.distance_km
+                                                .toFixed(3)
+                                            :
+                                            "-"
+                                    } km
+                                </div>
+                            </div>
+
+                        </div>
+                    `;
+
+                }
+            )
+            .join("");
+
+        let missingHtml =
+            "";
+
+        if (
+            missingResources.length > 0
+        ) {
+
+            const labels = {
+                police:
+                    "Poliție",
+
+                ambulance:
+                    "Ambulanță",
+
+                fire:
+                    "Pompieri"
+            };
+
+            const missingItems =
+                missingResources.map(
+                    function (
+                        resource
+                    ) {
+
+                        return `
+                            <li>
+                                ${escapeHtml(
+                                    labels[
+                                        resource.vehicle_type
+                                    ]
+                                    ||
+                                    resource.vehicle_type
+                                )}:
+                                lipsesc
+                                ${escapeHtml(
+                                    resource.missing_quantity
+                                )}
+                            </li>
+                        `;
+
+                    }
+                )
+                .join("");
+
+            missingHtml = `
+                <div class="recommendation-error">
+                    <strong>
+                        Nu există suficiente vehicule disponibile.
+                    </strong>
+
+                    <ul>
+                        ${missingItems}
+                    </ul>
+                </div>
+            `;
+
+        }
 
         content.innerHTML = `
-            <div class="recommended-vehicle-card">
-
-                <div>
-
-                    <div class="recommended-label">
-                        Vehicul
-                    </div>
-
-                    <div class="recommended-value">
-                        ${escapeHtml(
-                            recommendedVehicle.displayName
-                        )}
-                    </div>
-
-                </div>
-
-                <div>
-
-                    <div class="recommended-label">
-                        Tip
-                    </div>
-
-                    <div class="recommended-value">
-                        ${escapeHtml(
-                            recommendedVehicle.vehicle_type
-                        )}
-                    </div>
-
-                </div>
-
-                <div>
-
-                    <div class="recommended-label">
-                        Stare
-                    </div>
-
-                    <div
-                        class="recommended-value status-active"
-                    >
-                        ● ${escapeHtml(
-                            recommendedVehicle.status
-                        )}
-                    </div>
-
-                </div>
-
-                <div>
-
-                    <div class="recommended-label">
-                        Distanță directă
-                    </div>
-
-                    <div class="recommended-value">
-                        ${
-                            Number.isFinite(
-                                recommendedVehicleDistance
-                            )
-                                ?
-                                recommendedVehicleDistance
-                                    .toFixed(3)
-                                :
-                                "-"
-                        } km
-                    </div>
-
-                </div>
-
-            </div>
+            ${vehicleCards}
+            ${missingHtml}
         `;
 
         refreshVehicleView();
 
-        displayVehicleDetails(
-            recommendedVehicle
-        );
+        if (recommendedVehicle) {
 
-        focusVehicle(
-            recommendedVehicle
-        );
+            displayVehicleDetails(
+                recommendedVehicle
+            );
+
+            focusVehicle(
+                recommendedVehicle
+            );
+
+        }
 
     }
 
     catch (error) {
 
         console.error(
-            "Eroare vehicul recomandat:",
+            "Eroare la recomandarea vehiculelor:",
             error
         );
 
         recommendedVehicle =
             null;
+
+        recommendedVehicles =
+            [];
 
         recommendedVehicleDistance =
             null;
@@ -254,14 +374,20 @@ async function loadRecommendedVehicle(
 
 
 /* =====================================
-   CONFIRM RECOMMENDED VEHICLE
+   CONFIRMARE ASIGNARE
 ===================================== */
 
 async function confirmRecommendedVehicle() {
 
     if (
-        !recommendedVehicle ||
-        !activeIncidentId ||
+        !Array.isArray(
+            recommendedVehicles
+        )
+        ||
+        recommendedVehicles.length === 0
+        ||
+        !activeIncidentId
+        ||
         assignmentSaving
     ) {
 
@@ -293,7 +419,7 @@ async function confirmRecommendedVehicle() {
             true;
 
         confirmButton.textContent =
-            "Se atribuie...";
+            "Se asignează...";
 
     }
 
@@ -307,36 +433,43 @@ async function confirmRecommendedVehicle() {
     if (status) {
 
         status.textContent =
-            "Se atribuie...";
+            "Se asignează...";
 
     }
 
     try {
 
-        const result =
-            await window.assignVehicleToIncident(
-                activeIncidentId,
-                recommendedVehicle.id
+        const vehicleIds =
+            recommendedVehicles.map(
+                function (
+                    vehicle
+                ) {
+
+                    return vehicle.id;
+
+                }
             );
 
-        const incident =
-            result.incident;
-
-        if (status) {
-
-            status.textContent =
-                "Se calculează ruta...";
-
-        }
-
-        await window.getIncidentRoute(
-            activeIncidentId
-        );
+        const result =
+            await window
+                .assignVehicleToIncident(
+                    activeIncidentId,
+                    vehicleIds
+                );
 
         activeRouteId =
-            incident.id;
+            activeIncidentId;
+
+        await loadVehicles();
 
         await loadIncidents();
+
+        const assignedCount =
+            Array.isArray(
+                result.assignments
+            )
+                ? result.assignments.length
+                : vehicleIds.length;
 
         recommendationModeActive =
             false;
@@ -347,37 +480,20 @@ async function confirmRecommendedVehicle() {
         recommendedVehicle =
             null;
 
+        recommendedVehicles =
+            [];
+
         recommendedVehicleDistance =
             null;
 
         hideRecommendationPanel();
-
-        if (
-            typeof clearIncidentRoute ===
-            "function"
-        ) {
-
-            clearIncidentRoute();
-
-        }
-
-        if (
-            typeof removeIncidentMarker ===
-            "function"
-        ) {
-
-            removeIncidentMarker();
-
-        }
 
         resetVehicleDetails();
 
         showVehiclesSidebar();
 
         alert(
-            `Vehiculul a fost atribuit la ${incident.incident_code}.\n\n`
-            +
-            "Misiunea este disponibilă în secțiunea Incidente."
+            `${assignedCount} vehicule au fost asignate incidentului.`
         );
 
     }
@@ -385,7 +501,7 @@ async function confirmRecommendedVehicle() {
     catch (error) {
 
         console.error(
-            "Vehicle assignment or route error:",
+            "Eroare la asignarea vehiculelor:",
             error
         );
 
@@ -430,7 +546,7 @@ async function confirmRecommendedVehicle() {
 
 
 /* =====================================
-   CANCEL RECOMMENDED VEHICLE
+   ANULARE RECOMANDARE
 ===================================== */
 
 function cancelRecommendedVehicle() {
@@ -446,6 +562,9 @@ function cancelRecommendedVehicle() {
 
     recommendedVehicle =
         null;
+
+    recommendedVehicles =
+        [];
 
     recommendedVehicleDistance =
         null;
@@ -481,7 +600,7 @@ function cancelRecommendedVehicle() {
 
 
 /* =====================================
-   HIDE RECOMMENDATION PANEL
+   ASCUNDERE PANOU
 ===================================== */
 
 function hideRecommendationPanel() {

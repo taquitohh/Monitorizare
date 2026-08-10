@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="ro">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Administrare
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="css/admin.css?v=1"
+    >
+
+</head>
+
+
+<body>
+
+    <!-- =====================================
+         TOPBAR
+    ====================================== -->
+
+    <header class="admin-topbar">
+
+        <div class="admin-brand">
+
+            <div class="admin-brand-mark">
+                GPS
+            </div>
+
+            <div>
+
+                <strong>
+                    Sistem monitorizare GPS
+                </strong>
+
+                <span>
+                    Administrare
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <nav class="admin-main-navigation">
+
+            <a
+                href="admin.html"
+                class="admin-main-navigation-link active"
+            >
+                Administrare
+            </a>
+
+            <a
+                href="dispatcher.html"
+                class="admin-main-navigation-link"
+            >
+                Dispecerat
+            </a>
+
+        </nav>
+
+
+        <div class="admin-user-area">
+
+            <div class="admin-user-information">
+
+                <span>
+                    Administrator
+                </span>
+
+                <strong id="admin-current-user-name">
+                    -
+                </strong>
+
+            </div>
+
+            <button
+                type="button"
+                id="admin-logout-button"
+                class="admin-logout-button"
+            >
+                Deconectare
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- =====================================
+         LAYOUT
+    ====================================== -->
+
+    <div class="admin-layout">
+
+
+        <!-- =====================================
+             SIDEBAR
+        ====================================== -->
+
+        <aside class="admin-sidebar">
+
+            <div class="admin-sidebar-heading">
+
+                <span>
+                    Panou administrator
+                </span>
+
+                <strong>
+                    Control sistem
+                </strong>
+
+            </div>
+
+
+            <nav class="admin-sidebar-navigation">
+
+                <button
+                    type="button"
+                    class="admin-sidebar-link active"
+                    data-admin-section="overview"
+                >
+                    <span>
+                        ◫
+                    </span>
+
+                    Prezentare generală
+                </button>
+
+
+                <button
+                    type="button"
+                    class="admin-sidebar-link"
+                    data-admin-section="users"
+                >
+                    <span>
+                        👤
+                    </span>
+
+                    Utilizatori
+                </button>
+
+
+                <button
+                    type="button"
+                    class="admin-sidebar-link"
+                    data-admin-section="vehicles"
+                >
+                    <span>
+                        🚓
+                    </span>
+
+                    Vehicule
+                </button>
+
+
+                <button
+                    type="button"
+                    class="admin-sidebar-link"
+                    data-admin-section="database"
+                >
+                    <span>
+                        ▦
+                    </span>
+
+                    Bază de date
+                </button>
+
+
+                <button
+                    type="button"
+                    class="admin-sidebar-link"
+                    data-admin-section="sql"
+                >
+                    <span>
+                        &gt;_
+                    </span>
+
+                    SQL Console
+                </button>
+
+            </nav>
+
+        </aside>
+
+
+        <!-- =====================================
+             MAIN
+        ====================================== -->
+
+        <main class="admin-main">
+
+
+            <!-- =====================================
+                 STATUS GLOBAL
+            ====================================== -->
+
+            <div
+                id="admin-global-message"
+                class="admin-global-message"
+                hidden
+            ></div>
+
+
+            <!-- =====================================
+                 PREZENTARE GENERALĂ
+            ====================================== -->
+
+            <section
+                id="admin-section-overview"
+                class="admin-section active"
+            >
+
+                <div class="admin-page-heading">
+
+                    <div>
+
+                        <span class="admin-section-label">
+                            Administrare
+                        </span>
+
+                        <h1>
+                            Prezentare generală
+                        </h1>
+
+                        <p>
+                            Starea curentă a sistemului de monitorizare.
+                        </p>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="admin-refresh-dashboard-button"
+                        class="admin-secondary-button"
+                    >
+                        Reîncarcă
+                    </button>
+
+                </div>
+
+
+                <!-- STATISTICI -->
+
+                <div class="admin-statistics-grid">
+
+
+                    <article class="admin-stat-card">
+
+                        <span>
+                            Utilizatori
+                        </span>
+
+                        <strong id="admin-stat-total-users">
+                            -
+                        </strong>
+
+                        <small id="admin-stat-users-details">
+                            -
+                        </small>
+
+                    </article>
+
+
+                    <article class="admin-stat-card">
+
+                        <span>
+                            Vehicule
+                        </span>
+
+                        <strong id="admin-stat-total-vehicles">
+                            -
+                        </strong>
+
+                        <small id="admin-stat-vehicles-details">
+                            -
+                        </small>
+
+                    </article>
+
+
+                    <article class="admin-stat-card">
+
+                        <span>
+                            Incidente active
+                        </span>
+
+                        <strong id="admin-stat-active-incidents">
+                            -
+                        </strong>
+
+                        <small id="admin-stat-incidents-details">
+                            -
+                        </small>
+
+                    </article>
+
+
+                    <article class="admin-stat-card">
+
+                        <span>
+                            Cereri active
+                        </span>
+
+                        <strong id="admin-stat-active-requests">
+                            -
+                        </strong>
+
+                        <small id="admin-stat-requests-details">
+                            -
+                        </small>
+
+                    </article>
+
+                </div>
+
+
+                <!-- REZUMAT -->
+
+                <div class="admin-content-grid">
+
+                    <section class="admin-panel">
+
+                        <div class="admin-panel-header">
+
+                            <div>
+
+                                <span>
+                                    Utilizatori
+                                </span>
+
+                                <h2>
+                                    Distribuție roluri
+                                </h2>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="admin-summary-list">
+
+                            <div class="admin-summary-row">
+
+                                <span>
+                                    Administratori
+                                </span>
+
+                                <strong id="admin-summary-administrators">
+                                    -
+                                </strong>
+
+                            </div>
+
+
+                            <div class="admin-summary-row">
+
+                                <span>
+                                    Dispeceri
+                                </span>
+
+                                <strong id="admin-summary-dispatchers">
+                                    -
+                                </strong>
+
+                            </div>
+
+
+                            <div class="admin-summary-row">
+
+                                <span>
+                                    Șoferi
+                                </span>
+
+                                <strong id="admin-summary-drivers">
+                                    -
+                                </strong>
+
+                            </div>
+
+
+                            <div class="admin-summary-row">
+
+                                <span>
+                                    Conturi active
+                                </span>
+
+                                <strong id="admin-summary-active-users">
+                                    -
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+
+                    <section class="admin-panel">
+
+                        <div class="admin-panel-header">
+
+                            <div>
+
+                                <span>
+                                    Vehicule
+                                </span>
+
+                                <h2>
+                                    Flotă
+                                </h2>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="admin-summary-list">
+
+                            <div class="admin-summary-row">
+
+                                <span>
+                                    Poliție
+                                </span>
+
+                                <strong id="admin-summary-police">
+                                    -
+                                </strong>
+
+                            </div>
+
+
+                            <div class="admin-summary-row">
+
+                                <span>
+                                    Ambulanțe
+                                </span>
+
+                                <strong id="admin-summary-ambulance">
+                                    -
+                                </strong>
+
+                            </div>
+
+
+                            <div class="admin-summary-row">
+
+                                <span>
+                                    Pompieri
+                                </span>
+
+                                <strong id="admin-summary-fire">
+                                    -
+                                </strong>
+
+                            </div>
+
+
+                            <div class="admin-summary-row">
+
+                                <span>
+                                    În misiune
+                                </span>
+
+                                <strong id="admin-summary-busy-vehicles">
+                                    -
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                </div>
+
+            </section>
+
+
+            <!-- =====================================
+                 UTILIZATORI
+            ====================================== -->
+
+            <section
+                id="admin-section-users"
+                class="admin-section"
+                hidden
+            >
+
+                <div class="admin-page-heading">
+
+                    <div>
+
+                        <span class="admin-section-label">
+                            Conturi
+                        </span>
+
+                        <h1>
+                            Utilizatori
+                        </h1>
+
+                        <p>
+                            Creare, activare, dezactivare și resetare parolă.
+                        </p>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="admin-open-create-user-button"
+                        class="admin-primary-button"
+                    >
+                        + Utilizator nou
+                    </button>
+
+                </div>
+
+
+                <!-- FORMULAR CREARE -->
+
+                <section
+                    id="admin-create-user-panel"
+                    class="admin-panel"
+                    hidden
+                >
+
+                    <div class="admin-panel-header">
+
+                        <div>
+
+                            <span>
+                                Cont nou
+                            </span>
+
+                            <h2>
+                                Creează utilizator
+                            </h2>
+
+                        </div>
+
+
+                        <button
+                            type="button"
+                            id="admin-close-create-user-button"
+                            class="admin-icon-button"
+                            aria-label="Închide"
+                        >
+                            ×
+                        </button>
+
+                    </div>
+
+
+                    <form
+                        id="admin-create-user-form"
+                        class="admin-form"
+                    >
+
+                        <div class="admin-form-grid">
+
+
+                            <div class="admin-form-field">
+
+                                <label for="admin-create-user-role">
+                                    Rol
+                                </label>
+
+                                <select
+                                    id="admin-create-user-role"
+                                    required
+                                >
+
+                                    <option value="driver">
+                                        Șofer
+                                    </option>
+
+                                    <option value="dispatcher">
+                                        Dispecer
+                                    </option>
+
+                                    <option value="administrator">
+                                        Administrator
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+
+                            <div class="admin-form-field">
+
+                                <label for="admin-create-user-display-name">
+                                    Nume afișat
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="admin-create-user-display-name"
+                                    maxlength="100"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div
+                                id="admin-create-user-username-field"
+                                class="admin-form-field"
+                                hidden
+                            >
+
+                                <label for="admin-create-user-username">
+                                    Nume utilizator
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="admin-create-user-username"
+                                    maxlength="50"
+                                >
+
+                                <small>
+                                    Pentru șofer se generează automat.
+                                </small>
+
+                            </div>
+
+
+                            <div class="admin-form-field">
+
+                                <label for="admin-create-user-password">
+                                    Parolă
+                                </label>
+
+                                <input
+                                    type="password"
+                                    id="admin-create-user-password"
+                                    minlength="8"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div
+                                id="admin-create-user-vehicle-type-field"
+                                class="admin-form-field"
+                            >
+
+                                <label for="admin-create-user-vehicle-type">
+                                    Tip vehicul
+                                </label>
+
+                                <select id="admin-create-user-vehicle-type">
+
+                                    <option value="police">
+                                        Poliție
+                                    </option>
+
+                                    <option value="ambulance">
+                                        Ambulanță
+                                    </option>
+
+                                    <option value="fire">
+                                        Pompieri
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+
+                            <div
+                                id="admin-create-user-vehicle-name-field"
+                                class="admin-form-field"
+                            >
+
+                                <label for="admin-create-user-vehicle-name">
+                                    Nume vehicul
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="admin-create-user-vehicle-name"
+                                    maxlength="100"
+                                    placeholder="Opțional"
+                                >
+
+                            </div>
+
+                        </div>
+
+
+                        <div
+                            id="admin-create-user-result"
+                            class="admin-inline-message"
+                            hidden
+                        ></div>
+
+
+                        <div class="admin-form-actions">
+
+                            <button
+                                type="submit"
+                                class="admin-primary-button"
+                            >
+                                Creează utilizator
+                            </button>
+
+                            <button
+                                type="button"
+                                id="admin-cancel-create-user-button"
+                                class="admin-secondary-button"
+                            >
+                                Anulează
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </section>
+
+
+                <!-- LISTĂ UTILIZATORI -->
+
+                <section class="admin-panel">
+
+                    <div class="admin-panel-header">
+
+                        <div>
+
+                            <span>
+                                Conturi existente
+                            </span>
+
+                            <h2>
+                                Lista utilizatorilor
+                            </h2>
+
+                        </div>
+
+
+                        <button
+                            type="button"
+                            id="admin-refresh-users-button"
+                            class="admin-secondary-button"
+                        >
+                            Reîncarcă
+                        </button>
+
+                    </div>
+
+
+                    <div class="admin-table-wrapper">
+
+                        <table class="admin-table">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>
+                                        ID
+                                    </th>
+
+                                    <th>
+                                        Utilizator
+                                    </th>
+
+                                    <th>
+                                        Nume
+                                    </th>
+
+                                    <th>
+                                        Rol
+                                    </th>
+
+                                    <th>
+                                        Stare
+                                    </th>
+
+                                    <th>
+                                        Creat
+                                    </th>
+
+                                    <th>
+                                        Acțiuni
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody id="admin-users-table-body">
+
+                                <tr>
+
+                                    <td colspan="7">
+                                        Se încarcă...
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </section>
+
+            </section>
+
+
+            <!-- =====================================
+                 VEHICULE
+            ====================================== -->
+
+            <section
+                id="admin-section-vehicles"
+                class="admin-section"
+                hidden
+            >
+
+                <div class="admin-page-heading">
+
+                    <div>
+
+                        <span class="admin-section-label">
+                            Flotă
+                        </span>
+
+                        <h1>
+                            Vehicule
+                        </h1>
+
+                        <p>
+                            Vizualizare centralizată a vehiculelor existente.
+                        </p>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="admin-refresh-vehicles-button"
+                        class="admin-secondary-button"
+                    >
+                        Reîncarcă
+                    </button>
+
+                </div>
+
+
+                <section class="admin-panel">
+
+                    <div class="admin-table-wrapper">
+
+                        <table class="admin-table">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>
+                                        ID
+                                    </th>
+
+                                    <th>
+                                        Cod
+                                    </th>
+
+                                    <th>
+                                        Nume
+                                    </th>
+
+                                    <th>
+                                        Tip
+                                    </th>
+
+                                    <th>
+                                        Stare
+                                    </th>
+
+                                    <th>
+                                        Latitudine
+                                    </th>
+
+                                    <th>
+                                        Longitudine
+                                    </th>
+
+                                    <th>
+                                        Viteză
+                                    </th>
+
+                                    <th>
+                                        Actualizat
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody id="admin-vehicles-table-body">
+
+                                <tr>
+
+                                    <td colspan="9">
+                                        Se încarcă...
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </section>
+
+            </section>
+
+
+            <!-- =====================================
+                 DATABASE EXPLORER
+            ====================================== -->
+
+            <section
+                id="admin-section-database"
+                class="admin-section"
+                hidden
+            >
+
+                <div class="admin-page-heading">
+
+                    <div>
+
+                        <span class="admin-section-label">
+                            Database Explorer
+                        </span>
+
+                        <h1>
+                            Bază de date
+                        </h1>
+
+                        <p>
+                            Vizualizare tabele, structură și date.
+                        </p>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="admin-refresh-database-button"
+                        class="admin-secondary-button"
+                    >
+                        Reîncarcă tabelele
+                    </button>
+
+                </div>
+
+
+                <div class="admin-database-layout">
+
+
+                    <!-- TABELE -->
+
+                    <aside class="admin-database-sidebar">
+
+                        <div class="admin-database-sidebar-header">
+
+                            <strong>
+                                Tabele
+                            </strong>
+
+                            <span id="admin-database-table-count">
+                                0
+                            </span>
+
+                        </div>
+
+
+                        <div
+                            id="admin-database-table-list"
+                            class="admin-database-table-list"
+                        >
+
+                            <p class="admin-empty-message">
+                                Se încarcă...
+                            </p>
+
+                        </div>
+
+                    </aside>
+
+
+                    <!-- DETALII TABEL -->
+
+                    <section class="admin-panel admin-database-content">
+
+                        <div class="admin-panel-header">
+
+                            <div>
+
+                                <span>
+                                    Tabel selectat
+                                </span>
+
+                                <h2 id="admin-selected-table-name">
+                                    Niciun tabel selectat
+                                </h2>
+
+                            </div>
+
+                        </div>
+
+
+                        <div
+                            id="admin-database-empty-state"
+                            class="admin-empty-state"
+                        >
+
+                            Selectează un tabel din lista din stânga.
+
+                        </div>
+
+
+                        <div
+                            id="admin-database-table-content"
+                            hidden
+                        >
+
+                            <div class="admin-database-tabs">
+
+                                <button
+                                    type="button"
+                                    class="admin-database-tab active"
+                                    data-database-tab="rows"
+                                >
+                                    Date
+                                </button>
+
+                                <button
+                                    type="button"
+                                    class="admin-database-tab"
+                                    data-database-tab="structure"
+                                >
+                                    Structură
+                                </button>
+
+                            </div>
+
+
+                            <!-- DATE -->
+
+                            <div
+                                id="admin-database-tab-rows"
+                                class="admin-database-tab-content"
+                            >
+
+                                <div class="admin-table-toolbar">
+
+                                    <span id="admin-database-row-summary">
+                                        -
+                                    </span>
+
+
+                                    <div class="admin-pagination-controls">
+
+                                        <button
+                                            type="button"
+                                            id="admin-database-previous-page"
+                                            class="admin-secondary-button"
+                                        >
+                                            ←
+                                        </button>
+
+                                        <span id="admin-database-current-page">
+                                            Pagina 1
+                                        </span>
+
+                                        <button
+                                            type="button"
+                                            id="admin-database-next-page"
+                                            class="admin-secondary-button"
+                                        >
+                                            →
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+
+                                <div class="admin-table-wrapper">
+
+                                    <table
+                                        id="admin-database-data-table"
+                                        class="admin-table"
+                                    >
+
+                                        <thead id="admin-database-data-head">
+                                        </thead>
+
+                                        <tbody id="admin-database-data-body">
+                                        </tbody>
+
+                                    </table>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- STRUCTURĂ -->
+
+                            <div
+                                id="admin-database-tab-structure"
+                                class="admin-database-tab-content"
+                                hidden
+                            >
+
+                                <div class="admin-table-wrapper">
+
+                                    <table class="admin-table">
+
+                                        <thead>
+
+                                            <tr>
+
+                                                <th>
+                                                    #
+                                                </th>
+
+                                                <th>
+                                                    Coloană
+                                                </th>
+
+                                                <th>
+                                                    Tip
+                                                </th>
+
+                                                <th>
+                                                    Null
+                                                </th>
+
+                                                <th>
+                                                    Default
+                                                </th>
+
+                                                <th>
+                                                    Cheie
+                                                </th>
+
+                                                <th>
+                                                    Extra
+                                                </th>
+
+                                            </tr>
+
+                                        </thead>
+
+
+                                        <tbody id="admin-database-structure-body">
+                                        </tbody>
+
+                                    </table>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                </div>
+
+            </section>
+
+
+            <!-- =====================================
+                 SQL CONSOLE
+            ====================================== -->
+
+            <section
+                id="admin-section-sql"
+                class="admin-section"
+                hidden
+            >
+
+                <div class="admin-page-heading">
+
+                    <div>
+
+                        <span class="admin-section-label">
+                            SQL Console
+                        </span>
+
+                        <h1>
+                            Interogări SQL
+                        </h1>
+
+                        <p>
+                            Execută câte o singură instrucțiune SQL.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <section class="admin-panel">
+
+                    <div class="admin-sql-warning">
+
+                        Comenzile care modifică baza de date vor solicita
+                        confirmare înainte de execuție.
+
+                    </div>
+
+
+                    <label
+                        for="admin-sql-editor"
+                        class="admin-sql-label"
+                    >
+                        Interogare
+                    </label>
+
+
+                    <textarea
+                        id="admin-sql-editor"
+                        class="admin-sql-editor"
+                        spellcheck="false"
+                        placeholder="SELECT * FROM users;"
+                    ></textarea>
+
+
+                    <div class="admin-form-actions">
+
+                        <button
+                            type="button"
+                            id="admin-run-sql-button"
+                            class="admin-primary-button"
+                        >
+                            Execută
+                        </button>
+
+                        <button
+                            type="button"
+                            id="admin-clear-sql-button"
+                            class="admin-secondary-button"
+                        >
+                            Șterge editorul
+                        </button>
+
+                    </div>
+
+
+                    <div
+                        id="admin-sql-message"
+                        class="admin-inline-message"
+                        hidden
+                    ></div>
+
+
+                    <div
+                        id="admin-sql-result"
+                        class="admin-sql-result"
+                        hidden
+                    >
+
+                        <div class="admin-panel-header">
+
+                            <div>
+
+                                <span>
+                                    Rezultat
+                                </span>
+
+                                <h2 id="admin-sql-result-title">
+                                    Interogare executată
+                                </h2>
+
+                            </div>
+
+                        </div>
+
+
+                        <div
+                            id="admin-sql-result-summary"
+                            class="admin-sql-result-summary"
+                        ></div>
+
+
+                        <div
+                            id="admin-sql-result-table-wrapper"
+                            class="admin-table-wrapper"
+                            hidden
+                        >
+
+                            <table
+                                id="admin-sql-result-table"
+                                class="admin-table"
+                            >
+
+                                <thead id="admin-sql-result-head">
+                                </thead>
+
+                                <tbody id="admin-sql-result-body">
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+    <!-- =====================================
+         MODAL RESETARE PAROLĂ
+    ====================================== -->
+
+    <div
+        id="admin-password-modal"
+        class="admin-modal-backdrop"
+        hidden
+    >
+
+        <div class="admin-modal">
+
+            <div class="admin-panel-header">
+
+                <div>
+
+                    <span>
+                        Securitate
+                    </span>
+
+                    <h2>
+                        Resetează parola
+                    </h2>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="admin-close-password-modal"
+                    class="admin-icon-button"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <p id="admin-password-modal-user">
+                -
+            </p>
+
+
+            <div class="admin-form-field">
+
+                <label for="admin-new-user-password">
+                    Parolă nouă
+                </label>
+
+                <input
+                    type="password"
+                    id="admin-new-user-password"
+                    minlength="8"
+                >
+
+            </div>
+
+
+            <div class="admin-form-actions">
+
+                <button
+                    type="button"
+                    id="admin-confirm-password-reset"
+                    class="admin-primary-button"
+                >
+                    Schimbă parola
+                </button>
+
+                <button
+                    type="button"
+                    id="admin-cancel-password-reset"
+                    class="admin-secondary-button"
+                >
+                    Anulează
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================
+         SCRIPTURI
+    ====================================== -->
+
+    <script src="js/auth.js?v=9"></script>
+
+    <script src="js/admin-api.js?v=1"></script>
+
+    <script src="js/admin.js?v=3"></script>
+
+</body>
+
+</html>

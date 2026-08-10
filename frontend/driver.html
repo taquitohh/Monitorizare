@@ -16,12 +16,12 @@
 
     <link
         rel="stylesheet"
-        href="css/base.css?v=1"
+        href="css/base.css?v=3"
     >
 
     <link
         rel="stylesheet"
-        href="css/driver.css?v=3s"
+        href="css/driver.css?v=10"
     >
 
     <link
@@ -32,10 +32,6 @@
 </head>
 
 <body class="driver-page">
-
-    <!-- ===========================
-         BARA SUPERIOARĂ
-    ============================ -->
 
     <header class="driver-navbar">
 
@@ -100,7 +96,10 @@
             <button
                 type="button"
                 id="driver-logout-button"
-                class="driver-navbar-button driver-logout-button"
+                class="
+                    driver-navbar-button
+                    driver-logout-button
+                "
             >
                 Deconectare
             </button>
@@ -109,10 +108,6 @@
 
     </header>
 
-
-    <!-- ===========================
-         CONȚINUT
-    ============================ -->
 
     <main class="driver-main">
 
@@ -147,7 +142,10 @@
 
                     <span
                         id="driver-mission-status"
-                        class="driver-badge driver-badge-neutral"
+                        class="
+                            driver-badge
+                            driver-badge-neutral
+                        "
                     >
                         În așteptare
                     </span>
@@ -173,16 +171,115 @@
                 hidden
             ></div>
 
+
+            <!-- ===========================
+                 CERERE ÎNTĂRIRI
+            ============================ -->
+
+            <section
+                id="driver-reinforcement-section"
+                class="driver-reinforcement-section"
+                hidden
+            >
+
+                <div class="driver-reinforcement-header">
+
+                    <div>
+
+                        <span class="driver-section-label">
+                            Asistență operațională
+                        </span>
+
+                        <h3>
+                            Întăriri
+                        </h3>
+
+                    </div>
+
+                    <span
+                        id="driver-reinforcement-status-badge"
+                        class="
+                            driver-reinforcement-status-badge
+                            neutral
+                        "
+                    >
+                        Disponibil
+                    </span>
+
+                </div>
+
+
+                <!-- =====================================
+                    CERERE NOUĂ
+                ====================================== -->
+
+                <div
+                    id="driver-reinforcement-request-form"
+                    class="driver-reinforcement-request-form"
+                >
+
+                    <label for="driver-reinforcement-message">
+                        Mesaj pentru dispecer
+                    </label>
+
+                    <textarea
+                        id="driver-reinforcement-message"
+                        rows="3"
+                        maxlength="1000"
+                        placeholder="Descrie pe scurt motivul solicitării de întăriri..."
+                    ></textarea>
+
+                    <div class="driver-reinforcement-message-footer">
+
+                        <span>
+                            Mesaj opțional
+                        </span>
+
+                        <span id="driver-reinforcement-message-count">
+                            0 / 1000
+                        </span>
+
+                    </div>
+
+                    <button
+                        type="button"
+                        id="driver-request-reinforcement-button"
+                        class="driver-reinforcement-button"
+                    >
+                        Solicită întăriri
+                    </button>
+
+                </div>
+
+
+            
+                >
+
+
+                <!-- =====================================
+                    ISTORIC TOATE CERERILE
+                ====================================== -->
+
+                <div
+                    id="driver-reinforcement-history"
+                    class="driver-reinforcement-history"
+                    hidden
+                ></div>
+
+            </section>
+
         </section>
 
 
         <!-- ===========================
-             ZONA HARTĂ ȘI VEHICULE
+             ZONA DE LUCRU
         ============================ -->
 
         <section class="driver-workspace">
 
-            <!-- LISTĂ VEHICULE -->
+            <!-- ===========================
+                 LISTĂ VEHICULE
+            ============================ -->
 
             <aside class="driver-vehicles-panel">
 
@@ -225,8 +322,12 @@
                             Disponibile
                         </option>
 
+                        <option value="busy">
+                            În misiune
+                        </option>
+
                         <option value="inactive">
-                            Indisponibile
+                            Indisponibile și în misiune
                         </option>
 
                     </select>
@@ -247,7 +348,9 @@
             </aside>
 
 
-            <!-- HARTĂ -->
+            <!-- ===========================
+                 HARTĂ
+            ============================ -->
 
             <section class="driver-map-panel">
 
@@ -294,11 +397,19 @@
     </main>
 
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- ===========================
+         SCRIPTURI
+    ============================ -->
 
-    <script src="js/auth.js?v=2"></script>
-    <script src="js/driver-api.js?v=1"></script>
-    <script src="js/driver.js?v=3"></script>
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    ></script>
+
+    <script src="js/auth.js?v=9"></script>
+
+    <script src="js/driver-api.js?v=6"></script>
+
+    <script src="js/driver.js?v=19"></script>
 
 </body>
 

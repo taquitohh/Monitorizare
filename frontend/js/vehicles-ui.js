@@ -1,5 +1,5 @@
 /* =====================================
-   LOAD VEHICLES
+   ÎNCĂRCARE VEHICULE
 ===================================== */
 
 async function loadVehicles() {
@@ -12,7 +12,7 @@ async function loadVehicles() {
         if (!Array.isArray(result)) {
 
             throw new Error(
-                "The vehicles API did not return an array."
+                "API-ul vehiculelor nu a returnat o listă validă."
             );
 
         }
@@ -58,7 +58,7 @@ async function loadVehicles() {
     catch (error) {
 
         console.error(
-            "Could not load vehicles:",
+            "Vehiculele nu au putut fi încărcate:",
             error
         );
 
@@ -68,35 +68,88 @@ async function loadVehicles() {
 
 
 /* =====================================
-   UPDATE RECOMMENDED VEHICLE DATA
+   ACTUALIZARE DATE VEHICULE RECOMANDATE
 ===================================== */
 
 function updateRecommendedVehicleFromLatestData() {
 
-    if (!recommendedVehicle) {
+    if (
+        !Array.isArray(
+            recommendedVehicles
+        )
+        ||
+        recommendedVehicles.length === 0
+    ) {
+
+        recommendedVehicle =
+            null;
 
         return;
 
     }
 
-    const updatedVehicle =
-        vehicles.find(
-            function (vehicle) {
+    recommendedVehicles =
+        recommendedVehicles.map(
+            function (
+                recommendedItem
+            ) {
 
-                return (
-                    Number(vehicle.id) ===
-                    Number(
-                        recommendedVehicle.id
-                    )
-                );
+                const updatedVehicle =
+                    vehicles.find(
+                        function (
+                            vehicle
+                        ) {
+
+                            return (
+                                Number(
+                                    vehicle.id
+                                )
+                                ===
+                                Number(
+                                    recommendedItem.id
+                                )
+                            );
+
+                        }
+                    );
+
+                if (!updatedVehicle) {
+
+                    return (
+                        recommendedItem
+                    );
+
+                }
+
+                return {
+                    ...updatedVehicle,
+
+                    displayName:
+                        getVehicleDisplayName(
+                            updatedVehicle
+                                .vehicle_code
+                        ),
+
+                    distance_km:
+                        recommendedItem
+                            .distance_km
+                };
 
             }
         );
 
-    if (updatedVehicle) {
+    recommendedVehicle =
+        recommendedVehicles[0]
+        ||
+        null;
 
-        recommendedVehicle =
-            updatedVehicle;
+    if (recommendedVehicle) {
+
+        recommendedVehicleDistance =
+            Number(
+                recommendedVehicle
+                    .distance_km
+            );
 
     }
 
@@ -104,7 +157,7 @@ function updateRecommendedVehicleFromLatestData() {
 
 
 /* =====================================
-   INITIALIZE VEHICLE FILTERS
+   INIȚIALIZARE FILTRE VEHICULE
 ===================================== */
 
 function initializeVehicleFilters() {
@@ -165,7 +218,7 @@ function initializeVehicleFilters() {
 
 
 /* =====================================
-   RESET VEHICLE FILTERS
+   RESETARE FILTRE VEHICULE
 ===================================== */
 
 function resetVehicleFilters() {
@@ -204,7 +257,7 @@ function resetVehicleFilters() {
 
 
 /* =====================================
-   APPLY VEHICLE FILTERS
+   APLICARE FILTRE VEHICULE
 ===================================== */
 
 function applyVehicleFilters() {
@@ -214,12 +267,16 @@ function applyVehicleFilters() {
 
             const vehicleType =
                 String(
-                    vehicle.vehicle_type || ""
+                    vehicle.vehicle_type
+                    ||
+                    ""
                 ).toLowerCase();
 
             const vehicleStatus =
                 String(
-                    vehicle.status || ""
+                    vehicle.status
+                    ||
+                    ""
                 ).toLowerCase();
 
             const typeMatches =
@@ -235,7 +292,8 @@ function applyVehicleFilters() {
                     filters.status;
 
             return (
-                typeMatches &&
+                typeMatches
+                &&
                 statusMatches
             );
 
@@ -246,18 +304,23 @@ function applyVehicleFilters() {
 
 
 /* =====================================
-   REFRESH VEHICLE VIEW
+   ACTUALIZARE VEDERE VEHICULE
 ===================================== */
 
 function refreshVehicleView() {
 
     if (
-        recommendationModeActive &&
-        recommendedVehicle
+        recommendationModeActive
+        &&
+        Array.isArray(
+            recommendedVehicles
+        )
+        &&
+        recommendedVehicles.length > 0
     ) {
 
         filteredVehicles = [
-            recommendedVehicle
+            ...recommendedVehicles
         ];
 
     }
@@ -284,7 +347,8 @@ function refreshVehicleView() {
     );
 
     if (
-        sidebarMode === "vehicles" &&
+        sidebarMode === "vehicles"
+        &&
         activeRouteId === null
     ) {
 
@@ -300,7 +364,7 @@ function refreshVehicleView() {
 
 
 /* =====================================
-   UPDATE SIDEBAR COUNT
+   ACTUALIZARE NUMĂR VEHICULE
 ===================================== */
 
 function updateSidebarCount(
@@ -323,7 +387,7 @@ function updateSidebarCount(
 
 
 /* =====================================
-   DISPLAY VEHICLES
+   AFIȘARE VEHICULE
 ===================================== */
 
 function displayVehicles(
@@ -345,6 +409,10 @@ function displayVehicles(
         "";
 
     if (
+        !Array.isArray(
+            vehicleList
+        )
+        ||
         vehicleList.length === 0
     ) {
 
@@ -366,9 +434,23 @@ function displayVehicles(
                     "div"
                 );
 
+            const vehicleType =
+                String(
+                    vehicle.vehicle_type
+                    ||
+                    ""
+                ).toLowerCase();
+
+            const vehicleStatus =
+                String(
+                    vehicle.status
+                    ||
+                    ""
+                ).toLowerCase();
+
             card.className =
                 `vehicle-card ${escapeHtml(
-                    vehicle.vehicle_type
+                    vehicleType
                 )}`;
 
             if (
@@ -382,13 +464,30 @@ function displayVehicles(
 
             }
 
-            if (
-                recommendedVehicle &&
-                Number(vehicle.id) ===
-                Number(
-                    recommendedVehicle.id
+            const isRecommended =
+                Array.isArray(
+                    recommendedVehicles
                 )
-            ) {
+                &&
+                recommendedVehicles.some(
+                    function (
+                        recommendedItem
+                    ) {
+
+                        return (
+                            Number(
+                                recommendedItem.id
+                            )
+                            ===
+                            Number(
+                                vehicle.id
+                            )
+                        );
+
+                    }
+                );
+
+            if (isRecommended) {
 
                 card.classList.add(
                     "recommended"
@@ -396,18 +495,58 @@ function displayVehicles(
 
             }
 
+            const displayName =
+                vehicle.displayName
+                ||
+                getVehicleDisplayName(
+                    vehicle.vehicle_code
+                );
+
+            const distance =
+                Number(
+                    vehicle.distance_km
+                );
+
+            const recommendationDistanceHtml =
+                (
+                    recommendationModeActive
+                    &&
+                    isRecommended
+                    &&
+                    Number.isFinite(
+                        distance
+                    )
+                )
+                    ? `
+                        <div class="vehicle-status">
+                            <strong>
+                                Distanță:
+                            </strong>
+
+                            ${escapeHtml(
+                                distance.toFixed(
+                                    3
+                                )
+                            )} km
+                        </div>
+                    `
+                    : "";
+
             card.innerHTML = `
                 <div class="vehicle-name">
                     ${escapeHtml(
-                        vehicle.displayName
+                        displayName
                     )}
                 </div>
 
                 <div class="vehicle-status">
-                    <strong>Tip:</strong>
+                    <strong>
+                        Tip:
+                    </strong>
+
                     ${escapeHtml(
                         getReadableStatus(
-                            vehicle.vehicle_type
+                            vehicleType
                         )
                     )}
                 </div>
@@ -416,16 +555,18 @@ function displayVehicles(
                     class="
                         vehicle-status
                         status-${escapeHtml(
-                            vehicle.status
+                            vehicleStatus
                         )}
                     "
                 >
-                   ● ${escapeHtml(
+                    ● ${escapeHtml(
                         getReadableStatus(
-                            vehicle.status
+                            vehicleStatus
                         )
                     )}
                 </div>
+
+                ${recommendationDistanceHtml}
             `;
 
             card.addEventListener(
@@ -450,12 +591,18 @@ function displayVehicles(
 
 
 /* =====================================
-   SELECT VEHICLE
+   SELECTARE VEHICUL
 ===================================== */
 
 function selectVehicle(
     vehicle
 ) {
+
+    if (!vehicle) {
+
+        return;
+
+    }
 
     activeRouteId =
         null;
@@ -478,6 +625,10 @@ function selectVehicle(
 
     }
 
+    /*
+     * Înlocuim selecția anterioară.
+     * Doar un vehicul rămâne selectat.
+     */
     selectedVehicleId =
         vehicle.vehicle_code;
 
@@ -497,7 +648,7 @@ function selectVehicle(
 
 
 /* =====================================
-   REFRESH SELECTED VEHICLE DETAILS
+   ACTUALIZARE DETALII VEHICUL SELECTAT
 ===================================== */
 
 function refreshSelectedVehicleDetails() {
@@ -528,13 +679,48 @@ function refreshSelectedVehicleDetails() {
             selectedVehicle
         );
 
+        return;
+
     }
+
+    const selectedRecommendedVehicle =
+        Array.isArray(
+            recommendedVehicles
+        )
+            ? recommendedVehicles.find(
+                function (
+                    vehicle
+                ) {
+
+                    return (
+                        vehicle.vehicle_code ===
+                        selectedVehicleId
+                    );
+
+                }
+            )
+            : null;
+
+    if (selectedRecommendedVehicle) {
+
+        displayVehicleDetails(
+            selectedRecommendedVehicle
+        );
+
+        return;
+
+    }
+
+    selectedVehicleId =
+        null;
+
+    resetVehicleDetails();
 
 }
 
 
 /* =====================================
-   DISPLAY VEHICLE DETAILS
+   AFIȘARE DETALII VEHICUL
 ===================================== */
 
 function displayVehicleDetails(
@@ -552,6 +738,14 @@ function displayVehicleDetails(
 
     }
 
+    if (!vehicle) {
+
+        resetVehicleDetails();
+
+        return;
+
+    }
+
     const latitude =
         Number(
             vehicle.latitude
@@ -561,6 +755,50 @@ function displayVehicleDetails(
         Number(
             vehicle.longitude
         );
+
+    const speed =
+        Number(
+            vehicle.speed
+        );
+
+    const distance =
+        Number(
+            vehicle.distance_km
+        );
+
+    const displayName =
+        vehicle.displayName
+        ||
+        getVehicleDisplayName(
+            vehicle.vehicle_code
+        );
+
+    const recommendationDistanceHtml =
+        (
+            recommendationModeActive
+            &&
+            Number.isFinite(
+                distance
+            )
+        )
+            ? `
+                <div class="detail-item">
+
+                    <div class="detail-label">
+                        Distanță față de incident
+                    </div>
+
+                    <div class="detail-value">
+                        ${escapeHtml(
+                            distance.toFixed(
+                                3
+                            )
+                        )} km
+                    </div>
+
+                </div>
+            `
+            : "";
 
     details.innerHTML = `
         <div class="details-grid">
@@ -573,7 +811,23 @@ function displayVehicleDetails(
 
                 <div class="detail-value">
                     ${escapeHtml(
-                        vehicle.displayName
+                        displayName
+                    )}
+                </div>
+
+            </div>
+
+            <div class="detail-item">
+
+                <div class="detail-label">
+                    Cod vehicul
+                </div>
+
+                <div class="detail-value">
+                    ${escapeHtml(
+                        vehicle.vehicle_code
+                        ||
+                        "-"
                     )}
                 </div>
 
@@ -598,10 +852,21 @@ function displayVehicleDetails(
             <div class="detail-item">
 
                 <div class="detail-label">
-                    Status
+                    Stare
                 </div>
 
-                <div class="detail-value">
+                <div
+                    class="
+                        detail-value
+                        status-${escapeHtml(
+                            String(
+                                vehicle.status
+                                ||
+                                ""
+                            ).toLowerCase()
+                        )}
+                    "
+                >
                     ${escapeHtml(
                         getReadableStatus(
                             vehicle.status
@@ -614,14 +879,20 @@ function displayVehicleDetails(
             <div class="detail-item">
 
                 <div class="detail-label">
-                    Viteza
+                    Viteză
                 </div>
 
                 <div class="detail-value">
-                    ${formatNumber(
-                        vehicle.speed,
-                        2
-                    )} km/h
+                    ${
+                        Number.isFinite(
+                            speed
+                        )
+                            ? `${formatNumber(
+                                speed,
+                                2
+                            )} km/h`
+                            : "-"
+                    }
                 </div>
 
             </div>
@@ -657,16 +928,20 @@ function displayVehicleDetails(
             <div class="detail-item">
 
                 <div class="detail-label">
-                    Ultima Actualizare
+                    Ultima actualizare
                 </div>
 
                 <div class="detail-value">
                     ${escapeHtml(
-                        vehicle.updated_at ?? "-"
+                        vehicle.updated_at
+                        ??
+                        "-"
                     )}
                 </div>
 
             </div>
+
+            ${recommendationDistanceHtml}
 
         </div>
     `;
@@ -675,7 +950,7 @@ function displayVehicleDetails(
 
 
 /* =====================================
-   RESET VEHICLE DETAILS
+   RESETARE DETALII VEHICUL
 ===================================== */
 
 function resetVehicleDetails() {

@@ -28,7 +28,13 @@ let driverRouteEndMarker = null;
 
 let driverRouteData = null;
 
-let driverRouteIncidentId = null;
+let driverRouteIncidentId = null; 
+
+let driverReinforcementRequest = null;
+
+let driverReinforcementRequests = [];
+
+let driverReinforcementPendingSubmissions = 0;
 
 let driverRefreshRunning = false;
 
@@ -113,6 +119,15 @@ function initializeDriverControls() {
         document.getElementById(
             "driver-status-filter"
         );
+    const reinforcementButton =
+    document.getElementById(
+        "driver-request-reinforcement-button"
+    );
+
+    const reinforcementMessage =
+        document.getElementById(
+            "driver-reinforcement-message"
+        );
 
     if (logoutButton) {
 
@@ -149,6 +164,23 @@ function initializeDriverControls() {
                 );
 
             }
+        );
+
+    }
+    if (reinforcementButton) {
+
+        reinforcementButton.addEventListener(
+            "click",
+            submitDriverReinforcementRequest
+        );
+
+    }
+
+    if (reinforcementMessage) {
+
+        reinforcementMessage.addEventListener(
+            "input",
+            updateDriverReinforcementMessageCount
         );
 
     }
@@ -216,6 +248,8 @@ async function loadDriverDashboard(
                 ? dashboard.same_type_vehicles
                 : [];
 
+        await loadDriverReinforcementRequests();
+
         displayDriverUser(
             driverCurrentUser
         );
@@ -225,6 +259,8 @@ async function loadDriverDashboard(
         );
 
         displayDriverOperationalSummary();
+
+        displayDriverReinforcementSection();
 
         applyDriverVehicleFilter(
             document
@@ -693,8 +729,11 @@ function displayDriverOperationalSummary() {
 async function updateDriverMissionRoute() {
 
     if (
-        !driverMission ||
+        !driverMission
+        ||
         !driverMission.id
+        ||
+        !driverVehicle
     ) {
 
         driverRouteData =
@@ -711,20 +750,166 @@ async function updateDriverMissionRoute() {
 
     try {
 
-        const routeData =
+        const routeResponse =
             await window.driverApi
                 .getMissionRoute(
                     driverMission.id
                 );
 
-        driverRouteData =
-            routeData;
+        /*
+         * Endpoint-ul dispecerului întoarce acum
+         * toate rutele incidentului.
+         *
+         * Pentru șofer alegem exclusiv ruta
+         * vehiculului conectat.
+         */
+        let ownRoute =
+            null;
+
+        if (
+            Array.isArray(
+                routeResponse?.routes
+            )
+        ) {
+
+            ownRoute =
+                routeResponse.routes.find(
+                    function (route) {
+
+                        const sameId =
+                            Number(
+                                route.vehicle_id
+                            )
+                            ===
+                            Number(
+                                driverVehicle.id
+                            );
+
+                        const sameCode =
+                            String(
+                                route.vehicle_code
+                                ||
+                                ""
+                            )
+                            ===
+                            String(
+                                driverVehicle.vehicle_code
+                                ||
+                                ""
+                            );
+
+                        return (
+                            sameId
+                            ||
+                            sameCode
+                        );
+
+                    }
+                )
+                ||
+                null;
+
+        }
+
+        /*
+         * Compatibilitate cu răspunsul vechi,
+         * care conținea o singură rută.
+         */
+        if (
+            !ownRoute
+            &&
+            Array.isArray(
+                routeResponse?.coordinates
+            )
+        ) {
+
+            const responseVehicleId =
+                Number(
+                    routeResponse.vehicle_id
+                );
+
+            const responseVehicleCode =
+                String(
+                    routeResponse.vehicle_code
+                    ||
+                    ""
+                );
+
+            const routeBelongsToCurrentDriver =
+                (
+                    responseVehicleId ===
+                    Number(
+                        driverVehicle.id
+                    )
+                )
+                ||
+                (
+                    responseVehicleCode ===
+                    String(
+                        driverVehicle.vehicle_code
+                    )
+                );
+
+            if (
+                routeBelongsToCurrentDriver
+                ||
+                !Array.isArray(
+                    routeResponse.routes
+                )
+            ) {
+
+                ownRoute = {
+                    ...routeResponse
+                };
+
+            }
+
+        }
+
+        if (!ownRoute) {
+
+            throw new Error(
+                (
+                    "Serverul nu a returnat ruta "
+                    + "vehiculului conectat."
+                )
+            );
+
+        }
+
+        /*
+         * Adăugăm informațiile incidentului
+         * de la rădăcina răspunsului.
+         */
+        driverRouteData = {
+            ...ownRoute,
+
+            incident_id:
+                routeResponse.incident_id
+                ??
+                driverMission.id,
+
+            incident_code:
+                routeResponse.incident_code
+                ??
+                driverMission.incident_code,
+
+            incident_latitude:
+                routeResponse.incident_latitude
+                ??
+                driverMission.latitude,
+
+            incident_longitude:
+                routeResponse.incident_longitude
+                ??
+                driverMission.longitude
+        };
 
         driverRouteIncidentId =
             driverMission.id;
 
         displayDriverRoute(
-            routeData
+            driverRouteData
         );
 
         updateDriverRouteDistance();
@@ -755,8 +940,8 @@ async function updateDriverMissionRoute() {
 
             mapMessage.textContent =
                 (
-                    "Misiunea este activă, dar ruta nu a putut "
-                    + "fi calculată: "
+                    "Misiunea este activă, dar ruta "
+                    + "nu a putut fi calculată: "
                     + error.message
                 );
 
@@ -773,7 +958,11 @@ function displayDriverRoute(
     routeData
 ) {
 
-    if (!driverMap) {
+    if (
+        !driverMap
+        ||
+        !driverVehicle
+    ) {
 
         return;
 
@@ -785,8 +974,7 @@ function displayDriverRoute(
         );
 
     if (
-        routeCoordinates.length <
-        2
+        routeCoordinates.length < 2
     ) {
 
         throw new Error(
@@ -797,14 +985,17 @@ function displayDriverRoute(
 
     clearDriverRoute();
 
+    const routeColor =
+        getDriverMarkerColor(
+            driverVehicle.vehicle_type
+        );
+
     driverRouteLayer =
         L.polyline(
             routeCoordinates,
             {
                 color:
-                    getDriverMarkerColor(
-                        driverVehicle?.vehicle_type
-                    ),
+                    routeColor,
 
                 weight:
                     6,
@@ -822,115 +1013,100 @@ function displayDriverRoute(
             driverMap
         );
 
-    const startCoordinate =
-        routeCoordinates[0];
+    driverRouteLayer.bindPopup(
+        `
+            <strong>
+                Ruta misiunii
+            </strong>
+
+            <br>
+
+            Vehicul:
+            ${escapeDriverHtml(
+                driverVehicle.vehicle_code
+            )}
+
+            <br>
+
+            Distanță:
+            ${escapeDriverHtml(
+                getDriverRouteDistanceText()
+            )}
+        `
+    );
 
     const endCoordinate =
         routeCoordinates[
             routeCoordinates.length - 1
         ];
 
+    /*
+     * Nu mai creăm un marker separat la început.
+     * Markerul mare cu eticheta TU reprezintă
+     * deja poziția vehiculului.
+     */
     driverRouteStartMarker =
-        L.circleMarker(
-            startCoordinate,
-            {
-                radius:
-                    8,
+        null;
 
-                color:
-                    "#ffffff",
-
-                weight:
-                    3,
-
-                fillColor:
-                    getDriverMarkerColor(
-                        driverVehicle?.vehicle_type
-                    ),
-
-                fillOpacity:
-                    1
-            }
-        ).addTo(
-            driverMap
-        );
-
-    driverRouteStartMarker.bindPopup(`
-        <strong>
-            Poziția vehiculului
-        </strong>
-        <br>
-        ${escapeDriverHtml(
-            driverVehicle?.vehicle_code ||
-            routeData.vehicle_code ||
-            "-"
-        )}
-    `);
-
+    /*
+     * Nu mai creăm nici al doilea cerc mov.
+     * updateDriverMissionMarker() gestionează
+     * singur markerul incidentului.
+     */
     driverRouteEndMarker =
-        L.circleMarker(
-            endCoordinate,
-            {
-                radius:
-                    10,
+        null;
 
-                color:
-                    "#ffffff",
-
-                weight:
-                    3,
-
-                fillColor:
-                    "#7c3aed",
-
-                fillOpacity:
-                    1
-            }
-        ).addTo(
-            driverMap
+    const ownMarker =
+        driverMarkers.get(
+            String(
+                driverVehicle.id
+            )
         );
 
-    driverRouteEndMarker.bindPopup(`
-        <strong>
-            Destinația incidentului
-        </strong>
-        <br>
-        ${escapeDriverHtml(
-            driverMission?.incident_code ||
-            routeData.incident_code ||
-            "-"
-        )}
-        <br>
-        ${escapeDriverHtml(
-            driverMission?.title ||
-            "Incident activ"
-        )}
-    `);
+    if (ownMarker) {
 
-    if (
-        !driverInitialMapPositionSet ||
-        Number(driverRouteIncidentId) !==
-        Number(driverMission?.id)
-    ) {
+        ownMarker.setLatLng([
+            Number(
+                driverVehicle.latitude
+            ),
+            Number(
+                driverVehicle.longitude
+            )
+        ]);
 
-        focusDriverRoute();
+        ownMarker.setZIndexOffset(
+            4000
+        );
+
+        if (
+            !driverMap.hasLayer(
+                ownMarker
+            )
+        ) {
+
+            ownMarker.addTo(
+                driverMap
+            );
+
+        }
 
     }
 
-    else if (
-        driverRouteLayer &&
-        driverRouteLayer.getBounds()
-            .isValid()
+    /*
+     * Actualizăm poziția markerului incidentului
+     * dacă acesta există deja.
+     */
+    if (
+        driverMissionMarker
+        &&
+        driverMap.hasLayer(
+            driverMissionMarker
+        )
     ) {
 
-        const currentZoom =
-            driverMap.getZoom();
-
-        if (currentZoom < 11) {
-
-            focusDriverRoute();
-
-        }
+        driverMissionMarker.setLatLng(
+            endCoordinate
+        );
 
     }
 
@@ -1005,7 +1181,8 @@ function normalizeDriverRouteCoordinates(
 function focusDriverRoute() {
 
     if (
-        !driverMap ||
+        !driverMap
+        ||
         !driverRouteLayer
     ) {
 
@@ -1013,10 +1190,60 @@ function focusDriverRoute() {
 
     }
 
-    const routeBounds =
-        driverRouteLayer.getBounds();
+    const layers = [
+        driverRouteLayer
+    ];
 
-    if (!routeBounds.isValid()) {
+    const ownMarker =
+        driverVehicle
+            ?
+            driverMarkers.get(
+                String(
+                    driverVehicle.id
+                )
+            )
+            :
+            null;
+
+    if (
+        ownMarker
+        &&
+        driverMap.hasLayer(
+            ownMarker
+        )
+    ) {
+
+        layers.push(
+            ownMarker
+        );
+
+    }
+
+    if (
+        driverMissionMarker
+        &&
+        driverMap.hasLayer(
+            driverMissionMarker
+        )
+    ) {
+
+        layers.push(
+            driverMissionMarker
+        );
+
+    }
+
+    const group =
+        L.featureGroup(
+            layers
+        );
+
+    const routeBounds =
+        group.getBounds();
+
+    if (
+        !routeBounds.isValid()
+    ) {
 
         return;
 
@@ -1184,9 +1411,20 @@ function applyDriverVehicleFilter(
     filterValue
 ) {
 
+    const normalizedFilter =
+        String(
+            filterValue
+            ||
+            "all"
+        ).toLowerCase();
+
     const allVisibleVehicles =
         [];
 
+    /*
+     * Vehiculul conectat este introdus primul
+     * și este marcat separat.
+     */
     if (driverVehicle) {
 
         allVisibleVehicles.push({
@@ -1198,8 +1436,23 @@ function applyDriverVehicleFilter(
 
     }
 
+    /*
+     * Adăugăm toate celelalte vehicule
+     * din aceeași categorie.
+     */
     driverSameTypeVehicles.forEach(
         function (vehicle) {
+
+            if (
+                driverVehicle
+                &&
+                Number(vehicle.id) ===
+                Number(driverVehicle.id)
+            ) {
+
+                return;
+
+            }
 
             allVisibleVehicles.push({
                 ...vehicle,
@@ -1215,16 +1468,92 @@ function applyDriverVehicleFilter(
         allVisibleVehicles.filter(
             function (vehicle) {
 
-                if (filterValue === "all") {
+                const vehicleStatus =
+                    String(
+                        vehicle.status
+                        ||
+                        ""
+                    ).toLowerCase();
+
+                /*
+                 * Vehiculul conectat rămâne permanent
+                 * vizibil cât timp are o misiune activă,
+                 * indiferent de filtrul selectat.
+                 */
+                const isActiveMissionVehicle =
+                    Boolean(
+                        driverMission
+                    )
+                    &&
+                    Boolean(
+                        vehicle.isOwnVehicle
+                    );
+
+                if (
+                    isActiveMissionVehicle
+                ) {
 
                     return true;
 
                 }
 
-                return (
-                    vehicle.status ===
-                    filterValue
-                );
+                if (
+                    normalizedFilter ===
+                    "all"
+                ) {
+
+                    return true;
+
+                }
+
+                if (
+                    normalizedFilter ===
+                    "active"
+                ) {
+
+                    return (
+                        vehicleStatus ===
+                        "active"
+                    );
+
+                }
+
+                if (
+                    normalizedFilter ===
+                    "busy"
+                ) {
+
+                    return (
+                        vehicleStatus ===
+                        "busy"
+                    );
+
+                }
+
+                /*
+                 * Indisponibile:
+                 * - inactive
+                 * - busy
+                 *
+                 * Vehiculele în misiune nu pot fi
+                 * asignate altui incident.
+                 */
+                if (
+                    normalizedFilter ===
+                    "inactive"
+                ) {
+
+                    return (
+                        vehicleStatus ===
+                        "inactive"
+                        ||
+                        vehicleStatus ===
+                        "busy"
+                    );
+
+                }
+
+                return true;
 
             }
         );
@@ -1236,7 +1565,6 @@ function applyDriverVehicleFilter(
     updateDriverMarkers();
 
 }
-
 
 /* =====================================
    LISTĂ VEHICULE
@@ -1475,15 +1803,18 @@ function updateDriverMap() {
 
         mapStatus.textContent =
             driverMission
-                ? "Misiune activă"
-                : "Monitorizare activă";
+                ?
+                "Misiune activă"
+                :
+                "Monitorizare activă";
 
     }
 
     if (mapMessage) {
 
         if (
-            driverMission &&
+            driverMission
+            &&
             driverRouteLayer
         ) {
 
@@ -1512,8 +1843,25 @@ function updateDriverMap() {
     }
 
     if (
-        !driverInitialMapPositionSet &&
-        driverVehicle &&
+        driverMission
+        &&
+        driverRouteLayer
+    ) {
+
+        focusDriverRoute();
+
+        driverInitialMapPositionSet =
+            true;
+
+        return;
+
+    }
+
+    if (
+        !driverInitialMapPositionSet
+        &&
+        driverVehicle
+        &&
         driverVehicleHasLocation(
             driverVehicle
         )
@@ -1813,6 +2161,46 @@ function getDriverVehicleEmoji(
 
 }
 
+/* =====================================
+   ICONIȚĂ INCIDENT ȘOFER
+===================================== */
+
+function createDriverIncidentIcon() {
+
+    return L.divIcon({
+        className:
+            "driver-incident-marker-wrapper",
+
+        html: `
+            <div class="driver-incident-marker">
+
+                <span>
+                    !
+                </span>
+
+            </div>
+        `,
+
+        iconSize:
+            [
+                46,
+                54
+            ],
+
+        iconAnchor:
+            [
+                23,
+                54
+            ],
+
+        popupAnchor:
+            [
+                0,
+                -48
+            ]
+    });
+
+}
 
 function updateDriverMissionMarker() {
 
@@ -1822,70 +2210,130 @@ function updateDriverMissionMarker() {
 
     }
 
-    if (driverMissionMarker) {
-
-        driverMap.removeLayer(
-            driverMissionMarker
-        );
-
-        driverMissionMarker =
-            null;
-
-    }
-
     if (
-        !driverMission ||
+        !driverMission
+        ||
         !driverMissionHasLocation(
             driverMission
         )
     ) {
+
+        if (
+            driverMissionMarker
+            &&
+            driverMap.hasLayer(
+                driverMissionMarker
+            )
+        ) {
+
+            driverMap.removeLayer(
+                driverMissionMarker
+            );
+
+        }
+
+        driverMissionMarker =
+            null;
+
+        return;
+
+    }
+
+    const position = [
+        Number(
+            driverMission.latitude
+        ),
+
+        Number(
+            driverMission.longitude
+        )
+    ];
+
+    const popupContent = `
+        <div class="driver-incident-popup">
+
+            <strong>
+                Incident activ
+            </strong>
+
+            <br>
+
+            ${escapeDriverHtml(
+                driverMission.incident_code
+            )}
+
+            <br>
+
+            ${escapeDriverHtml(
+                driverMission.title
+            )}
+
+        </div>
+    `;
+
+    /*
+     * Actualizăm markerul existent fără
+     * să îl distrugem la fiecare refresh.
+     */
+    if (driverMissionMarker) {
+
+        driverMissionMarker.setLatLng(
+            position
+        );
+
+        driverMissionMarker.setIcon(
+            createDriverIncidentIcon()
+        );
+
+        driverMissionMarker.setPopupContent(
+            popupContent
+        );
+
+        driverMissionMarker.setZIndexOffset(
+            4500
+        );
+
+        if (
+            !driverMap.hasLayer(
+                driverMissionMarker
+            )
+        ) {
+
+            driverMissionMarker.addTo(
+                driverMap
+            );
+
+        }
 
         return;
 
     }
 
     driverMissionMarker =
-        L.circleMarker(
-            [
-                Number(
-                    driverMission.latitude
-                ),
-
-                Number(
-                    driverMission.longitude
-                )
-            ],
+        L.marker(
+            position,
             {
-                radius:
-                    12,
+                icon:
+                    createDriverIncidentIcon(),
 
-                color:
-                    "#ffffff",
-
-                weight:
-                    3,
-
-                fillColor:
-                    "#7c3aed",
-
-                fillOpacity:
-                    1
+                zIndexOffset:
+                    4500
             }
         );
 
-    driverMissionMarker.bindPopup(`
-        <strong>
-            Incident activ
-        </strong>
-        <br>
-        ${escapeDriverHtml(
-            driverMission.incident_code
-        )}
-        <br>
-        ${escapeDriverHtml(
-            driverMission.title
-        )}
-    `);
+    driverMissionMarker.bindPopup(
+        popupContent,
+        {
+            closeButton:
+                true,
+
+            autoClose:
+                false,
+
+            closeOnClick:
+                false
+        }
+    );
 
     driverMissionMarker.addTo(
         driverMap
@@ -2422,5 +2870,1156 @@ function escapeDriverHtml(
             );
 
     return element.innerHTML;
+
+}
+
+/* =====================================
+   ÎNCĂRCARE CERERI ÎNTĂRIRI
+===================================== */
+
+async function loadDriverReinforcementRequests() {
+
+    if (!driverMission) {
+
+        driverReinforcementRequest =
+            null;
+
+        driverReinforcementRequests =
+            [];
+
+        return;
+
+    }
+
+    try {
+
+        const response =
+            await window.driverApi
+                .getReinforcementRequestHistory();
+
+        const requests =
+            Array.isArray(
+                response?.requests
+            )
+                ?
+                response.requests
+                :
+                [];
+
+        /*
+         * Păstrăm doar cererile misiunii
+         * active în momentul acesta.
+         */
+        driverReinforcementRequests =
+            requests.filter(
+                function (
+                    reinforcementRequest
+                ) {
+
+                    return (
+                        Number(
+                            reinforcementRequest
+                                .incident_id
+                        )
+                        ===
+                        Number(
+                            driverMission.id
+                        )
+                    );
+
+                }
+            );
+
+        /*
+         * Endpoint-ul le trimite deja DESC,
+         * dar păstrăm explicit ordinea.
+         */
+        driverReinforcementRequests.sort(
+            function (
+                requestA,
+                requestB
+            ) {
+
+                return (
+                    Number(
+                        requestB.id
+                    )
+                    -
+                    Number(
+                        requestA.id
+                    )
+                );
+
+            }
+        );
+
+        /*
+         * Păstrăm și variabila veche pentru
+         * compatibilitatea cu UI-ul existent.
+         *
+         * Prima cerere este cea mai nouă.
+         */
+        driverReinforcementRequest =
+            driverReinforcementRequests[0]
+            ||
+            null;
+
+    }
+
+    catch (error) {
+
+        console.error(
+            (
+                "Istoricul cererilor de întăriri "
+                + "nu a putut fi încărcat:"
+            ),
+            error
+        );
+
+        /*
+         * Dacă endpoint-ul de istoric are
+         * temporar o problemă, încercăm
+         * endpoint-ul vechi /latest.
+         */
+        try {
+
+            const fallbackResponse =
+                await window.driverApi
+                    .getLatestReinforcementRequest();
+
+            const latestRequest =
+                fallbackResponse?.request
+                ||
+                null;
+
+            if (
+                latestRequest
+                &&
+                Number(
+                    latestRequest.incident_id
+                )
+                ===
+                Number(
+                    driverMission.id
+                )
+            ) {
+
+                driverReinforcementRequest =
+                    latestRequest;
+
+                driverReinforcementRequests =
+                    [
+                        latestRequest
+                    ];
+
+            }
+
+            else {
+
+                driverReinforcementRequest =
+                    null;
+
+                driverReinforcementRequests =
+                    [];
+
+            }
+
+        }
+
+        catch (
+            fallbackError
+        ) {
+
+            console.error(
+                (
+                    "Nici ultima cerere de întăriri "
+                    + "nu a putut fi încărcată:"
+                ),
+                fallbackError
+            );
+
+            driverReinforcementRequest =
+                null;
+
+            driverReinforcementRequests =
+                [];
+
+        }
+
+    }
+
+}
+
+
+/* =====================================
+   COMPATIBILITATE ÎNCĂRCARE ULTIMA CERERE
+===================================== */
+
+async function loadDriverReinforcementRequest() {
+
+    await loadDriverReinforcementRequests();
+
+}
+
+/* =====================================
+   AFIȘARE ISTORIC CERERI ÎNTĂRIRI
+===================================== */
+function displayDriverReinforcementHistory() {
+
+    const historyContainer =
+        document.getElementById(
+            "driver-reinforcement-history"
+        );
+
+    if (!historyContainer) {
+
+        return;
+
+    }
+
+    if (
+        !Array.isArray(
+            driverReinforcementRequests
+        )
+        ||
+        driverReinforcementRequests.length === 0
+    ) {
+
+        historyContainer.hidden =
+            true;
+
+        historyContainer.innerHTML =
+            "";
+
+        return;
+
+    }
+
+    historyContainer.hidden =
+        false;
+
+    const historyHtml =
+        driverReinforcementRequests
+            .map(
+                function (
+                    reinforcementRequest,
+                    index
+                ) {
+
+                    return (
+                        createDriverReinforcementHistoryItem(
+                            reinforcementRequest,
+                            index
+                        )
+                    );
+
+                }
+            )
+            .join("");
+
+    historyContainer.innerHTML = `
+        <div class="driver-reinforcement-history-heading">
+
+            <strong>
+                Cereri trimise
+            </strong>
+
+            <span>
+                ${driverReinforcementRequests.length}
+            </span>
+
+        </div>
+
+        <div class="driver-reinforcement-history-list">
+            ${historyHtml}
+        </div>
+    `;
+
+}
+
+function createDriverReinforcementHistoryItem(
+    reinforcementRequest,
+    index
+) {
+
+    const requestStatus =
+        String(
+            reinforcementRequest?.status
+            ||
+            ""
+        ).toLowerCase();
+
+    const requestId =
+        reinforcementRequest?.id
+        ||
+        (
+            index + 1
+        );
+
+    const statusInformation =
+        getDriverReinforcementHistoryStatus(
+            requestStatus
+        );
+
+    
+
+    const dispatcherMessage =
+        String(
+            reinforcementRequest
+                ?.dispatcher_message
+            ||
+            ""
+        ).trim();
+
+    const createdAt =
+        reinforcementRequest?.created_at
+            ?
+            formatDriverDate(
+                reinforcementRequest.created_at
+            )
+            :
+            "-";
+
+    const resources =
+        Array.isArray(
+            reinforcementRequest?.resources
+        )
+            ?
+            reinforcementRequest.resources
+            :
+            [];
+
+    const visibleResources =
+        resources.filter(
+            function (
+                resource
+            ) {
+
+                return (
+                    Number(
+                        resource?.approved_quantity
+                        ||
+                        0
+                    ) > 0
+                    ||
+                    Number(
+                        resource?.assigned_quantity
+                        ||
+                        0
+                    ) > 0
+                );
+
+            }
+        );
+
+    const resourcesHtml =
+        visibleResources
+            .map(
+                function (
+                    resource
+                ) {
+
+                    const vehicleType =
+                        String(
+                            resource?.vehicle_type
+                            ||
+                            ""
+                        ).toLowerCase();
+
+                    return `
+                        <div class="driver-reinforcement-history-resource">
+
+                            <span class="driver-reinforcement-history-resource-icon">
+                                ${getDriverVehicleEmoji(
+                                    vehicleType
+                                )}
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    ${escapeDriverHtml(
+                                        getDriverVehicleTypeName(
+                                            vehicleType
+                                        )
+                                    )}
+                                </strong>
+
+                                <span>
+                                    Aprobate:
+                                    ${Number(
+                                        resource?.approved_quantity
+                                        ||
+                                        0
+                                    )}
+
+                                    ·
+
+                                    Asignate:
+                                    ${Number(
+                                        resource?.assigned_quantity
+                                        ||
+                                        0
+                                    )}
+                                </span>
+
+                            </div>
+
+                        </div>
+                    `;
+
+                }
+            )
+            .join("");
+
+    return `
+        <article class="
+            driver-reinforcement-history-card
+            ${escapeDriverHtml(
+                statusInformation.className
+            )}
+        ">
+
+            <div class="driver-reinforcement-history-card-header">
+
+                <div>
+
+                    <strong>
+                        Cererea #${escapeDriverHtml(
+                            requestId
+                        )}
+                    </strong>
+
+                    <span>
+                        ${escapeDriverHtml(
+                            createdAt
+                        )}
+                    </span>
+
+                </div>
+
+                <span class="
+                    driver-reinforcement-history-status
+                    ${escapeDriverHtml(
+                        statusInformation.className
+                    )}
+                ">
+                    ${escapeDriverHtml(
+                        statusInformation.label
+                    )}
+                </span>
+
+            </div>
+
+            <div class="driver-reinforcement-history-state">
+
+                <span class="
+                    driver-reinforcement-history-state-icon
+                    ${escapeDriverHtml(
+                        statusInformation.className
+                    )}
+                ">
+                    ${statusInformation.icon}
+                </span>
+
+                <div>
+
+                    <strong>
+                        ${escapeDriverHtml(
+                            statusInformation.title
+                        )}
+                    </strong>
+
+                    <p>
+                        ${escapeDriverHtml(
+                            statusInformation.message
+                        )}
+                    </p>
+
+                </div>
+
+            </div>
+
+            ${
+    dispatcherMessage
+        ?
+        `
+            <div class="
+                driver-reinforcement-history-message
+                dispatcher
+            ">
+
+                <span>
+                    Mesajul dispecerului
+                </span>
+
+                <p>
+                    ${escapeDriverHtml(
+                        dispatcherMessage
+                    )}
+                </p>
+
+            </div>
+        `
+        :
+        ""
+}
+
+          
+
+            ${
+                resourcesHtml
+                    ?
+                    `
+                        <div class="driver-reinforcement-history-resources">
+                            ${resourcesHtml}
+                        </div>
+                    `
+                    :
+                    ""
+            }
+
+        </article>
+    `;
+
+}
+
+
+function getDriverReinforcementHistoryStatus(
+    status
+) {
+
+    const statuses = {
+
+        pending: {
+            label:
+                "În așteptare",
+
+            title:
+                "Cerere în așteptare",
+
+            message:
+                "Cererea așteaptă o decizie din partea dispeceratului.",
+
+            icon:
+                "…",
+
+            className:
+                "pending"
+        },
+
+        partially_assigned: {
+            label:
+                "Parțial aprobată",
+
+            title:
+                "Cerere aprobată parțial",
+
+            message:
+                "O parte dintre echipajele aprobate au fost trimise.",
+
+            icon:
+                "✓",
+
+            className:
+                "accepted"
+        },
+
+        accepted: {
+            label:
+                "Acceptată",
+
+            title:
+                "Cerere acceptată",
+
+            message:
+                "Echipajele aprobate au fost trimise și sunt pe drum.",
+
+            icon:
+                "✓",
+
+            className:
+                "accepted"
+        },
+
+        rejected: {
+            label:
+                "Respinsă",
+
+            title:
+                "Cerere respinsă",
+
+            message:
+                "Dispeceratul nu a aprobat trimiterea echipajelor.",
+
+            icon:
+                "×",
+
+            className:
+                "rejected"
+        },
+
+        failed: {
+            label:
+                "Eșuată",
+
+            title:
+                "Cererea nu a putut fi procesată",
+
+            message:
+                "Nu au fost disponibile resursele solicitate.",
+
+            icon:
+                "!",
+
+            className:
+                "rejected"
+        },
+
+        cancelled: {
+            label:
+                "Anulată",
+
+            title:
+                "Cerere anulată",
+
+            message:
+                "Cererea a fost anulată.",
+
+            icon:
+                "−",
+
+            className:
+                "neutral"
+        },
+
+        completed: {
+            label:
+                "Finalizată",
+
+            title:
+                "Cerere finalizată",
+
+            message:
+                "Procesarea cererii a fost finalizată.",
+
+            icon:
+                "✓",
+
+            className:
+                "completed"
+        }
+
+    };
+
+    return (
+        statuses[
+            String(
+                status
+                ||
+                ""
+            ).toLowerCase()
+        ]
+        ||
+        {
+            label:
+                "În procesare",
+
+            title:
+                "Cerere în procesare",
+
+            message:
+                "Cererea este procesată.",
+
+            icon:
+                "…",
+
+            className:
+                "pending"
+        }
+    );
+
+}
+
+/* =====================================
+   AFIȘARE SECȚIUNE ÎNTĂRIRI
+===================================== */
+
+function displayDriverReinforcementSection() {
+
+    const section =
+        document.getElementById(
+            "driver-reinforcement-section"
+        );
+
+    const requestForm =
+        document.getElementById(
+            "driver-reinforcement-request-form"
+        );
+
+    const statusBadge =
+        document.getElementById(
+            "driver-reinforcement-status-badge"
+        );
+
+    const requestButton =
+        document.getElementById(
+            "driver-request-reinforcement-button"
+        );
+
+    const historyContainer =
+        document.getElementById(
+            "driver-reinforcement-history"
+        );
+
+    if (
+        !section
+        ||
+        !requestForm
+        ||
+        !statusBadge
+    ) {
+
+        return;
+
+    }
+
+
+    /* =====================================
+       FĂRĂ MISIUNE
+    ===================================== */
+
+    section.hidden =
+        !driverMission;
+
+    if (!driverMission) {
+
+        requestForm.hidden =
+            false;
+
+        if (historyContainer) {
+
+            historyContainer.hidden =
+                true;
+
+            historyContainer.innerHTML =
+                "";
+
+        }
+
+        return;
+
+    }
+
+
+    /* =====================================
+       MISIUNE ACTIVĂ
+    ===================================== */
+
+    requestForm.hidden =
+        false;
+
+    if (requestButton) {
+
+        requestButton.disabled =
+            false;
+
+        requestButton.textContent =
+            "Solicită întăriri";
+
+    }
+
+
+    /* =====================================
+       CERERI ÎN CURS DE TRIMITERE
+    ===================================== */
+
+    if (
+        driverReinforcementPendingSubmissions >
+        0
+    ) {
+
+        statusBadge.textContent =
+            (
+                driverReinforcementPendingSubmissions === 1
+                    ?
+                    "Se trimite 1 cerere"
+                    :
+                    (
+                        "Se trimit "
+                        + driverReinforcementPendingSubmissions
+                        + " cereri"
+                    )
+            );
+
+        statusBadge.className =
+            (
+                "driver-reinforcement-status-badge "
+                + "pending"
+            );
+
+    }
+
+    else {
+
+        statusBadge.textContent =
+            "Disponibil";
+
+        statusBadge.className =
+            (
+                "driver-reinforcement-status-badge "
+                + "neutral"
+            );
+
+    }
+
+
+    /* =====================================
+       TOATE CERERILE
+    ===================================== */
+
+    displayDriverReinforcementHistory();
+
+}
+
+
+/* =====================================
+   MESAJ DISPECER
+===================================== */
+
+function displayDriverReinforcementDispatcherMessage(
+    reinforcementRequest,
+    container,
+    textElement
+) {
+
+    const dispatcherMessage =
+        String(
+            reinforcementRequest
+                ?.dispatcher_message
+            ||
+            ""
+        ).trim();
+
+    if (!dispatcherMessage) {
+
+        container.hidden =
+            true;
+
+        textElement.textContent =
+            "-";
+
+        return;
+
+    }
+
+    container.hidden =
+        false;
+
+    textElement.textContent =
+        dispatcherMessage;
+
+}
+
+
+/* =====================================
+   RESURSE APROBATE
+===================================== */
+
+function displayDriverReinforcementResources(
+    reinforcementRequest,
+    container
+) {
+
+    const resources =
+        Array.isArray(
+            reinforcementRequest?.resources
+        )
+            ?
+            reinforcementRequest.resources
+            :
+            [];
+
+    const visibleResources =
+        resources.filter(
+            function (resource) {
+
+                return (
+                    Number(
+                        resource.approved_quantity
+                    ) > 0
+                    ||
+                    Number(
+                        resource.assigned_quantity
+                    ) > 0
+                );
+
+            }
+        );
+
+    if (
+        visibleResources.length ===
+        0
+    ) {
+
+        container.hidden =
+            true;
+
+        container.innerHTML =
+            "";
+
+        return;
+
+    }
+
+    container.hidden =
+        false;
+
+    container.innerHTML =
+        visibleResources
+            .map(
+                function (resource) {
+
+                    const vehicleType =
+                        String(
+                            resource.vehicle_type
+                            ||
+                            ""
+                        ).toLowerCase();
+
+                    const typeNames = {
+                        police:
+                            "Poliție",
+
+                        ambulance:
+                            "Ambulanță",
+
+                        fire:
+                            "Pompieri"
+                    };
+
+                    const emojis = {
+                        police:
+                            "🚓",
+
+                        ambulance:
+                            "🚑",
+
+                        fire:
+                            "🚒"
+                    };
+
+                    return `
+                        <div class="driver-reinforcement-resource">
+
+                            <span>
+                                ${
+                                    emojis[vehicleType]
+                                    ||
+                                    "🚗"
+                                }
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    ${
+                                        typeNames[vehicleType]
+                                        ||
+                                        "Vehicul"
+                                    }
+                                </strong>
+
+                                <small>
+                                    Aprobate:
+                                    ${
+                                        Number(
+                                            resource
+                                                .approved_quantity
+                                        )
+                                    }
+                                    · Asignate:
+                                    ${
+                                        Number(
+                                            resource
+                                                .assigned_quantity
+                                        )
+                                    }
+                                </small>
+
+                            </div>
+
+                        </div>
+                    `;
+
+                }
+            )
+            .join("");
+
+}
+
+
+/* =====================================
+   TRIMITERE CERERE
+===================================== */
+
+async function submitDriverReinforcementRequest() {
+
+    if (!driverMission) {
+
+        alert(
+            (
+                "Întăririle pot fi solicitate "
+                + "doar în timpul unei misiuni active."
+            )
+        );
+
+        return;
+
+    }
+
+    const messageInput =
+        document.getElementById(
+            "driver-reinforcement-message"
+        );
+
+    const requestedMessage =
+        String(
+            messageInput?.value
+            ||
+            ""
+        ).trim();
+
+    if (
+        requestedMessage.length >
+        1000
+    ) {
+
+        alert(
+            (
+                "Mesajul cererii de întăriri "
+                + "nu poate depăși 1000 de caractere."
+            )
+        );
+
+        return;
+
+    }
+
+    /*
+     * Fiecare solicitare este independentă.
+     * Nu blocăm formularul în timp ce o cerere
+     * anterioară este încă trimisă.
+     */
+    driverReinforcementPendingSubmissions +=
+        1;
+
+    /*
+     * Salvăm mesajul în requestedMessage și golim
+     * imediat câmpul, astfel încât șoferul să poată
+     * scrie următoarea cerere fără să aștepte.
+     */
+    if (messageInput) {
+
+        messageInput.value =
+            "";
+
+    }
+
+    updateDriverReinforcementMessageCount();
+
+    displayDriverReinforcementSection();
+
+    try {
+
+        await window.driverApi
+            .createReinforcementRequest(
+                requestedMessage
+            );
+
+        /*
+         * Citim din nou ultima cerere de pe server.
+         * Nu folosim direct răspunsul POST pentru că,
+         * atunci când există mai multe cereri simultane,
+         * răspunsurile pot ajunge într-o ordine diferită.
+         */
+        await loadDriverReinforcementRequest();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Cererea de întăriri nu a putut fi trimisă:",
+            error
+        );
+
+        alert(
+            error.message
+        );
+
+    }
+
+    finally {
+
+        driverReinforcementPendingSubmissions =
+            Math.max(
+                0,
+                driverReinforcementPendingSubmissions - 1
+            );
+
+        /*
+         * Sincronizare finală după terminarea
+         * acestei solicitări.
+         */
+        try {
+
+            await loadDriverReinforcementRequest();
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Starea cererilor nu a putut fi actualizată:",
+                error
+            );
+
+        }
+
+        displayDriverReinforcementSection();
+
+    }
+
+}
+
+/* =====================================
+   CONTOR MESAJ
+===================================== */
+
+function updateDriverReinforcementMessageCount() {
+
+    const messageInput =
+        document.getElementById(
+            "driver-reinforcement-message"
+        );
+
+    const messageCount =
+        document.getElementById(
+            "driver-reinforcement-message-count"
+        );
+
+    if (
+        !messageInput
+        ||
+        !messageCount
+    ) {
+
+        return;
+
+    }
+
+    messageCount.textContent =
+        `${messageInput.value.length} / 1000`;
 
 }

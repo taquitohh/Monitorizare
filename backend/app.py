@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
 from routes.auth import auth_bp
 from routes.driver import driver_bp
+from routes.admin import admin_bp
 
 import os
 import uuid
@@ -12,6 +13,7 @@ from services.route_service import RouteService
 from services.report_service import IncidentReportService
 from utils.validation import calculate_haversine_distance, validate_coordinates
 from services.incident_service import IncidentService
+from services.auth_service import AuthService
 
 app = Flask(__name__)
 
@@ -40,6 +42,9 @@ app.register_blueprint(
 )
 app.register_blueprint(
     driver_bp
+)
+app.register_blueprint(
+    admin_bp
 )
 DB_CONFIG = {
     "host": os.getenv("DB_HOST"),
@@ -460,18 +465,27 @@ def create_incident():
                 "error",
 
             "message":
-                "Request body is missing."
+                "Corpul cererii lipsește."
         }), 400
 
     try:
-        payload = IncidentService.validate_incident_payload(data)
-    except ValueError as error:
-        return jsonify({
-            "status": "error",
-            "message": str(error)
-        }), 400
 
-    incident_code = payload["incident_code"]
+        payload = (
+            IncidentService
+            .validate_incident_payload(
+                data
+            )
+        )
+
+    except ValueError as error:
+
+        return jsonify({
+            "status":
+                "error",
+
+            "message":
+                str(error)
+        }), 400
 
     connection = get_db_connection()
 
@@ -479,7 +493,8 @@ def create_incident():
 
         with connection.cursor() as cursor:
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO incidents (
                     incident_code,
                     title,
@@ -504,22 +519,105 @@ def create_incident():
                     NULL,
                     'draft'
                 )
-            """, (
-                incident_code,
-                payload["title"],
-                payload["incident_type"],
-                payload["required_vehicle_type"],
-                payload["priority"],
-                payload["details"] or None
-            ))
+                """,
+                (
+                    payload[
+                        "incident_code"
+                    ],
+
+                    payload[
+                        "title"
+                    ],
+
+                    payload[
+                        "incident_type"
+                    ],
+
+                    payload[
+                        "required_vehicle_type"
+                    ],
+
+                    payload[
+                        "priority"
+                    ],
+
+                    (
+                        payload["details"]
+                        or
+                        None
+                    )
+                )
+            )
 
             incident_id = (
                 cursor.lastrowid
             )
 
+            category_rows = [
+                (
+                    incident_id,
+                    incident_type
+                )
+                for incident_type
+                in payload[
+                    "incident_types"
+                ]
+            ]
+
+            cursor.executemany(
+                """
+                INSERT INTO incident_categories (
+                    incident_id,
+                    category_code
+                )
+                VALUES (
+                    %s,
+                    %s
+                )
+                """,
+                category_rows
+            )
+
+            requirement_rows = []
+
+            for resource in payload[
+                "required_resources"
+            ]:
+
+                requirement_rows.append(
+                    (
+                        incident_id,
+
+                        resource[
+                            "vehicle_type"
+                        ],
+
+                        resource[
+                            "quantity"
+                        ]
+                    )
+                )
+
+            cursor.executemany(
+                """
+                INSERT INTO incident_requirements (
+                    incident_id,
+                    vehicle_type,
+                    quantity
+                )
+                VALUES (
+                    %s,
+                    %s,
+                    %s
+                )
+                """,
+                requirement_rows
+            )
+
             connection.commit()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT
                     id,
                     incident_code,
@@ -540,11 +638,81 @@ def create_incident():
                 FROM incidents
 
                 WHERE id = %s
-            """, (
-                incident_id,
-            ))
+                """,
+                (
+                    incident_id,
+                )
+            )
 
-            incident = cursor.fetchone()
+            incident = (
+                cursor.fetchone()
+            )
+
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    vehicle_type,
+                    quantity,
+                    created_at,
+                    updated_at
+
+                FROM incident_requirements
+
+                WHERE incident_id = %s
+
+                ORDER BY
+                    FIELD(
+                        vehicle_type,
+                        'police',
+                        'ambulance',
+                        'fire'
+                    )
+                """,
+                (
+                    incident_id,
+                )
+            )
+
+            required_resources = (
+                cursor.fetchall()
+            )
+
+            for resource in required_resources:
+
+                resource["quantity"] = int(
+                    resource["quantity"]
+                )
+
+            incident[
+                "required_resources"
+            ] = required_resources
+
+            cursor.execute(
+                """
+                SELECT
+                    category_code
+
+                FROM incident_categories
+
+                WHERE incident_id = %s
+
+                ORDER BY id
+                """,
+                (
+                    incident_id,
+                )
+            )
+
+            incident_types = [
+                row["category_code"]
+                for row
+                in cursor.fetchall()
+            ]
+
+            incident[
+                "incident_types"
+            ] = incident_types
 
             return jsonify({
                 "status":
@@ -559,7 +727,7 @@ def create_incident():
         connection.rollback()
 
         app.logger.exception(
-            "Incident could not be created"
+            "Incidentul nu a putut fi creat"
         )
 
         return jsonify({
@@ -573,7 +741,6 @@ def create_incident():
     finally:
 
         connection.close()
-
 
 # =====================================
 # UPDATE INCIDENT LOCATION
@@ -757,7 +924,7 @@ def update_incident_location(
 
 
 # =====================================
-# RECOMMEND VEHICLE
+# RECOMANDĂ VEHICULE
 # =====================================
 
 @app.route(
@@ -774,11 +941,11 @@ def recommend_vehicle(
 
         with connection.cursor() as cursor:
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT
                     id,
                     incident_code,
-                    required_vehicle_type,
                     latitude,
                     longitude,
                     status
@@ -786,237 +953,13 @@ def recommend_vehicle(
                 FROM incidents
 
                 WHERE id = %s
-            """, (
-                incident_id,
-            ))
 
-            incident = cursor.fetchone()
-
-            if not incident:
-
-                return jsonify({
-                    "status":
-                        "error",
-
-                    "message":
-                        "Incident was not found."
-                }), 404
-
-            if (
-                incident["latitude"] is None
-                or
-                incident["longitude"] is None
-            ):
-
-                return jsonify({
-                    "status":
-                        "error",
-
-                    "message":
-                        "The incident location "
-                        "has not been selected."
-                }), 409
-
-            cursor.execute("""
-                SELECT
-                    v.id,
-                    v.vehicle_code,
-                    v.name,
-                    v.vehicle_type,
-                    v.status,
-                    cp.latitude,
-                    cp.longitude,
-                    cp.speed,
-                    cp.updated_at
-
-                FROM vehicles v
-
-                INNER JOIN current_positions cp
-                    ON v.id = cp.vehicle_id
-
-                WHERE
-                    v.vehicle_type = %s
-
-                    AND v.status = 'active'
-
-                    AND cp.latitude
-                        IS NOT NULL
-
-                    AND cp.longitude
-                        IS NOT NULL
-            """, (
-                incident[
-                    "required_vehicle_type"
-                ],
-            ))
-
-            eligible_vehicles = (
-                cursor.fetchall()
-            )
-
-            if not eligible_vehicles:
-
-                return jsonify({
-                    "status":
-                        "error",
-
-                    "message":
-                        "No active vehicle is available "
-                        "for this incident type."
-                }), 404
-
-            incident_latitude = float(
-                incident["latitude"]
-            )
-
-            incident_longitude = float(
-                incident["longitude"]
-            )
-
-            nearest_vehicle = None
-
-            shortest_distance = None
-
-            for vehicle in eligible_vehicles:
-
-                vehicle_latitude = float(
-                    vehicle["latitude"]
-                )
-
-                vehicle_longitude = float(
-                    vehicle["longitude"]
-                )
-
-                distance = (
-                    calculate_haversine_distance(
-                        vehicle_latitude,
-                        vehicle_longitude,
-                        incident_latitude,
-                        incident_longitude
-                    )
-                )
-
-                if (
-                    shortest_distance is None
-                    or
-                    distance
-                    <
-                    shortest_distance
-                ):
-
-                    shortest_distance = (
-                        distance
-                    )
-
-                    nearest_vehicle = (
-                        vehicle
-                    )
-
-            return jsonify({
-                "status":
-                    "recommended",
-
-                "incident_id":
+                LIMIT 1
+                """,
+                (
                     incident_id,
-
-                "vehicle":
-                    nearest_vehicle,
-
-                "distance_km":
-                    round(
-                        shortest_distance,
-                        3
-                    )
-            }), 200
-
-    except Exception as error:
-
-        app.logger.exception(
-            "Recommended vehicle could not be calculated"
-        )
-
-        return jsonify({
-            "status":
-                "error",
-
-            "message":
-                str(error)
-        }), 500
-
-    finally:
-
-        connection.close()
-
-
-# =====================================
-# ASSIGN VEHICLE
-# =====================================
-
-@app.route(
-    "/api/incidents/<int:incident_id>/assign",
-    methods=["PATCH"]
-)
-def assign_vehicle(
-    incident_id
-):
-
-    data = request.get_json(
-        silent=True
-    )
-
-    if not data:
-
-        return jsonify({
-            "status":
-                "error",
-
-            "message":
-                "Request body is missing."
-        }), 400
-
-    vehicle_id = data.get(
-        "vehicle_id"
-    )
-
-    try:
-
-        vehicle_id = int(
-            vehicle_id
-        )
-
-    except (
-        TypeError,
-        ValueError
-    ):
-
-        return jsonify({
-            "status":
-                "error",
-
-            "message":
-                "Vehicle id must be a valid integer."
-        }), 400
-
-    connection = get_db_connection()
-
-    try:
-
-        with connection.cursor() as cursor:
-
-            cursor.execute("""
-                SELECT
-                    id,
-                    required_vehicle_type,
-                    latitude,
-                    longitude,
-                    status
-
-                FROM incidents
-
-                WHERE id = %s
-            """, (
-                incident_id,
-            ))
+                )
+            )
 
             incident = cursor.fetchone()
 
@@ -1027,7 +970,7 @@ def assign_vehicle(
                         "error",
 
                     "message":
-                        "Incident was not found."
+                        "Incidentul nu a fost găsit."
                 }), 404
 
             if (
@@ -1041,7 +984,7 @@ def assign_vehicle(
                         "error",
 
                     "message":
-                        "Incident location is missing."
+                        "Locația incidentului nu a fost selectată."
                 }), 409
 
             if incident["status"] in {
@@ -1054,11 +997,394 @@ def assign_vehicle(
                         "error",
 
                     "message":
-                        "A vehicle cannot be assigned "
-                        "to this incident."
+                        "Incidentul nu mai este activ."
                 }), 409
 
-            cursor.execute("""
+            cursor.execute(
+                """
+                SELECT
+                    vehicle_type,
+                    quantity
+
+                FROM incident_requirements
+
+                WHERE incident_id = %s
+
+                ORDER BY id
+                """,
+                (
+                    incident_id,
+                )
+            )
+
+            requirements = cursor.fetchall()
+
+            if not requirements:
+
+                return jsonify({
+                    "status":
+                        "error",
+
+                    "message":
+                        "Incidentul nu are resurse configurate."
+                }), 409
+
+            incident_latitude = float(
+                incident["latitude"]
+            )
+
+            incident_longitude = float(
+                incident["longitude"]
+            )
+
+            recommended_vehicles = []
+
+            missing_resources = []
+
+            selected_vehicle_ids = set()
+
+            for requirement in requirements:
+
+                vehicle_type = str(
+                    requirement[
+                        "vehicle_type"
+                    ]
+                ).lower()
+
+                quantity = int(
+                    requirement[
+                        "quantity"
+                    ]
+                )
+
+                cursor.execute(
+                    """
+                    SELECT
+                        v.id,
+                        v.vehicle_code,
+                        v.name,
+                        v.vehicle_type,
+                        v.status,
+
+                        cp.latitude,
+                        cp.longitude,
+                        cp.speed,
+                        cp.updated_at
+
+                    FROM vehicles v
+
+                    INNER JOIN current_positions cp
+                        ON cp.vehicle_id = v.id
+
+                    WHERE
+                        v.vehicle_type = %s
+
+                        AND v.status = 'active'
+
+                        AND cp.latitude IS NOT NULL
+
+                        AND cp.longitude IS NOT NULL
+
+                    ORDER BY v.id
+                    """,
+                    (
+                        vehicle_type,
+                    )
+                )
+
+                available_vehicles = (
+                    cursor.fetchall()
+                )
+
+                ranked_vehicles = []
+
+                for vehicle in available_vehicles:
+
+                    vehicle_id = int(
+                        vehicle["id"]
+                    )
+
+                    if (
+                        vehicle_id
+                        in selected_vehicle_ids
+                    ):
+
+                        continue
+
+                    distance_km = (
+                        calculate_haversine_distance(
+                            float(
+                                vehicle["latitude"]
+                            ),
+                            float(
+                                vehicle["longitude"]
+                            ),
+                            incident_latitude,
+                            incident_longitude
+                        )
+                    )
+
+                    vehicle[
+                        "distance_km"
+                    ] = round(
+                        distance_km,
+                        3
+                    )
+
+                    ranked_vehicles.append(
+                        vehicle
+                    )
+
+                ranked_vehicles.sort(
+                    key=lambda item:
+                        item["distance_km"]
+                )
+
+                selected_for_type = (
+                    ranked_vehicles[
+                        :quantity
+                    ]
+                )
+
+                for vehicle in selected_for_type:
+
+                    selected_vehicle_ids.add(
+                        int(
+                            vehicle["id"]
+                        )
+                    )
+
+                    recommended_vehicles.append(
+                        vehicle
+                    )
+
+                missing_quantity = (
+                    quantity
+                    -
+                    len(
+                        selected_for_type
+                    )
+                )
+
+                if missing_quantity > 0:
+
+                    missing_resources.append({
+                        "vehicle_type":
+                            vehicle_type,
+
+                        "requested_quantity":
+                            quantity,
+
+                        "available_quantity":
+                            len(
+                                selected_for_type
+                            ),
+
+                        "missing_quantity":
+                            missing_quantity
+                    })
+
+            return jsonify({
+                "status":
+                    (
+                        "recommended"
+                        if not missing_resources
+                        else "partially_recommended"
+                    ),
+
+                "incident_id":
+                    incident_id,
+
+                "incident_code":
+                    incident[
+                        "incident_code"
+                    ],
+
+                "vehicles":
+                    recommended_vehicles,
+
+                "missing_resources":
+                    missing_resources,
+
+                "complete":
+                    len(
+                        missing_resources
+                    ) == 0
+            }), 200
+
+    except Exception as error:
+
+        app.logger.exception(
+            "Vehiculele recomandate nu au putut fi calculate"
+        )
+
+        return jsonify({
+            "status":
+                "error",
+
+            "message":
+                str(error)
+        }), 500
+
+    finally:
+
+        connection.close()
+# =====================================
+# ASIGNEAZĂ VEHICULE
+# =====================================
+
+@app.route(
+    "/api/incidents/<int:incident_id>/assign",
+    methods=["PATCH"]
+)
+def assign_vehicle(
+    incident_id
+):
+
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+    vehicle_ids = data.get(
+        "vehicle_ids"
+    )
+
+    # Compatibilitate cu vechiul frontend.
+    if vehicle_ids is None:
+
+        legacy_vehicle_id = data.get(
+            "vehicle_id"
+        )
+
+        if legacy_vehicle_id is not None:
+
+            vehicle_ids = [
+                legacy_vehicle_id
+            ]
+
+    if (
+        not isinstance(
+            vehicle_ids,
+            list
+        )
+        or
+        not vehicle_ids
+    ):
+
+        return jsonify({
+            "status":
+                "error",
+
+            "message":
+                "Trebuie selectat cel puțin un vehicul."
+        }), 400
+
+    normalized_vehicle_ids = []
+
+    try:
+
+        for vehicle_id in vehicle_ids:
+
+            normalized_id = int(
+                vehicle_id
+            )
+
+            if (
+                normalized_id
+                not in normalized_vehicle_ids
+            ):
+
+                normalized_vehicle_ids.append(
+                    normalized_id
+                )
+
+    except (
+        TypeError,
+        ValueError
+    ):
+
+        return jsonify({
+            "status":
+                "error",
+
+            "message":
+                "Lista vehiculelor nu este validă."
+        }), 400
+
+    connection = get_db_connection()
+
+    try:
+
+        with connection.cursor() as cursor:
+
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    incident_code,
+                    latitude,
+                    longitude,
+                    status
+
+                FROM incidents
+
+                WHERE id = %s
+
+                FOR UPDATE
+                """,
+                (
+                    incident_id,
+                )
+            )
+
+            incident = cursor.fetchone()
+
+            if not incident:
+
+                return jsonify({
+                    "status":
+                        "error",
+
+                    "message":
+                        "Incidentul nu a fost găsit."
+                }), 404
+
+            if (
+                incident["latitude"] is None
+                or
+                incident["longitude"] is None
+            ):
+
+                return jsonify({
+                    "status":
+                        "error",
+
+                    "message":
+                        "Locația incidentului lipsește."
+                }), 409
+
+            if incident["status"] in {
+                "resolved",
+                "cancelled"
+            }:
+
+                return jsonify({
+                    "status":
+                        "error",
+
+                    "message":
+                        "Nu se mai pot asigna vehicule acestui incident."
+                }), 409
+
+            placeholders = ", ".join(
+                [
+                    "%s"
+                    for _ in normalized_vehicle_ids
+                ]
+            )
+
+            cursor.execute(
+                f"""
                 SELECT
                     id,
                     vehicle_code,
@@ -1067,39 +1393,25 @@ def assign_vehicle(
 
                 FROM vehicles
 
-                WHERE id = %s
-            """, (
-                vehicle_id,
-            ))
+                WHERE id IN (
+                    {placeholders}
+                )
 
-            vehicle = cursor.fetchone()
+                FOR UPDATE
+                """,
+                tuple(
+                    normalized_vehicle_ids
+                )
+            )
 
-            if not vehicle:
-
-                return jsonify({
-                    "status":
-                        "error",
-
-                    "message":
-                        "Vehicle was not found."
-                }), 404
-
-            if vehicle["status"] != "active":
-
-                return jsonify({
-                    "status":
-                        "error",
-
-                    "message":
-                        "Vehicle is not active."
-                }), 409
+            selected_vehicles = (
+                cursor.fetchall()
+            )
 
             if (
-                vehicle["vehicle_type"]
+                len(selected_vehicles)
                 !=
-                incident[
-                    "required_vehicle_type"
-                ]
+                len(normalized_vehicle_ids)
             ):
 
                 return jsonify({
@@ -1107,79 +1419,295 @@ def assign_vehicle(
                         "error",
 
                     "message":
-                        "Vehicle type does not match "
-                        "the incident requirements."
+                        "Unul dintre vehicule nu a fost găsit."
+                }), 404
+
+            unavailable_vehicles = [
+                vehicle[
+                    "vehicle_code"
+                ]
+                for vehicle
+                in selected_vehicles
+                if vehicle["status"] != "active"
+            ]
+
+            if unavailable_vehicles:
+
+                return jsonify({
+                    "status":
+                        "error",
+
+                    "message":
+                        (
+                            "Următoarele vehicule nu mai sunt "
+                            "disponibile: "
+                            +
+                            ", ".join(
+                                unavailable_vehicles
+                            )
+                        )
                 }), 409
 
-            cursor.execute("""
+            cursor.execute(
+                """
+                SELECT
+                    vehicle_type,
+                    quantity
+
+                FROM incident_requirements
+
+                WHERE incident_id = %s
+                """,
+                (
+                    incident_id,
+                )
+            )
+
+            requirements = cursor.fetchall()
+
+            required_quantities = {
+                str(
+                    requirement[
+                        "vehicle_type"
+                    ]
+                ).lower():
+                    int(
+                        requirement[
+                            "quantity"
+                        ]
+                    )
+
+                for requirement
+                in requirements
+            }
+
+            selected_quantities = {}
+
+            for vehicle in selected_vehicles:
+
+                vehicle_type = str(
+                    vehicle[
+                        "vehicle_type"
+                    ]
+                ).lower()
+
+                selected_quantities[
+                    vehicle_type
+                ] = (
+                    selected_quantities.get(
+                        vehicle_type,
+                        0
+                    )
+                    +
+                    1
+                )
+
+            for (
+                vehicle_type,
+                required_quantity
+            ) in required_quantities.items():
+
+                selected_quantity = (
+                    selected_quantities.get(
+                        vehicle_type,
+                        0
+                    )
+                )
+
+                if (
+                    selected_quantity
+                    <
+                    required_quantity
+                ):
+
+                    return jsonify({
+                        "status":
+                            "error",
+
+                        "message":
+                            (
+                                "Nu au fost selectate suficiente "
+                                f"vehicule de tip {vehicle_type}. "
+                                f"Necesare: {required_quantity}, "
+                                f"selectate: {selected_quantity}."
+                            )
+                    }), 409
+
+            for (
+                vehicle_type,
+                selected_quantity
+            ) in selected_quantities.items():
+
+                allowed_quantity = (
+                    required_quantities.get(
+                        vehicle_type,
+                        0
+                    )
+                )
+
+                if (
+                    selected_quantity
+                    >
+                    allowed_quantity
+                ):
+
+                    return jsonify({
+                        "status":
+                            "error",
+
+                        "message":
+                            (
+                                "Au fost selectate prea multe "
+                                f"vehicule de tip {vehicle_type}."
+                            )
+                    }), 409
+
+            first_vehicle_id = (
+                normalized_vehicle_ids[0]
+            )
+
+            cursor.execute(
+                """
+                DELETE FROM incident_assignments
+
+                WHERE
+                    incident_id = %s
+
+                    AND status IN (
+                        'assigned',
+                        'in_progress'
+                    )
+                """,
+                (
+                    incident_id,
+                )
+            )
+
+            assignment_rows = [
+                (
+                    incident_id,
+                    vehicle_id,
+                    "primary",
+                    "assigned"
+                )
+                for vehicle_id
+                in normalized_vehicle_ids
+            ]
+
+            cursor.executemany(
+                """
+                INSERT INTO incident_assignments (
+                    incident_id,
+                    vehicle_id,
+                    assignment_type,
+                    status
+                )
+                VALUES (
+                    %s,
+                    %s,
+                    %s,
+                    %s
+                )
+                """,
+                assignment_rows
+            )
+
+            cursor.execute(
+                f"""
+                UPDATE vehicles
+
+                SET status = 'busy'
+
+                WHERE id IN (
+                    {placeholders}
+                )
+                """,
+                tuple(
+                    normalized_vehicle_ids
+                )
+            )
+
+            cursor.execute(
+                """
                 UPDATE incidents
 
                 SET
                     assigned_vehicle_id = %s,
                     status = 'assigned',
                     dispatched_at =
-                        CURRENT_TIMESTAMP
+                        COALESCE(
+                            dispatched_at,
+                            CURRENT_TIMESTAMP
+                        )
 
                 WHERE id = %s
-            """, (
-                vehicle_id,
-                incident_id
-            ))
-            cursor.execute("""
-            UPDATE vehicles
-
-                SET
-                    status = 'busy'
-
-                WHERE id = %s
-            """, (
-                vehicle_id,
-            ))
+                """,
+                (
+                    first_vehicle_id,
+                    incident_id
+                )
+            )
 
             connection.commit()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT
-                    i.id,
-                    i.incident_code,
-                    i.title,
-                    i.incident_type,
-                    i.required_vehicle_type,
-                    i.priority,
-                    i.details,
-                    i.latitude,
-                    i.longitude,
-                    i.assigned_vehicle_id,
-                    i.status,
-                    i.created_at,
-                    i.updated_at,
-                    i.dispatched_at,
-                    i.resolved_at,
+                    ia.id AS assignment_id,
+                    ia.assignment_type,
+                    ia.status AS assignment_status,
+                    ia.assigned_at,
 
-                    v.vehicle_code
-                        AS assigned_vehicle_code
+                    v.id,
+                    v.vehicle_code,
+                    v.name,
+                    v.vehicle_type,
+                    v.status
 
-                FROM incidents i
+                FROM incident_assignments ia
 
-                LEFT JOIN vehicles v
-                    ON i.assigned_vehicle_id =
-                       v.id
+                INNER JOIN vehicles v
+                    ON v.id = ia.vehicle_id
 
-                WHERE i.id = %s
-            """, (
-                incident_id,
-            ))
+                WHERE
+                    ia.incident_id = %s
 
-            updated_incident = (
-                cursor.fetchone()
+                    AND ia.status IN (
+                        'assigned',
+                        'in_progress'
+                    )
+
+                ORDER BY ia.id
+                """,
+                (
+                    incident_id,
+                )
             )
+
+            assignments = cursor.fetchall()
 
             return jsonify({
                 "status":
                     "assigned",
 
-                "incident":
-                    updated_incident
+                "message":
+                    "Vehiculele au fost asignate.",
+
+                "incident": {
+                    "id":
+                        incident_id,
+
+                    "incident_code":
+                        incident[
+                            "incident_code"
+                        ],
+
+                    "status":
+                        "assigned"
+                },
+
+                "assignments":
+                    assignments
             }), 200
 
     except Exception as error:
@@ -1187,7 +1715,7 @@ def assign_vehicle(
         connection.rollback()
 
         app.logger.exception(
-            "Vehicle could not be assigned"
+            "Vehiculele nu au putut fi asignate"
         )
 
         return jsonify({
@@ -1202,9 +1730,8 @@ def assign_vehicle(
 
         connection.close()
 
-
 # =====================================
-# GET INCIDENT ROUTE
+# GET ALL INCIDENT ROUTES
 # =====================================
 
 @app.route(
@@ -1221,47 +1748,25 @@ def get_incident_route(
 
         with connection.cursor() as cursor:
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT
-                    i.id,
-                    i.incident_code,
+                    id,
+                    incident_code,
+                    latitude,
+                    longitude,
+                    status
 
-                    i.latitude
-                        AS incident_latitude,
+                FROM incidents
 
-                    i.longitude
-                        AS incident_longitude,
+                WHERE id = %s
 
-                    i.assigned_vehicle_id,
-
-                    i.status
-                        AS incident_status,
-
-                    v.vehicle_code,
-                    v.vehicle_type,
-
-                    v.status
-                        AS vehicle_status,
-
-                    cp.latitude
-                        AS vehicle_latitude,
-
-                    cp.longitude
-                        AS vehicle_longitude
-
-                FROM incidents i
-
-                LEFT JOIN vehicles v
-                    ON i.assigned_vehicle_id =
-                       v.id
-
-                LEFT JOIN current_positions cp
-                    ON v.id = cp.vehicle_id
-
-                WHERE i.id = %s
-            """, (
-                incident_id,
-            ))
+                LIMIT 1
+                """,
+                (
+                    incident_id,
+                )
+            )
 
             incident = cursor.fetchone()
 
@@ -1272,30 +1777,13 @@ def get_incident_route(
                         "error",
 
                     "message":
-                        "Incident was not found."
+                        "Incidentul nu a fost găsit."
                 }), 404
 
-            if not incident[
-                "assigned_vehicle_id"
-            ]:
-
-                return jsonify({
-                    "status":
-                        "error",
-
-                    "message":
-                        "No vehicle has been assigned "
-                        "to this incident."
-                }), 409
-
             if (
-                incident[
-                    "incident_latitude"
-                ] is None
+                incident["latitude"] is None
                 or
-                incident[
-                    "incident_longitude"
-                ] is None
+                incident["longitude"] is None
             ):
 
                 return jsonify({
@@ -1303,96 +1791,289 @@ def get_incident_route(
                         "error",
 
                     "message":
-                        "The incident does not have "
-                        "a valid location."
+                        "Incidentul nu are o locație validă."
                 }), 409
 
-            if (
-                incident[
-                    "vehicle_latitude"
-                ] is None
-                or
-                incident[
-                    "vehicle_longitude"
-                ] is None
-            ):
+            cursor.execute(
+                """
+                SELECT
+                    ia.id AS assignment_id,
+                    ia.assignment_type,
+                    ia.status AS assignment_status,
+                    ia.assigned_at,
+
+                    v.id AS vehicle_id,
+                    v.vehicle_code,
+                    v.name AS vehicle_name,
+                    v.vehicle_type,
+                    v.status AS vehicle_status,
+
+                    cp.latitude AS vehicle_latitude,
+                    cp.longitude AS vehicle_longitude,
+                    cp.speed AS vehicle_speed,
+                    cp.updated_at AS position_updated_at
+
+                FROM incident_assignments ia
+
+                INNER JOIN vehicles v
+                    ON v.id = ia.vehicle_id
+
+                LEFT JOIN current_positions cp
+                    ON cp.vehicle_id = v.id
+
+                WHERE
+                    ia.incident_id = %s
+
+                    AND ia.status IN (
+                        'assigned',
+                        'in_progress'
+                    )
+
+                ORDER BY
+                    FIELD(
+                        v.vehicle_type,
+                        'police',
+                        'ambulance',
+                        'fire'
+                    ),
+                    ia.assigned_at,
+                    ia.id
+                """,
+                (
+                    incident_id,
+                )
+            )
+
+            assigned_vehicles = cursor.fetchall()
+
+            if not assigned_vehicles:
 
                 return jsonify({
                     "status":
                         "error",
 
                     "message":
-                        "The assigned vehicle does not "
-                        "have a valid current position."
+                        "Incidentul nu are vehicule active asignate."
                 }), 409
-
-            vehicle_latitude = float(
-                incident[
-                    "vehicle_latitude"
-                ]
-            )
-
-            vehicle_longitude = float(
-                incident[
-                    "vehicle_longitude"
-                ]
-            )
 
             incident_latitude = float(
-                incident[
-                    "incident_latitude"
-                ]
+                incident["latitude"]
             )
 
             incident_longitude = float(
-                incident[
-                    "incident_longitude"
-                ]
+                incident["longitude"]
             )
 
-        route = (
-            route_service.calculate_route(
-                vehicle_latitude,
-                vehicle_longitude,
-                incident_latitude,
-                incident_longitude
-            )
-        )
+        routes = []
 
-        return jsonify({
+        failed_routes = []
+
+        for vehicle in assigned_vehicles:
+
+            if (
+                vehicle["vehicle_latitude"] is None
+                or
+                vehicle["vehicle_longitude"] is None
+            ):
+
+                failed_routes.append({
+                    "vehicle_id":
+                        vehicle["vehicle_id"],
+
+                    "vehicle_code":
+                        vehicle["vehicle_code"],
+
+                    "vehicle_type":
+                        vehicle["vehicle_type"],
+
+                    "message":
+                        "Vehiculul nu are o poziție GPS validă."
+                })
+
+                continue
+
+            vehicle_latitude = float(
+                vehicle["vehicle_latitude"]
+            )
+
+            vehicle_longitude = float(
+                vehicle["vehicle_longitude"]
+            )
+
+            try:
+
+                calculated_route = (
+                    route_service.calculate_route(
+                        vehicle_latitude,
+                        vehicle_longitude,
+                        incident_latitude,
+                        incident_longitude
+                    )
+                )
+
+                routes.append({
+                    "assignment_id":
+                        vehicle["assignment_id"],
+
+                    "assignment_type":
+                        vehicle["assignment_type"],
+
+                    "assignment_status":
+                        vehicle["assignment_status"],
+
+                    "vehicle_id":
+                        vehicle["vehicle_id"],
+
+                    "vehicle_code":
+                        vehicle["vehicle_code"],
+
+                    "vehicle_name":
+                        vehicle["vehicle_name"],
+
+                    "vehicle_type":
+                        vehicle["vehicle_type"],
+
+                    "vehicle_status":
+                        vehicle["vehicle_status"],
+
+                    "vehicle_latitude":
+                        vehicle_latitude,
+
+                    "vehicle_longitude":
+                        vehicle_longitude,
+
+                    "vehicle_speed":
+                        (
+                            float(
+                                vehicle["vehicle_speed"]
+                            )
+                            if vehicle["vehicle_speed"] is not None
+                            else 0.0
+                        ),
+
+                    "position_updated_at":
+                        vehicle["position_updated_at"],
+
+                    **calculated_route
+                })
+
+            except Exception as route_error:
+
+                app.logger.exception(
+                    (
+                        "Ruta nu a putut fi calculată "
+                        f"pentru {vehicle['vehicle_code']}"
+                    )
+                )
+
+                failed_routes.append({
+                    "vehicle_id":
+                        vehicle["vehicle_id"],
+
+                    "vehicle_code":
+                        vehicle["vehicle_code"],
+
+                    "vehicle_type":
+                        vehicle["vehicle_type"],
+
+                    "message":
+                        str(route_error)
+                })
+
+        if not routes:
+
+            return jsonify({
+                "status":
+                    "error",
+
+                "message":
+                    (
+                        "Nu a putut fi calculată ruta "
+                        "niciunui vehicul asignat."
+                    ),
+
+                "incident_id":
+                    incident_id,
+
+                "incident_code":
+                    incident["incident_code"],
+
+                "failed_routes":
+                    failed_routes
+            }), 409
+
+        response_data = {
             "status":
-                "route_ready",
+                (
+                    "routes_ready"
+                    if not failed_routes
+                    else "routes_partially_ready"
+                ),
 
             "incident_id":
                 incident_id,
 
             "incident_code":
-                incident[
-                    "incident_code"
-                ],
+                incident["incident_code"],
 
+            "incident_status":
+                incident["status"],
+
+            "incident_latitude":
+                incident_latitude,
+
+            "incident_longitude":
+                incident_longitude,
+
+            "route_count":
+                len(routes),
+
+            "routes":
+                routes,
+
+            "failed_routes":
+                failed_routes
+        }
+
+        # Compatibilitate temporară cu eventuale funcții
+        # care încă se așteaptă la o singură rută.
+        first_route = routes[0]
+
+        response_data.update({
             "vehicle_id":
-                incident[
-                    "assigned_vehicle_id"
-                ],
+                first_route["vehicle_id"],
 
             "vehicle_code":
-                incident[
-                    "vehicle_code"
-                ],
+                first_route["vehicle_code"],
 
             "vehicle_type":
-                incident[
-                    "vehicle_type"
-                ],
+                first_route["vehicle_type"],
 
-            **route
-        }), 200
+            "coordinates":
+                first_route.get(
+                    "coordinates",
+                    []
+                ),
+
+            "distance_km":
+                first_route.get(
+                    "distance_km"
+                ),
+
+            "estimated_duration_minutes":
+                first_route.get(
+                    "estimated_duration_minutes"
+                )
+        })
+
+        return jsonify(
+            response_data
+        ), 200
 
     except FileNotFoundError as error:
 
         app.logger.exception(
-            "Road graph file was not found"
+            "Fișierul grafului rutier nu a fost găsit"
         )
 
         return jsonify({
@@ -1406,7 +2087,7 @@ def get_incident_route(
     except Exception as error:
 
         app.logger.exception(
-            "Route calculation failed"
+            "Rutele incidentului nu au putut fi calculate"
         )
 
         return jsonify({
@@ -1421,9 +2102,8 @@ def get_incident_route(
 
         connection.close()
 
-
 # =====================================
-# GET ACTIVE ASSIGNMENT FOR VEHICLE
+# MISIUNEA ACTIVĂ A VEHICULULUI
 # =====================================
 
 @app.route(
@@ -1434,17 +2114,38 @@ def get_vehicle_active_assignment(
     vehicle_code
 ):
 
+    vehicle_code = str(
+        vehicle_code or ""
+    ).strip()
+
+    if not vehicle_code:
+
+        return jsonify({
+            "status":
+                "error",
+
+            "message":
+                "Codul vehiculului este obligatoriu."
+        }), 400
+
     connection = get_db_connection()
 
     try:
 
         with connection.cursor() as cursor:
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT
                     v.id AS vehicle_id,
                     v.vehicle_code,
                     v.vehicle_type,
+                    v.status AS vehicle_status,
+
+                    ia.id AS assignment_id,
+                    ia.assignment_type,
+                    ia.status AS assignment_status,
+                    ia.assigned_at,
 
                     i.id AS incident_id,
                     i.incident_code,
@@ -1460,8 +2161,15 @@ def get_vehicle_active_assignment(
 
                 FROM vehicles v
 
+                LEFT JOIN incident_assignments ia
+                    ON ia.vehicle_id = v.id
+                    AND ia.status IN (
+                        'assigned',
+                        'in_progress'
+                    )
+
                 LEFT JOIN incidents i
-                    ON i.assigned_vehicle_id = v.id
+                    ON i.id = ia.incident_id
                     AND i.status IN (
                         'assigned',
                         'in_progress'
@@ -1469,12 +2177,14 @@ def get_vehicle_active_assignment(
 
                 WHERE v.vehicle_code = %s
 
-                ORDER BY i.dispatched_at DESC
+                ORDER BY ia.assigned_at DESC
 
                 LIMIT 1
-            """, (
-                vehicle_code,
-            ))
+                """,
+                (
+                    vehicle_code,
+                )
+            )
 
             result = cursor.fetchone()
 
@@ -1485,7 +2195,7 @@ def get_vehicle_active_assignment(
                         "error",
 
                     "message":
-                        "Vehicle was not found."
+                        "Vehiculul nu a fost găsit."
                 }), 404
 
             if not result["incident_id"]:
@@ -1501,7 +2211,13 @@ def get_vehicle_active_assignment(
                         result["vehicle_id"],
 
                     "vehicle_code":
-                        result["vehicle_code"]
+                        result["vehicle_code"],
+
+                    "vehicle_type":
+                        result["vehicle_type"],
+
+                    "vehicle_status":
+                        result["vehicle_status"]
                 }), 200
 
             return jsonify({
@@ -1520,8 +2236,24 @@ def get_vehicle_active_assignment(
                 "vehicle_type":
                     result["vehicle_type"],
 
-                "incident": {
+                "vehicle_status":
+                    result["vehicle_status"],
 
+                "assignment": {
+                    "id":
+                        result["assignment_id"],
+
+                    "type":
+                        result["assignment_type"],
+
+                    "status":
+                        result["assignment_status"],
+
+                    "assigned_at":
+                        result["assigned_at"]
+                },
+
+                "incident": {
                     "id":
                         result["incident_id"],
 
@@ -1541,13 +2273,21 @@ def get_vehicle_active_assignment(
                         result["details"],
 
                     "latitude":
-                        float(
-                            result["latitude"]
+                        (
+                            float(
+                                result["latitude"]
+                            )
+                            if result["latitude"] is not None
+                            else None
                         ),
 
                     "longitude":
-                        float(
-                            result["longitude"]
+                        (
+                            float(
+                                result["longitude"]
+                            )
+                            if result["longitude"] is not None
+                            else None
                         ),
 
                     "status":
@@ -1559,13 +2299,12 @@ def get_vehicle_active_assignment(
                     "dispatched_at":
                         result["dispatched_at"]
                 }
-
             }), 200
 
     except Exception as error:
 
         app.logger.exception(
-            "Vehicle assignment could not be loaded"
+            "Misiunea vehiculului nu a putut fi încărcată"
         )
 
         return jsonify({
@@ -1582,7 +2321,7 @@ def get_vehicle_active_assignment(
 
 
 # =====================================
-# MARK INCIDENT AS ARRIVED
+# MARCHEAZĂ SOSIREA UNUI VEHICUL
 # =====================================
 
 @app.route(
@@ -1611,7 +2350,7 @@ def mark_incident_arrived(
                 "error",
 
             "message":
-                "Vehicle code is required."
+                "Codul vehiculului este obligatoriu."
         }), 400
 
     connection = get_db_connection()
@@ -1620,65 +2359,92 @@ def mark_incident_arrived(
 
         with connection.cursor() as cursor:
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT
-                    i.id,
+                    i.id AS incident_id,
                     i.incident_code,
-                    i.status,
-                    i.assigned_vehicle_id,
-                    v.vehicle_code
+                    i.status AS incident_status,
+
+                    v.id AS vehicle_id,
+                    v.vehicle_code,
+                    v.status AS vehicle_status,
+
+                    ia.id AS assignment_id,
+                    ia.status AS assignment_status
 
                 FROM incidents i
 
-                LEFT JOIN vehicles v
-                    ON i.assigned_vehicle_id = v.id
+                INNER JOIN incident_assignments ia
+                    ON ia.incident_id = i.id
 
-                WHERE i.id = %s
-            """, (
-                incident_id,
-            ))
+                INNER JOIN vehicles v
+                    ON v.id = ia.vehicle_id
 
-            incident = cursor.fetchone()
+                WHERE
+                    i.id = %s
+                    AND v.vehicle_code = %s
 
-            if not incident:
+                LIMIT 1
+
+                FOR UPDATE
+                """,
+                (
+                    incident_id,
+                    vehicle_code
+                )
+            )
+
+            assignment = cursor.fetchone()
+
+            if not assignment:
 
                 return jsonify({
                     "status":
                         "error",
 
                     "message":
-                        "Incident was not found."
+                        (
+                            "Vehiculul nu este asignat "
+                            "acestui incident."
+                        )
                 }), 404
 
-            if (
-                incident["vehicle_code"]
-                !=
-                vehicle_code
-            ):
+            if assignment[
+                "assignment_status"
+            ] in {
+                "arrived",
+                "released"
+            }:
 
                 return jsonify({
                     "status":
-                        "error",
-
-                    "message":
-                        "This vehicle is not assigned "
-                        "to the incident."
-                }), 409
-
-            if incident["status"] == "resolved":
-
-                return jsonify({
-                    "status":
-                        "already_resolved",
+                        "already_arrived",
 
                     "incident_id":
                         incident_id,
 
                     "incident_code":
-                        incident["incident_code"]
+                        assignment[
+                            "incident_code"
+                        ],
+
+                    "vehicle_code":
+                        vehicle_code,
+
+                    "incident_resolved":
+                        (
+                            assignment[
+                                "incident_status"
+                            ]
+                            ==
+                            "resolved"
+                        )
                 }), 200
 
-            if incident["status"] not in {
+            if assignment[
+                "assignment_status"
+            ] not in {
                 "assigned",
                 "in_progress"
             }:
@@ -1688,46 +2454,181 @@ def mark_incident_arrived(
                         "error",
 
                     "message":
-                        "The incident is not currently active."
+                        (
+                            "Asignarea vehiculului nu mai "
+                            "este activă."
+                        )
                 }), 409
 
-            cursor.execute("""
-                UPDATE incidents
+            cursor.execute(
+                """
+                UPDATE incident_assignments
 
                 SET
-                    status = 'resolved',
-                    resolved_at = CURRENT_TIMESTAMP
+                    status = 'arrived',
+                    arrived_at = CURRENT_TIMESTAMP,
+                    released_at = CURRENT_TIMESTAMP
 
                 WHERE id = %s
-            """, (
-                incident_id,
-            ))
+                """,
+                (
+                    assignment[
+                        "assignment_id"
+                    ],
+                )
+            )
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE vehicles
 
-                SET
-                    status = 'active'
+                SET status = 'active'
 
                 WHERE id = %s
-            """, (
-                incident["assigned_vehicle_id"],
-            ))
+                """,
+                (
+                    assignment[
+                        "vehicle_id"
+                    ],
+                )
+            )
+
+            cursor.execute(
+                """
+                SELECT COUNT(*) AS active_assignments
+
+                FROM incident_assignments
+
+                WHERE
+                    incident_id = %s
+
+                    AND status IN (
+                        'assigned',
+                        'in_progress'
+                    )
+                """,
+                (
+                    incident_id,
+                )
+            )
+
+            remaining_result = (
+                cursor.fetchone()
+            )
+
+            active_assignments = int(
+                remaining_result[
+                    "active_assignments"
+                ]
+                or
+                0
+            )
+
+            # =====================================
+            # VERIFICARE CERERI DE ÎNTĂRIRI ACTIVE
+            # =====================================
+
+            cursor.execute(
+                """
+                SELECT COUNT(*) AS pending_reinforcement_requests
+
+                FROM reinforcement_requests
+
+                WHERE
+                    incident_id = %s
+
+                    AND status IN (
+                        'pending',
+                        'partially_assigned'
+                    )
+                """,
+                (
+                    incident_id,
+                )
+            )
+
+            reinforcement_result = (
+                cursor.fetchone()
+            )
+
+            pending_reinforcement_requests = int(
+                reinforcement_result[
+                    "pending_reinforcement_requests"
+                ]
+                or
+                0
+            )
+
+            # Incidentul se închide doar dacă nu mai există
+            # vehicule active și nici cereri de întăriri
+            # care încă așteaptă o decizie / completare.
+            incident_resolved = (
+                active_assignments == 0
+                and
+                pending_reinforcement_requests == 0
+            )
+
+            if incident_resolved:
+
+                cursor.execute(
+                    """
+                    UPDATE incidents
+
+                    SET
+                        status = 'resolved',
+                        resolved_at =
+                            CURRENT_TIMESTAMP
+
+                    WHERE id = %s
+                    """,
+                    (
+                        incident_id,
+                    )
+                )
+
+            else:
+
+                cursor.execute(
+                    """
+                    UPDATE incidents
+
+                    SET
+                        status = 'in_progress',
+                        resolved_at = NULL
+
+                    WHERE id = %s
+                    """,
+                    (
+                        incident_id,
+                    )
+                )
 
             connection.commit()
 
             return jsonify({
                 "status":
-                    "resolved",
+                    (
+                        "resolved"
+                        if incident_resolved
+                        else "vehicle_arrived"
+                    ),
 
                 "incident_id":
                     incident_id,
 
                 "incident_code":
-                    incident["incident_code"],
+                    assignment[
+                        "incident_code"
+                    ],
 
                 "vehicle_code":
-                    vehicle_code
+                    vehicle_code,
+
+                "incident_resolved":
+                    incident_resolved,
+
+                "remaining_vehicles":
+                    active_assignments
             }), 200
 
     except Exception as error:
@@ -1735,7 +2636,7 @@ def mark_incident_arrived(
         connection.rollback()
 
         app.logger.exception(
-            "Incident arrival could not be saved"
+            "Sosirea vehiculului nu a putut fi salvată"
         )
 
         return jsonify({
@@ -1749,7 +2650,6 @@ def mark_incident_arrived(
     finally:
 
         connection.close()
-
 
 # =====================================
 # GET INCIDENTS
@@ -1767,7 +2667,12 @@ def get_incidents():
 
         with connection.cursor() as cursor:
 
-            cursor.execute("""
+            # =====================================
+            # ÎNCĂRCARE INCIDENTE
+            # =====================================
+
+            cursor.execute(
+                """
                 SELECT
                     i.id,
                     i.incident_code,
@@ -1786,22 +2691,185 @@ def get_incidents():
                     i.resolved_at,
 
                     v.vehicle_code
-                        AS assigned_vehicle_code
+                        AS assigned_vehicle_code,
+
+                    v.vehicle_type
+                        AS assigned_vehicle_type
 
                 FROM incidents i
 
                 LEFT JOIN vehicles v
-                    ON i.assigned_vehicle_id =
-                       v.id
+                    ON i.assigned_vehicle_id = v.id
 
                 ORDER BY i.created_at DESC
-            """)
+                """
+            )
 
-            incidents = cursor.fetchall()
+            incidents = (
+                cursor.fetchall()
+            )
+
+
+            # =====================================
+            # ÎNCĂRCARE TOATE ASIGNĂRILE
+            # =====================================
+
+            cursor.execute(
+                """
+                SELECT
+                    ia.id
+                        AS assignment_id,
+
+                    ia.incident_id,
+
+                    ia.vehicle_id,
+
+                    ia.assignment_type,
+
+                    ia.status
+                        AS assignment_status,
+
+                    ia.assigned_at,
+
+                    ia.arrived_at,
+
+                    ia.released_at,
+
+                    v.vehicle_code,
+
+                    v.vehicle_type,
+
+                    v.status
+                        AS vehicle_status
+
+                FROM incident_assignments ia
+
+                INNER JOIN vehicles v
+                    ON v.id = ia.vehicle_id
+
+                ORDER BY
+                    ia.incident_id ASC,
+                    ia.id ASC
+                """
+            )
+
+            assignments = (
+                cursor.fetchall()
+            )
+
+
+            # =====================================
+            # GRUPARE PE INCIDENT
+            # =====================================
+
+            assignments_by_incident = {}
+
+            for assignment in assignments:
+
+                incident_id = (
+                    assignment[
+                        "incident_id"
+                    ]
+                )
+
+                if (
+                    incident_id
+                    not in
+                    assignments_by_incident
+                ):
+
+                    assignments_by_incident[
+                        incident_id
+                    ] = []
+
+                assignments_by_incident[
+                    incident_id
+                ].append({
+                    "assignment_id":
+                        assignment[
+                            "assignment_id"
+                        ],
+
+                    "vehicle_id":
+                        assignment[
+                            "vehicle_id"
+                        ],
+
+                    "vehicle_code":
+                        assignment[
+                            "vehicle_code"
+                        ],
+
+                    "vehicle_type":
+                        assignment[
+                            "vehicle_type"
+                        ],
+
+                    "vehicle_status":
+                        assignment[
+                            "vehicle_status"
+                        ],
+
+                    "assignment_type":
+                        assignment[
+                            "assignment_type"
+                        ],
+
+                    "assignment_status":
+                        assignment[
+                            "assignment_status"
+                        ],
+
+                    "assigned_at":
+                        assignment[
+                            "assigned_at"
+                        ],
+
+                    "arrived_at":
+                        assignment[
+                            "arrived_at"
+                        ],
+
+                    "released_at":
+                        assignment[
+                            "released_at"
+                        ]
+                })
+
+
+            # =====================================
+            # ADĂUGARE ASIGNĂRI ÎN INCIDENTE
+            # =====================================
+
+            for incident in incidents:
+
+                incident_id = (
+                    incident[
+                        "id"
+                    ]
+                )
+
+                incident[
+                    "assigned_vehicles"
+                ] = (
+                    assignments_by_incident.get(
+                        incident_id,
+                        []
+                    )
+                )
+
+                incident[
+                    "assigned_vehicle_count"
+                ] = len(
+                    incident[
+                        "assigned_vehicles"
+                    ]
+                )
+
 
             return jsonify(
                 incidents
-            )
+            ), 200
 
     except Exception as error:
 
@@ -1820,9 +2888,6 @@ def get_incidents():
     finally:
 
         connection.close()
-
-
-
 # =====================================
 # GET INCIDENT PDF REPORT
 # =====================================
@@ -2122,7 +3187,1144 @@ def get_incident_report(
 
         connection.close()
 
+# =====================================
+# LISTĂ CERERI DE ÎNTĂRIRI
+# =====================================
 
+@app.route(
+    "/api/reinforcement-requests",
+    methods=["GET"]
+)
+def get_reinforcement_requests():
+
+    current_user = (
+        AuthService
+        .get_user_from_authorization_header(
+            request.headers.get(
+                "Authorization"
+            )
+        )
+    )
+
+    if not current_user:
+
+        return jsonify({
+            "status":
+                "error",
+
+            "message":
+                "Utilizatorul nu este autentificat."
+        }), 401
+
+    if current_user["role"] not in (
+        "administrator",
+        "dispatcher"
+    ):
+
+        return jsonify({
+            "status":
+                "error",
+
+            "message":
+                (
+                    "Accesul este permis doar "
+                    "administratorilor și dispecerilor."
+                )
+        }), 403
+
+    connection = (
+        get_db_connection()
+    )
+
+    try:
+
+        with connection.cursor() as cursor:
+
+            cursor.execute(
+                """
+                SELECT
+                    rr.id,
+                    rr.incident_id,
+                    rr.requested_by_vehicle_id,
+                    rr.requested_vehicle_type,
+                    rr.requested_quantity,
+                    rr.requested_message,
+                    rr.assigned_quantity,
+                    rr.status,
+                    rr.failure_message,
+                    rr.dispatcher_message,
+                    rr.reviewed_by_user_id,
+                    rr.reviewed_at,
+                    rr.created_at,
+                    rr.updated_at,
+                    rr.completed_at,
+
+                    i.incident_code,
+                    i.title AS incident_title,
+                    i.priority AS incident_priority,
+                    i.status AS incident_status,
+                    i.latitude AS incident_latitude,
+                    i.longitude AS incident_longitude,
+
+                    v.vehicle_code
+                        AS requested_by_vehicle_code,
+
+                    v.name
+                        AS requested_by_vehicle_name,
+
+                    v.vehicle_type
+                        AS requested_by_vehicle_type_code,
+
+                    v.status
+                        AS requested_by_vehicle_status,
+
+                    reviewer.display_name
+                        AS reviewed_by_display_name
+
+                FROM reinforcement_requests rr
+
+                INNER JOIN incidents i
+                    ON i.id = rr.incident_id
+
+                INNER JOIN vehicles v
+                    ON v.id = rr.requested_by_vehicle_id
+
+                LEFT JOIN users reviewer
+                    ON reviewer.id = rr.reviewed_by_user_id
+
+                ORDER BY
+                    FIELD(
+                        rr.status,
+                        'pending',
+                        'partially_assigned',
+                        'accepted',
+                        'rejected',
+                        'completed',
+                        'cancelled',
+                        'failed'
+                    ),
+                    rr.created_at DESC,
+                    rr.id DESC
+                """
+            )
+
+            reinforcement_requests = (
+                cursor.fetchall()
+            )
+
+            for reinforcement_request in (
+                reinforcement_requests
+            ):
+
+                cursor.execute(
+                    """
+                    SELECT
+                        id,
+                        reinforcement_request_id,
+                        vehicle_type,
+                        requested_quantity,
+                        approved_quantity,
+                        assigned_quantity,
+                        created_at,
+                        updated_at
+
+                    FROM reinforcement_request_resources
+
+                    WHERE reinforcement_request_id = %s
+
+                    ORDER BY
+                        FIELD(
+                            vehicle_type,
+                            'police',
+                            'ambulance',
+                            'fire'
+                        ),
+                        id
+                    """,
+                    (
+                        reinforcement_request["id"],
+                    )
+                )
+
+                reinforcement_request["resources"] = (
+                    cursor.fetchall()
+                )
+
+        return jsonify({
+            "status":
+                "success",
+
+            "requests":
+                reinforcement_requests,
+
+            "count":
+                len(
+                    reinforcement_requests
+                )
+        }), 200
+
+    except Exception as error:
+
+        app.logger.exception(
+            (
+                "Cererile de întăriri "
+                "nu au putut fi încărcate."
+            )
+        )
+
+        return jsonify({
+            "status":
+                "error",
+
+            "message":
+                (
+                    "Cererile de întăriri nu au putut "
+                    "fi încărcate."
+                ),
+
+            "details":
+                str(error)
+        }), 500
+
+    finally:
+
+        connection.close()
+
+
+        # =====================================
+# VALIDARE RESURSE ÎNTĂRIRI
+# =====================================
+
+def normalize_reinforcement_resources(
+    raw_resources
+):
+
+    if not isinstance(
+        raw_resources,
+        dict
+    ):
+
+        raise ValueError(
+            "Resursele aprobate nu sunt valide."
+        )
+
+    allowed_vehicle_types = (
+        "police",
+        "ambulance",
+        "fire"
+    )
+
+    normalized_resources = {}
+
+    for vehicle_type in allowed_vehicle_types:
+
+        raw_quantity = (
+            raw_resources.get(
+                vehicle_type,
+                0
+            )
+        )
+
+        try:
+
+            quantity = int(
+                raw_quantity
+            )
+
+        except (
+            TypeError,
+            ValueError
+        ):
+
+            raise ValueError(
+                (
+                    "Cantitatea pentru "
+                    f"{vehicle_type} nu este validă."
+                )
+            )
+
+        if (
+            quantity < 0
+            or
+            quantity > 20
+        ):
+
+            raise ValueError(
+                (
+                    "Cantitatea fiecărui tip de vehicul "
+                    "trebuie să fie între 0 și 20."
+                )
+            )
+
+        normalized_resources[
+            vehicle_type
+        ] = quantity
+
+    if (
+        sum(
+            normalized_resources.values()
+        )
+        < 1
+    ):
+
+        raise ValueError(
+            (
+                "Pentru acceptarea cererii trebuie "
+                "aprobat cel puțin un vehicul."
+            )
+        )
+
+    return normalized_resources
+
+
+# =====================================
+# ACCEPTARE CERERE DE ÎNTĂRIRI
+# =====================================
+
+@app.route(
+    "/api/reinforcement-requests/<int:request_id>/accept",
+    methods=["POST"]
+)
+def accept_reinforcement_request(
+    request_id
+):
+
+    current_user = (
+        AuthService
+        .get_user_from_authorization_header(
+            request.headers.get(
+                "Authorization"
+            )
+        )
+    )
+
+    if not current_user:
+
+        return jsonify({
+            "status":
+                "error",
+
+            "message":
+                "Utilizatorul nu este autentificat."
+        }), 401
+
+    if current_user["role"] not in (
+        "administrator",
+        "dispatcher"
+    ):
+
+        return jsonify({
+            "status":
+                "error",
+
+            "message":
+                (
+                    "Cererea poate fi analizată doar "
+                    "de un administrator sau dispecer."
+                )
+        }), 403
+
+    request_data = (
+        request.get_json(
+            silent=True
+        )
+        or
+        {}
+    )
+
+    dispatcher_message = str(
+        request_data.get(
+            "message"
+        )
+        or
+        ""
+    ).strip()
+
+    if len(dispatcher_message) > 1000:
+
+        return jsonify({
+            "status":
+                "error",
+
+            "message":
+                (
+                    "Mesajul dispecerului nu poate "
+                    "depăși 1000 de caractere."
+                )
+        }), 400
+
+    try:
+
+        approved_resources = (
+            normalize_reinforcement_resources(
+                request_data.get(
+                    "resources"
+                )
+            )
+        )
+
+    except ValueError as error:
+
+        return jsonify({
+            "status":
+                "error",
+
+            "message":
+                str(error)
+        }), 400
+
+    connection = (
+        get_db_connection()
+    )
+
+    try:
+
+        with connection.cursor() as cursor:
+
+            # =====================================
+            # BLOCARE CERERE
+            # =====================================
+
+            cursor.execute(
+                """
+                SELECT
+                    rr.id,
+                    rr.incident_id,
+                    rr.requested_by_vehicle_id,
+                    rr.status,
+
+                    i.incident_code,
+                    i.title AS incident_title,
+                    i.status AS incident_status,
+                    i.latitude AS incident_latitude,
+                    i.longitude AS incident_longitude
+
+                FROM reinforcement_requests rr
+
+                INNER JOIN incidents i
+                    ON i.id = rr.incident_id
+
+                WHERE rr.id = %s
+
+                LIMIT 1
+
+                FOR UPDATE
+                """,
+                (
+                    request_id,
+                )
+            )
+
+            reinforcement_request = (
+                cursor.fetchone()
+            )
+
+            if not reinforcement_request:
+
+                return jsonify({
+                    "status":
+                        "error",
+
+                    "message":
+                        "Cererea de întăriri nu a fost găsită."
+                }), 404
+
+            if (
+                reinforcement_request["status"]
+                !=
+                "pending"
+            ):
+
+                return jsonify({
+                    "status":
+                        "error",
+
+                    "message":
+                        (
+                            "Cererea a fost deja analizată "
+                            "sau nu mai este în așteptare."
+                        )
+                }), 409
+
+            if (
+                reinforcement_request[
+                    "incident_status"
+                ]
+                not in (
+                    "assigned",
+                    "in_progress"
+                )
+            ):
+
+                return jsonify({
+                    "status":
+                        "error",
+
+                    "message":
+                        (
+                            "Incidentul asociat cererii "
+                            "nu mai este activ."
+                        )
+                }), 409
+
+            incident_latitude = (
+                reinforcement_request[
+                    "incident_latitude"
+                ]
+            )
+
+            incident_longitude = (
+                reinforcement_request[
+                    "incident_longitude"
+                ]
+            )
+
+            if (
+                incident_latitude is None
+                or
+                incident_longitude is None
+            ):
+
+                return jsonify({
+                    "status":
+                        "error",
+
+                    "message":
+                        (
+                            "Incidentul nu are o locație "
+                            "GPS validă."
+                        )
+                }), 409
+
+            incident_latitude = float(
+                incident_latitude
+            )
+
+            incident_longitude = float(
+                incident_longitude
+            )
+
+            total_approved_quantity = 0
+            total_assigned_quantity = 0
+
+            assigned_vehicles = []
+            unavailable_resources = []
+
+            # =====================================
+            # PROCESARE FIECARE TIP
+            # =====================================
+
+            for (
+                vehicle_type,
+                approved_quantity
+            ) in approved_resources.items():
+
+                if approved_quantity < 1:
+
+                    continue
+
+                total_approved_quantity += (
+                    approved_quantity
+                )
+
+                cursor.execute(
+                    """
+                    SELECT
+                        v.id,
+                        v.vehicle_code,
+                        v.name,
+                        v.vehicle_type,
+                        v.status,
+
+                        cp.latitude,
+                        cp.longitude,
+                        cp.speed,
+                        cp.updated_at
+
+                    FROM vehicles v
+
+                    INNER JOIN current_positions cp
+                        ON cp.vehicle_id = v.id
+
+                    WHERE
+                        v.vehicle_type = %s
+
+                        AND v.status = 'active'
+
+                        AND v.id != %s
+
+                        AND NOT EXISTS (
+                            SELECT 1
+
+                            FROM incident_assignments existing_incident
+
+                            WHERE
+                                existing_incident.incident_id = %s
+
+                                AND existing_incident.vehicle_id = v.id
+                        )
+
+                        AND NOT EXISTS (
+                            SELECT 1
+
+                            FROM incident_assignments active_assignment
+
+                            INNER JOIN incidents active_incident
+                                ON active_incident.id =
+                                   active_assignment.incident_id
+
+                            WHERE
+                                active_assignment.vehicle_id = v.id
+
+                                AND active_assignment.status IN (
+                                    'assigned',
+                                    'in_progress',
+                                    'arrived'
+                                )
+
+                                AND active_incident.status IN (
+                                    'assigned',
+                                    'in_progress'
+                                )
+                        )
+
+                    FOR UPDATE
+                    """,
+                    (
+                        vehicle_type,
+                        reinforcement_request[
+                            "requested_by_vehicle_id"
+                        ],
+                        reinforcement_request[
+                            "incident_id"
+                        ]
+                    )
+                )
+
+                candidate_vehicles = (
+                    cursor.fetchall()
+                )
+
+                ranked_candidates = []
+
+                for candidate in candidate_vehicles:
+
+                    if (
+                        candidate["latitude"] is None
+                        or
+                        candidate["longitude"] is None
+                    ):
+
+                        continue
+
+                    distance_km = (
+                        calculate_haversine_distance(
+                            float(
+                                candidate["latitude"]
+                            ),
+                            float(
+                                candidate["longitude"]
+                            ),
+                            incident_latitude,
+                            incident_longitude
+                        )
+                    )
+
+                    ranked_candidates.append({
+                        **candidate,
+
+                        "distance_km":
+                            float(
+                                distance_km
+                            )
+                    })
+
+                ranked_candidates.sort(
+                    key=lambda candidate:
+                        candidate["distance_km"]
+                )
+
+                selected_candidates = (
+                    ranked_candidates[
+                        :approved_quantity
+                    ]
+                )
+
+                assigned_quantity = len(
+                    selected_candidates
+                )
+
+                total_assigned_quantity += (
+                    assigned_quantity
+                )
+
+                # =====================================
+                # SALVARE RESURSĂ APROBATĂ
+                # =====================================
+
+                cursor.execute(
+                    """
+                    INSERT INTO reinforcement_request_resources (
+                        reinforcement_request_id,
+                        vehicle_type,
+                        requested_quantity,
+                        approved_quantity,
+                        assigned_quantity
+                    )
+                    VALUES (
+                        %s,
+                        %s,
+                        0,
+                        %s,
+                        %s
+                    )
+
+                    ON DUPLICATE KEY UPDATE
+                        approved_quantity =
+                            VALUES(approved_quantity),
+
+                        assigned_quantity =
+                            VALUES(assigned_quantity),
+
+                        updated_at =
+                            CURRENT_TIMESTAMP
+                    """,
+                    (
+                        request_id,
+                        vehicle_type,
+                        approved_quantity,
+                        assigned_quantity
+                    )
+                )
+
+                if (
+                    assigned_quantity
+                    <
+                    approved_quantity
+                ):
+
+                    unavailable_resources.append({
+                        "vehicle_type":
+                            vehicle_type,
+
+                        "approved_quantity":
+                            approved_quantity,
+
+                        "assigned_quantity":
+                            assigned_quantity,
+
+                        "missing_quantity":
+                            (
+                                approved_quantity
+                                -
+                                assigned_quantity
+                            )
+                    })
+
+                # =====================================
+                # CREARE ASIGNĂRI
+                # =====================================
+
+                for vehicle in selected_candidates:
+
+                    cursor.execute(
+                        """
+                        INSERT INTO incident_assignments (
+                            incident_id,
+                            vehicle_id,
+                            assignment_type,
+                            status
+                        )
+                        VALUES (
+                            %s,
+                            %s,
+                            'reinforcement',
+                            'assigned'
+                        )
+                        """,
+                        (
+                            reinforcement_request[
+                                "incident_id"
+                            ],
+                            vehicle["id"]
+                        )
+                    )
+
+                    cursor.execute(
+                        """
+                        UPDATE vehicles
+
+                        SET status = 'busy'
+
+                        WHERE id = %s
+                        """,
+                        (
+                            vehicle["id"],
+                        )
+                    )
+
+                    assigned_vehicles.append({
+                        "id":
+                            vehicle["id"],
+
+                        "vehicle_code":
+                            vehicle["vehicle_code"],
+
+                        "name":
+                            vehicle["name"],
+
+                        "vehicle_type":
+                            vehicle["vehicle_type"],
+
+                        "distance_km":
+                            round(
+                                vehicle["distance_km"],
+                                3
+                            )
+                    })
+
+            # =====================================
+            # STARE FINALĂ CERERE
+            # =====================================
+
+            if (
+                total_assigned_quantity
+                ==
+                total_approved_quantity
+            ):
+
+                final_status = (
+                    "accepted"
+                )
+
+                failure_message = (
+                    None
+                )
+
+            elif total_assigned_quantity > 0:
+
+                final_status = (
+                    "partially_assigned"
+                )
+
+                failure_message = (
+                    "Nu au fost disponibile toate "
+                    "vehiculele aprobate."
+                )
+
+            else:
+
+                final_status = (
+                    "failed"
+                )
+
+                failure_message = (
+                    "Nu au fost găsite vehicule "
+                    "disponibile pentru întăriri."
+                )
+
+            cursor.execute(
+                """
+                UPDATE reinforcement_requests
+
+                SET
+                    assigned_quantity = %s,
+                    status = %s,
+                    failure_message = %s,
+                    dispatcher_message = %s,
+                    reviewed_by_user_id = %s,
+                    reviewed_at = CURRENT_TIMESTAMP,
+
+                    completed_at =
+                        CASE
+                            WHEN %s IN (
+                                'accepted',
+                                'partially_assigned',
+                                'failed'
+                            )
+                            THEN CURRENT_TIMESTAMP
+                            ELSE completed_at
+                        END
+
+                WHERE id = %s
+                """,
+                (
+                    total_assigned_quantity,
+                    final_status,
+                    failure_message,
+                    (
+                        dispatcher_message
+                        if dispatcher_message
+                        else None
+                    ),
+                    current_user["id"],
+                    final_status,
+                    request_id
+                )
+            )
+
+        connection.commit()
+
+        return jsonify({
+            "status":
+                "success",
+
+            "message":
+                (
+                    "Cererea a fost procesată, iar "
+                    f"{total_assigned_quantity} vehicule "
+                    "au fost asignate."
+                ),
+
+            "request_id":
+                request_id,
+
+            "request_status":
+                final_status,
+
+            "approved_quantity":
+                total_approved_quantity,
+
+            "assigned_quantity":
+                total_assigned_quantity,
+
+            "assigned_vehicles":
+                assigned_vehicles,
+
+            "unavailable_resources":
+                unavailable_resources
+        }), 200
+
+    except Exception as error:
+
+        connection.rollback()
+
+        app.logger.exception(
+            "Cererea de întăriri nu a putut fi acceptată"
+        )
+
+        return jsonify({
+            "status":
+                "error",
+
+            "message":
+                (
+                    "Cererea de întăriri nu a putut "
+                    "fi acceptată."
+                ),
+
+            "details":
+                str(error)
+        }), 500
+
+    finally:
+
+        connection.close()
+
+
+# =====================================
+# RESPINGERE CERERE DE ÎNTĂRIRI
+# =====================================
+
+@app.route(
+    "/api/reinforcement-requests/<int:request_id>/reject",
+    methods=["POST"]
+)
+def reject_reinforcement_request(
+    request_id
+):
+
+    current_user = (
+        AuthService
+        .get_user_from_authorization_header(
+            request.headers.get(
+                "Authorization"
+            )
+        )
+    )
+
+    if not current_user:
+
+        return jsonify({
+            "status":
+                "error",
+
+            "message":
+                "Utilizatorul nu este autentificat."
+        }), 401
+
+    if current_user["role"] not in (
+        "administrator",
+        "dispatcher"
+    ):
+
+        return jsonify({
+            "status":
+                "error",
+
+            "message":
+                (
+                    "Cererea poate fi analizată doar "
+                    "de un administrator sau dispecer."
+                )
+        }), 403
+
+    request_data = (
+        request.get_json(
+            silent=True
+        )
+        or
+        {}
+    )
+
+    dispatcher_message = str(
+        request_data.get(
+            "message"
+        )
+        or
+        ""
+    ).strip()
+
+    if len(dispatcher_message) > 1000:
+
+        return jsonify({
+            "status":
+                "error",
+
+            "message":
+                (
+                    "Mesajul dispecerului nu poate "
+                    "depăși 1000 de caractere."
+                )
+        }), 400
+
+    connection = (
+        get_db_connection()
+    )
+
+    try:
+
+        with connection.cursor() as cursor:
+
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    status
+
+                FROM reinforcement_requests
+
+                WHERE id = %s
+
+                LIMIT 1
+
+                FOR UPDATE
+                """,
+                (
+                    request_id,
+                )
+            )
+
+            reinforcement_request = (
+                cursor.fetchone()
+            )
+
+            if not reinforcement_request:
+
+                return jsonify({
+                    "status":
+                        "error",
+
+                    "message":
+                        "Cererea de întăriri nu a fost găsită."
+                }), 404
+
+            if (
+                reinforcement_request["status"]
+                !=
+                "pending"
+            ):
+
+                return jsonify({
+                    "status":
+                        "error",
+
+                    "message":
+                        (
+                            "Cererea a fost deja analizată "
+                            "sau nu mai este în așteptare."
+                        )
+                }), 409
+
+            cursor.execute(
+                """
+                UPDATE reinforcement_requests
+
+                SET
+                    status = 'rejected',
+                    assigned_quantity = 0,
+                    failure_message = NULL,
+                    dispatcher_message = %s,
+                    reviewed_by_user_id = %s,
+                    reviewed_at = CURRENT_TIMESTAMP,
+                    completed_at = CURRENT_TIMESTAMP
+
+                WHERE id = %s
+                """,
+                (
+                    (
+                        dispatcher_message
+                        if dispatcher_message
+                        else None
+                    ),
+                    current_user["id"],
+                    request_id
+                )
+            )
+
+        connection.commit()
+
+        return jsonify({
+            "status":
+                "success",
+
+            "message":
+                "Cererea de întăriri a fost respinsă.",
+
+            "request_id":
+                request_id,
+
+            "request_status":
+                "rejected"
+        }), 200
+
+    except Exception as error:
+
+        connection.rollback()
+
+        app.logger.exception(
+            "Cererea de întăriri nu a putut fi respinsă"
+        )
+
+        return jsonify({
+            "status":
+                "error",
+
+            "message":
+                (
+                    "Cererea de întăriri nu a putut "
+                    "fi respinsă."
+                ),
+
+            "details":
+                str(error)
+        }), 500
+
+    finally:
+
+        connection.close()
+
+        
 # =====================================
 # START SERVER
 # =====================================

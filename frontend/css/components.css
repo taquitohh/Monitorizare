@@ -6,18 +6,24 @@
 
 .panel-tab {
     flex: 1;
+    padding: 8px 12px;
     border: 1px solid #d1d5db;
+    border-radius: 999px;
     background: #f9fafb;
     color: #374151;
-    border-radius: 999px;
-    padding: 8px 12px;
+    cursor: pointer;
 }
 
 .panel-tab.active {
+    border-color: #2563eb;
     background: #2563eb;
     color: #ffffff;
-    border-color: #2563eb;
 }
+
+
+/* ===========================
+   FILTRE
+=========================== */
 
 .filters-row,
 .incident-filters {
@@ -32,27 +38,37 @@ input,
 select,
 textarea {
     width: 100%;
+    padding: 10px 12px;
     border: 1px solid #d1d5db;
     border-radius: 10px;
-    padding: 10px 12px;
     background: #ffffff;
 }
 
+
+/* ===========================
+   NUMĂR VEHICULE
+=========================== */
+
 .vehicle-count {
+    padding: 4px 8px;
+    border-radius: 999px;
     background: #eff6ff;
     color: #1d4ed8;
-    border-radius: 999px;
-    padding: 4px 8px;
     font-size: 0.85rem;
     font-weight: 700;
 }
 
+
+/* ===========================
+   CARDURI
+=========================== */
+
 .vehicle-card,
 .incident-card {
+    margin-bottom: 10px;
+    padding: 12px;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
-    padding: 12px;
-    margin-bottom: 10px;
     background: #f9fafb;
 }
 
@@ -67,27 +83,34 @@ textarea {
     background: #ecfdf5;
 }
 
+
+/* ===========================
+   BUTOANE
+=========================== */
+
 .secondary-button {
-    background: #f3f4f6;
-    color: #374151;
+    padding: 10px 14px;
     border: 1px solid #d1d5db;
     border-radius: 10px;
-    padding: 10px 14px;
+    background: #f3f4f6;
+    color: #374151;
 }
 
 button[type="submit"],
 button[type="button"] {
-    background: #2563eb;
-    color: #ffffff;
+    padding: 10px 14px;
     border: none;
     border-radius: 10px;
-    padding: 10px 14px;
+    background: #2563eb;
+    color: #ffffff;
+    cursor: pointer;
 }
 
 button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
+
 
 /* ===========================
    STĂRI VEHICULE
@@ -106,4 +129,1273 @@ button:disabled {
 .status-inactive {
     color: #dc2626;
     font-weight: 700;
+}
+
+
+/* ===========================
+   FORMULAR INCIDENT MODERN
+=========================== */
+
+.incident-form-modern {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+}
+
+.incident-form-modern .form-group {
+    min-width: 0;
+}
+
+.incident-form-modern label {
+    display: block;
+    margin-bottom: 8px;
+    color: #111827;
+    font-weight: 700;
+}
+
+.incident-main-fields-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    width: 100%;
+}
+
+.incident-main-fields-row .form-group {
+    min-width: 0;
+}
+
+.incident-main-fields-row select,
+.incident-main-fields-row .incident-type-toggle {
+    min-height: 44px;
+}
+
+
+/* ===========================
+   RESURSE INCIDENT
+=========================== */
+
+.incident-resources-section {
+    padding-top: 2px;
+}
+
+.resource-help-text {
+    margin: 0 0 16px;
+    color: #6b7280;
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+.incident-resource-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    align-items: stretch;
+}
+
+.incident-resource-card {
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 14px;
+    background: #ffffff;
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+.incident-resource-card:hover {
+    transform: translateY(-1px);
+    box-shadow:
+        0 8px 20px
+        rgba(15, 23, 42, 0.08);
+}
+
+.incident-resource-card:focus-within {
+    box-shadow:
+        0 0 0 3px
+        rgba(37, 99, 235, 0.12);
+}
+
+.incident-resource-card.police:focus-within {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+
+.incident-resource-card.ambulance:focus-within {
+    border-color: #dc2626;
+    background: #fef2f2;
+}
+
+.incident-resource-card.fire:focus-within {
+    border-color: #ea580c;
+    background: #fff7ed;
+}
+
+.incident-resource-header {
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 18px;
+}
+
+.incident-resource-header > div {
+    min-width: 0;
+}
+
+.incident-resource-header strong {
+    display: block;
+    color: #111827;
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.incident-resource-header span:not(
+    .incident-resource-icon
+) {
+    display: block;
+    margin-top: 3px;
+    color: #6b7280;
+    font-size: 0.78rem;
+    line-height: 1.25;
+}
+
+.incident-resource-icon {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 12px;
+    background: #f3f4f6;
+    font-size: 23px;
+}
+
+.incident-resource-card > label {
+    display: block;
+    margin-top: auto;
+    margin-bottom: 8px;
+    color: #111827;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+
+/* ===========================
+   STEPPER RESURSE
+=========================== */
+
+.resource-stepper {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) 40px;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.resource-stepper-button {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    padding: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #d1d5db !important;
+    border-radius: 10px;
+    background: #ffffff !important;
+    color: #111827 !important;
+    font-size: 1.2rem;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.resource-stepper-button:hover {
+    border-color: #9ca3af !important;
+    background: #f9fafb !important;
+}
+
+.resource-stepper-button:active {
+    transform: translateY(1px);
+}
+
+.incident-resource-quantity {
+    width: 100%;
+    min-height: 40px;
+    padding: 8px 10px;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 800;
+    appearance: textfield;
+}
+
+.incident-resource-quantity::-webkit-inner-spin-button,
+.incident-resource-quantity::-webkit-outer-spin-button {
+    margin: 0;
+    appearance: none;
+}
+
+
+/* ===========================
+   SUMAR RESURSE
+=========================== */
+
+.resource-summary {
+    margin-top: 14px;
+    padding: 11px 13px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    background: #f9fafb;
+    color: #374151;
+    font-weight: 700;
+}
+
+.resource-summary.empty {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.resource-summary.police {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.resource-summary.ambulance {
+    border-color: #fecaca;
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.resource-summary.fire {
+    border-color: #fed7aa;
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.resource-summary.multiple {
+    border-color: #c4b5fd;
+    background: #f5f3ff;
+    color: #6d28d9;
+}
+
+
+/* ===========================
+   SELECTOR MULTIPLU INCIDENT
+=========================== */
+
+.incident-type-selector {
+    position: relative;
+    width: 100%;
+}
+
+.incident-type-toggle {
+    width: 100%;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 14px;
+    border: 1px solid #d1d5db !important;
+    border-radius: 10px;
+    background: #ffffff !important;
+    color: #111827 !important;
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+}
+
+.incident-type-toggle:hover {
+    border-color: #9ca3af !important;
+    background: #f9fafb !important;
+}
+
+.incident-type-toggle:focus {
+    outline: none;
+    border-color: #9ca3af !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+    box-shadow:
+        0 0 0 3px
+        rgba(107, 114, 128, 0.12);
+}
+
+.incident-type-toggle[aria-expanded="true"] {
+    border-color: #9ca3af !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+}
+
+.incident-type-options {
+    position: absolute;
+    z-index: 2000;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    max-height: 390px;
+    overflow-y: auto;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow:
+        0 16px 40px
+        rgba(15, 23, 42, 0.2);
+}
+
+.incident-type-group {
+    display: block;
+    margin: 0 0 12px;
+    padding: 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #ffffff;
+}
+
+.incident-type-group:last-child {
+    margin-bottom: 0;
+}
+
+.incident-type-group legend {
+    padding: 0 7px;
+    color: #111827;
+    font-size: 0.9rem;
+    font-weight: 800;
+}
+
+.incident-type-option {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 11px;
+    margin: 0;
+    padding: 9px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.incident-type-option + .incident-type-option {
+    margin-top: 2px;
+}
+
+.incident-type-option:hover {
+    background: #f3f4f6;
+}
+
+.incident-type-option input[type="checkbox"] {
+    width: 18px !important;
+    min-width: 18px;
+    max-width: 18px;
+    height: 18px !important;
+    min-height: 18px;
+    max-height: 18px;
+    display: block;
+    flex: 0 0 18px;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.incident-type-option span {
+    display: block;
+    flex: 1;
+    width: auto;
+    margin: 0;
+    padding: 0;
+    color: #111827;
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.35;
+    text-align: left;
+}
+
+.incident-type-option:has(
+    input[type="checkbox"]:checked
+) {
+    background: #f3f4f6;
+}
+
+.incident-type-option:has(
+    input[type="checkbox"]:checked
+) span {
+    color: #111827;
+    font-weight: 700;
+}
+
+
+/* ===========================
+   ETICHETE SELECTATE
+=========================== */
+
+.selected-incident-types {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 9px;
+}
+
+.selected-incident-type {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #374151;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+
+/* ===========================
+   RESPONSIVE
+=========================== */
+
+@media (max-width: 900px) {
+
+    .incident-main-fields-row {
+        grid-template-columns: 1fr;
+    }
+
+    .incident-resource-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .incident-type-options {
+        max-height: 340px;
+    }
+
+}
+
+/* ===========================
+   START MARKERS FOR ROUTES
+=========================== */
+
+.route-vehicle-start-wrapper{
+    background:transparent;
+    border:none;
+}
+
+.route-vehicle-start{
+
+    width:34px;
+    height:34px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:50%;
+
+    border:3px solid #ffffff;
+
+    box-shadow:
+        0 2px 8px rgba(0,0,0,.35);
+
+    font-size:18px;
+    line-height:1;
+
+    overflow:hidden;
+}
+
+.route-vehicle-start-police{
+    background:#2563eb;
+}
+
+.route-vehicle-start-ambulance{
+    background:#dc2626;
+}
+
+.route-vehicle-start-fire{
+    background:#ea580c;
+}
+
+
+
+
+/* =====================================
+   FILTRE CERERI
+===================================== */
+
+#reinforcement-request-filters {
+    margin-bottom: 10px;
+}
+
+#reinforcement-request-filters label {
+    width: 100%;
+}
+
+#requests-container {
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+
+    overflow: hidden;
+}
+
+#requests-container[hidden] {
+    display: none;
+}
+
+#reinforcement-request-filters {
+    flex: 0 0 auto;
+    margin-bottom: 10px;
+}
+
+#reinforcement-requests-list {
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 9px;
+
+    max-height: none;
+
+    padding:
+        2px
+        12px
+        28px
+        2px;
+
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    box-sizing: border-box;
+
+    scrollbar-gutter: stable;
+    scroll-padding-bottom: 28px;
+
+    scrollbar-width: thin;
+    scrollbar-color:
+        #94a3b8
+        #f1f5f9;
+}
+
+#reinforcement-requests-list > * {
+    flex: 0 0 auto;
+}
+
+#reinforcement-requests-list::after {
+    content: "";
+    display: block;
+    flex: 0 0 12px;
+    height: 12px;
+}
+
+.vehicles-panel {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+#vehicles-container,
+#routes-container {
+    min-height: 0;
+}
+
+/* =====================================
+   CARD CERERE COMPACT
+===================================== */
+
+.reinforcement-request-card {
+    width: 100%;
+    min-width: 0;
+
+    display: block;
+
+    padding: 11px 12px;
+
+    border: 1px solid #e5e7eb;
+    border-left: 4px solid #94a3b8;
+    border-radius: 11px;
+
+    background: #ffffff;
+
+    box-sizing: border-box;
+
+    cursor: pointer;
+
+    overflow: hidden;
+
+    transition:
+        border-color 0.18s ease,
+        background 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.18s ease;
+}
+
+.reinforcement-request-card:hover {
+    border-color: #bfdbfe;
+
+    background: #f8fbff;
+
+    box-shadow:
+        0 4px 14px
+        rgba(15, 23, 42, 0.07);
+
+    transform: translateY(-1px);
+}
+
+.reinforcement-request-card.selected {
+    border-color: #2563eb;
+
+    background: #eff6ff;
+
+    box-shadow:
+        0 0 0 2px
+        rgba(37, 99, 235, 0.1);
+}
+
+
+/* =====================================
+   CULORI STĂRI CARD
+===================================== */
+
+.reinforcement-request-card.status-pending {
+    border-left-color: #f59e0b;
+}
+
+.reinforcement-request-card.status-accepted,
+.reinforcement-request-card.status-completed {
+    border-left-color: #10b981;
+}
+
+.reinforcement-request-card.status-partially_assigned {
+    border-left-color: #3b82f6;
+}
+
+.reinforcement-request-card.status-rejected,
+.reinforcement-request-card.status-failed {
+    border-left-color: #ef4444;
+}
+
+.reinforcement-request-card.status-cancelled {
+    border-left-color: #9ca3af;
+}
+
+
+/* =====================================
+   HEADER CARD
+===================================== */
+
+.reinforcement-request-card-header {
+    width: 100%;
+    min-width: 0;
+
+    display: grid;
+    grid-template-columns:
+        minmax(0, 1fr)
+        auto;
+    align-items: start;
+    gap: 8px;
+}
+
+.reinforcement-request-card-title {
+    min-width: 0;
+}
+
+.reinforcement-request-label {
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: #64748b;
+
+    font-size: 0.62rem;
+    font-weight: 800;
+    line-height: 1.2;
+
+    text-transform: uppercase;
+    letter-spacing: 0.045em;
+}
+
+.reinforcement-request-card-header h3 {
+    margin: 0;
+
+    color: #111827;
+
+    font-size: 0.86rem;
+    font-weight: 900;
+    line-height: 1.25;
+
+    overflow-wrap: anywhere;
+}
+
+
+/* =====================================
+   STATUS CERERE
+===================================== */
+
+.reinforcement-request-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    max-width: 92px;
+
+    padding: 4px 7px;
+
+    border: 1px solid transparent;
+    border-radius: 999px;
+
+    font-size: 0.62rem;
+    font-weight: 800;
+    line-height: 1.15;
+    text-align: center;
+
+    white-space: normal;
+}
+
+.reinforcement-request-status.pending {
+    border-color: #fde68a;
+    background: #fffbeb;
+    color: #b45309;
+}
+
+.reinforcement-request-status.accepted,
+.reinforcement-request-status.completed {
+    border-color: #a7f3d0;
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.reinforcement-request-status.partially_assigned {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.reinforcement-request-status.rejected,
+.reinforcement-request-status.failed {
+    border-color: #fecaca;
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.reinforcement-request-status.cancelled {
+    border-color: #d1d5db;
+    background: #f9fafb;
+    color: #4b5563;
+}
+
+
+/* =====================================
+   TITLU INCIDENT
+===================================== */
+
+.reinforcement-request-incident-title {
+    margin:
+        7px
+        0
+        8px;
+
+    color: #334155;
+
+    font-size: 0.76rem;
+    font-weight: 750;
+    line-height: 1.35;
+
+    overflow-wrap: anywhere;
+}
+
+
+/* =====================================
+   DETALII COMPACTE
+===================================== */
+
+.reinforcement-request-compact-details {
+    display: flex;
+    flex-direction: column;
+
+    border-top: 1px solid #eef2f7;
+}
+
+.reinforcement-request-compact-row {
+    min-width: 0;
+
+    display: grid;
+    grid-template-columns:
+        70px
+        minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+
+    padding: 5px 0;
+
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.reinforcement-request-compact-row:last-child {
+    border-bottom: none;
+}
+
+.reinforcement-request-compact-row span {
+    color: #64748b;
+
+    font-size: 0.67rem;
+    line-height: 1.3;
+}
+
+.reinforcement-request-compact-row strong {
+    min-width: 0;
+
+    color: #1f2937;
+
+    font-size: 0.69rem;
+    font-weight: 800;
+    line-height: 1.3;
+    text-align: right;
+
+    overflow-wrap: anywhere;
+}
+
+
+/* =====================================
+   FOOTER CARD
+===================================== */
+
+.reinforcement-request-card-footer {
+    width: 100%;
+    min-width: 0;
+
+    display: grid;
+    grid-template-columns:
+        minmax(0, 1fr)
+        auto;
+    align-items: center;
+    gap: 8px;
+
+    margin-top: 8px;
+    padding-top: 8px;
+
+    border-top: 1px solid #eef2f7;
+}
+
+.reinforcement-request-card-footer > span {
+    min-width: 0;
+
+    color: #94a3b8;
+
+    font-size: 0.6rem;
+    line-height: 1.25;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.reinforcement-request-card-footer button {
+    width: auto;
+    min-width: 78px;
+    min-height: 31px;
+
+    padding: 6px 9px;
+
+    font-size: 0.66rem;
+    font-weight: 750;
+
+    white-space: nowrap;
+}
+
+
+/* =====================================
+   MESAJ LISTĂ GOALĂ
+===================================== */
+
+#reinforcement-requests-list
+.empty-message {
+    margin: 0;
+    padding: 18px 12px;
+
+    border: 1px dashed #d1d5db;
+    border-radius: 10px;
+
+    background: #f9fafb;
+
+    text-align: center;
+}
+
+
+/* =====================================
+   RESPONSIVE CERERI
+===================================== */
+
+@media (max-width: 1200px) {
+
+    #reinforcement-requests-list {
+        max-height: 480px;
+    }
+
+}
+
+
+@media (max-width: 700px) {
+
+    #reinforcement-requests-list {
+        max-height: none;
+
+        padding-right: 4px;
+
+        overflow-y: visible;
+    }
+
+    .reinforcement-request-card-header {
+        grid-template-columns: 1fr;
+    }
+
+    .reinforcement-request-status {
+        justify-self: start;
+    }
+
+    .reinforcement-request-compact-row {
+        grid-template-columns: 64px minmax(0, 1fr);
+    }
+
+}
+
+/* =====================================
+   PANOU ANALIZĂ CERERE
+===================================== */
+
+.reinforcement-request-review-panel[hidden],
+#vehicle-details-panel[hidden] {
+    display: none;
+}
+
+.reinforcement-request-review-panel {
+    min-width: 0;
+}
+
+.reinforcement-review-panel-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.reinforcement-review-panel-header h2 {
+    margin: 2px 0 0;
+}
+
+.reinforcement-review-panel-summary {
+    min-width: 0;
+}
+
+.reinforcement-review-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.reinforcement-review-summary-item {
+    min-width: 0;
+    padding: 10px 11px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.reinforcement-review-summary-item span {
+    display: block;
+    margin-bottom: 4px;
+    color: #64748b;
+    font-size: 0.67rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.reinforcement-review-summary-item strong {
+    display: block;
+    color: #111827;
+    font-size: 0.79rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.reinforcement-review-driver-message,
+.reinforcement-review-existing-message,
+.reinforcement-review-existing-resources {
+    margin-top: 12px;
+    padding: 11px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #ffffff;
+}
+
+.reinforcement-review-driver-message > span,
+.reinforcement-review-existing-message > span,
+.reinforcement-review-existing-resources > span {
+    display: block;
+    margin-bottom: 5px;
+    color: #64748b;
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.reinforcement-review-driver-message p,
+.reinforcement-review-existing-message p {
+    margin: 0;
+    color: #334155;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.reinforcement-review-existing-message {
+    border-color: #ddd6fe;
+    background: #f5f3ff;
+}
+
+.reinforcement-review-existing-resources > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.reinforcement-review-existing-resources small {
+    padding: 6px 8px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #f8fafc;
+    color: #475569;
+}
+
+.reinforcement-review-panel-resources {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.reinforcement-review-resource {
+    min-width: 0;
+    padding: 13px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.reinforcement-review-resource.police {
+    border-top: 3px solid #2563eb;
+}
+
+.reinforcement-review-resource.ambulance {
+    border-top: 3px solid #dc2626;
+}
+
+.reinforcement-review-resource.fire {
+    border-top: 3px solid #ea580c;
+}
+
+.reinforcement-review-resource-heading {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 11px;
+}
+
+.reinforcement-review-resource-icon {
+    font-size: 1.45rem;
+    line-height: 1;
+}
+
+.reinforcement-review-resource-heading strong {
+    display: block;
+    color: #111827;
+    font-size: 0.84rem;
+}
+
+.reinforcement-review-resource-heading div > span {
+    display: block;
+    margin-top: 2px;
+    color: #64748b;
+    font-size: 0.68rem;
+}
+
+.reinforcement-request-quantity-control {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) 36px;
+    align-items: center;
+    gap: 7px;
+}
+
+.reinforcement-quantity-button {
+    width: 36px;
+    height: 36px;
+    padding: 0 !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 8px;
+    background: #ffffff !important;
+    color: #111827 !important;
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+.reinforcement-quantity-button:hover:not(:disabled) {
+    border-color: #a78bfa !important;
+    background: #f5f3ff !important;
+}
+
+.reinforcement-resource-quantity {
+    width: 100%;
+    min-width: 0;
+    height: 36px;
+    padding: 6px;
+    text-align: center;
+    font-weight: 800;
+    appearance: textfield;
+}
+
+.reinforcement-resource-quantity::-webkit-inner-spin-button,
+.reinforcement-resource-quantity::-webkit-outer-spin-button {
+    margin: 0;
+    appearance: none;
+}
+
+.reinforcement-review-message-label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-top: 15px;
+}
+
+.reinforcement-review-message-label > span {
+    color: #374151;
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.reinforcement-review-message-label textarea {
+    min-height: 92px;
+    resize: vertical;
+}
+
+.reinforcement-review-message-label small {
+    color: #64748b;
+    font-size: 0.7rem;
+}
+
+.reinforcement-request-review-feedback {
+    margin-top: 12px;
+    padding: 10px 11px;
+    border-radius: 9px;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.reinforcement-request-review-feedback[hidden] {
+    display: none;
+}
+
+.reinforcement-request-review-feedback.success {
+    border: 1px solid #a7f3d0;
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.reinforcement-request-review-feedback.error {
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.reinforcement-review-panel-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
+    padding-top: 14px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.reinforcement-danger-button,
+.reinforcement-success-button {
+    min-width: 150px;
+    min-height: 42px;
+    border: none;
+    border-radius: 10px;
+    color: #ffffff;
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.reinforcement-danger-button {
+    background: #dc2626 !important;
+}
+
+.reinforcement-danger-button:hover:not(:disabled) {
+    background: #b91c1c !important;
+}
+
+.reinforcement-success-button {
+    background: #059669 !important;
+}
+
+.reinforcement-success-button:hover:not(:disabled) {
+    background: #047857 !important;
+}
+
+@media (max-width: 1100px) {
+    .reinforcement-review-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .reinforcement-review-panel-resources {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 700px) {
+    #reinforcement-requests-list {
+        max-height: none;
+    }
+
+    .reinforcement-request-card-header,
+    .reinforcement-request-card-footer {
+        grid-template-columns: 1fr;
+    }
+
+    .reinforcement-request-status,
+    .reinforcement-request-card-footer button {
+        justify-self: start;
+    }
+
+    .reinforcement-review-panel-header {
+        flex-direction: column;
+    }
+
+    .reinforcement-review-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .reinforcement-review-panel-actions {
+        flex-direction: column;
+    }
+
+    .reinforcement-danger-button,
+    .reinforcement-success-button {
+        width: 100%;
+    }
 }

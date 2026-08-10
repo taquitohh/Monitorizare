@@ -43,9 +43,27 @@ window.addEventListener(
 
             initializeRefreshButton();
 
+            if (
+                typeof initializeReinforcementRequestsUi ===
+                "function"
+            ) {
+
+                initializeReinforcementRequestsUi();
+
+            }
+
             await loadVehicles();
 
             await loadIncidents();
+
+            if (
+                typeof loadReinforcementRequests ===
+                "function"
+            ) {
+
+                await loadReinforcementRequests();
+
+            }
 
             startAutomaticRefresh();
 
@@ -85,7 +103,8 @@ function displayCurrentUser(
     if (nameElement) {
 
         nameElement.textContent =
-            user.display_name ||
+            user.display_name
+            ||
             user.username;
 
     }
@@ -131,10 +150,12 @@ function initializeLogoutButton() {
 
             try {
 
-                await window.authApi.logout();
+                await window
+                    .authApi
+                    .logout();
 
                 window.location.replace(
-                    "/login.html"
+                    "/index.html"
                 );
 
             }

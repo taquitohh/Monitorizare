@@ -38,6 +38,10 @@ window.driverApi = {
     },
 
 
+    /* =====================================
+       RUTA MISIUNII
+    ===================================== */
+
     async getMissionRoute(
         incidentId
     ) {
@@ -79,10 +83,154 @@ window.driverApi = {
 
         return data;
 
+    },
+
+
+    /* =====================================
+       TRIMITERE CERERE DE ÎNTĂRIRI
+    ===================================== */
+
+    async createReinforcementRequest(
+        message = ""
+    ) {
+
+        const normalizedMessage =
+            String(
+                message
+                ||
+                ""
+            ).trim();
+
+        if (
+            normalizedMessage.length >
+            1000
+        ) {
+
+            throw new Error(
+                (
+                    "Mesajul cererii de întăriri "
+                    + "nu poate depăși 1000 de caractere."
+                )
+            );
+
+        }
+
+        const response = await fetch(
+            "/api/driver/reinforcement-requests",
+            {
+                method:
+                    "POST",
+
+                headers:
+                    window
+                        .getAuthorizationHeaders({
+                            "Content-Type":
+                                "application/json"
+                        }),
+
+                body:
+                    JSON.stringify({
+                        message:
+                            normalizedMessage
+                            ||
+                            null
+                    })
+            }
+        );
+
+        const data =
+            await readDriverApiResponse(
+                response
+            );
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.message
+                ||
+                "Cererea de întăriri nu a putut fi trimisă."
+            );
+
+        }
+
+        return data;
+
+    },
+
+
+    /* =====================================
+       ULTIMA CERERE DE ÎNTĂRIRI
+    ===================================== */
+
+    async getLatestReinforcementRequest() {
+
+        const response = await fetch(
+            "/api/driver/reinforcement-requests/latest",
+            {
+                method:
+                    "GET",
+
+                headers:
+                    window
+                        .getAuthorizationHeaders()
+            }
+        );
+
+        const data =
+            await readDriverApiResponse(
+                response
+            );
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.message
+                ||
+                "Cererea de întăriri nu a putut fi încărcată."
+            );
+
+        }
+
+        return data;
+
+    },
+
+/* =====================================
+   ISTORIC CERERI DE ÎNTĂRIRI
+===================================== */
+
+async getReinforcementRequestHistory() {
+
+    const response = await fetch(
+        "/api/driver/reinforcement-requests/history",
+        {
+            method:
+                "GET",
+
+            headers:
+                window
+                    .getAuthorizationHeaders()
+        }
+    );
+
+    const data =
+        await readDriverApiResponse(
+            response
+        );
+
+    if (!response.ok) {
+
+        throw new Error(
+            data.message
+            ||
+            "Istoricul cererilor de întăriri nu a putut fi încărcat."
+        );
+
     }
 
+    return data;
+}
 };
-
 
 /* =====================================
    CITIRE RĂSPUNS

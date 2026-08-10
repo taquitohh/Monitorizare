@@ -1,5 +1,5 @@
 /* =====================================
-   INITIALIZE INCIDENT FORM
+   INIȚIALIZARE FORMULAR INCIDENT
 ===================================== */
 
 function initializeIncidentForm() {
@@ -14,19 +14,36 @@ function initializeIncidentForm() {
             "incident-name"
         );
 
-    const incidentType =
+    const incidentTypeToggle =
         document.getElementById(
-            "incident-type"
+            "incident-type-toggle"
+        );
+
+    const incidentTypeToggleText =
+        document.getElementById(
+            "incident-type-toggle-text"
+        );
+
+    const incidentTypeOptions =
+        document.getElementById(
+            "incident-type-options"
+        );
+
+    const selectedIncidentTypesContainer =
+        document.getElementById(
+            "selected-incident-types"
+        );
+
+    const incidentTypeCheckboxes =
+        Array.from(
+            document.querySelectorAll(
+                ".incident-type-option input[type='checkbox']"
+            )
         );
 
     const incidentPriority =
         document.getElementById(
             "incident-priority"
-        );
-
-    const requiredVehicle =
-        document.getElementById(
-            "required-vehicle"
         );
 
     const incidentDetails =
@@ -49,32 +66,329 @@ function initializeIncidentForm() {
             ".incident-form-status"
         );
 
+    /* ===========================
+            RESOURCE INPUTS
+            =========================== */
+
+            const resourceInputs =
+                Array.from(
+                    document.querySelectorAll(
+                        ".incident-resource-quantity"
+                    )
+                );
+
+            const resourceStepperButtons =
+                Array.from(
+                    document.querySelectorAll(
+                        ".resource-stepper-button"
+                    )
+                );
+
+
+            resourceInputs.forEach(
+                function (input) {
+
+                    input.addEventListener(
+                        "input",
+                        function () {
+
+                            let value =
+                                parseInt(
+                                    input.value,
+                                    10
+                                );
+
+                            if (
+                                Number.isNaN(
+                                    value
+                                )
+                            ) {
+
+                                value = 0;
+
+                            }
+
+                            value =
+                                Math.max(
+                                    0,
+                                    Math.min(
+                                        20,
+                                        value
+                                    )
+                                );
+
+                            input.value = value;
+
+                            updateRequiredVehicleSummary();
+
+                        }
+                    );
+
+                }
+            );
+
+
+            resourceStepperButtons.forEach(
+                function (button) {
+
+                    button.addEventListener(
+                        "click",
+                        function () {
+
+                            const input =
+                                document.getElementById(
+                                    button.dataset.target
+                                );
+
+                            if (!input) {
+
+                                return;
+
+                            }
+
+                            let value =
+                                parseInt(
+                                    input.value,
+                                    10
+                                );
+
+                            if (
+                                Number.isNaN(
+                                    value
+                                )
+                            ) {
+
+                                value = 0;
+
+                            }
+
+                            if (
+                                button.dataset.action ===
+                                "increase"
+                            ) {
+
+                                value++;
+
+                            }
+
+                            else {
+
+                                value--;
+
+                            }
+
+                            value =
+                                Math.max(
+                                    0,
+                                    Math.min(
+                                        20,
+                                        value
+                                    )
+                                );
+
+                            input.value =
+                                value;
+
+                            input.dispatchEvent(
+                                new Event(
+                                    "input",
+                                    {
+                                        bubbles: true
+                                    }
+                                )
+                            );
+
+                        }
+                    );
+
+                }
+            );
+
     if (
-        !form ||
-        !incidentName ||
-        !incidentType ||
-        !incidentPriority ||
-        !requiredVehicle ||
-        !incidentDetails ||
-        !incidentDetailsCount ||
+        !form
+        ||
+        !incidentName
+        ||
+        !incidentTypeToggle
+        ||
+        !incidentTypeToggleText
+        ||
+        !incidentTypeOptions
+        ||
+        !selectedIncidentTypesContainer
+        ||
+        incidentTypeCheckboxes.length === 0
+        ||
+        !incidentPriority
+        ||
+        !incidentDetails
+        ||
+        !incidentDetailsCount
+        ||
         !submitButton
     ) {
+
+        console.error(
+            "Formularul incidentului nu poate fi inițializat."
+        );
 
         return;
 
     }
 
-    incidentType.addEventListener(
-        "change",
+
+    /* =====================================
+       DESCHIDERE / ÎNCHIDERE SELECTOR
+    ===================================== */
+
+    incidentTypeToggle.addEventListener(
+        "click",
         function () {
 
-            updateRequiredVehicle(
-                incidentType,
-                requiredVehicle
+            const shouldOpen =
+                incidentTypeOptions.hidden;
+
+            incidentTypeOptions.hidden =
+                !shouldOpen;
+
+            incidentTypeToggle.setAttribute(
+                "aria-expanded",
+                String(
+                    shouldOpen
+                )
             );
 
         }
     );
+
+
+    /* =====================================
+       SELECTAREA TIPURILOR
+    ===================================== */
+
+    incidentTypeCheckboxes.forEach(
+        function (checkbox) {
+
+            checkbox.addEventListener(
+                "change",
+                function () {
+
+                    updateIncidentTypeSelection(
+                        incidentTypeCheckboxes
+                    );
+
+                    applyResourcesFromIncidentTypes(
+                        incidentTypeCheckboxes,
+                        resourceInputs
+                    );
+
+                    updateRequiredResourcesSummary(
+                        resourceInputs
+                    );
+
+                }
+            );
+
+        }
+    );
+
+
+    /* =====================================
+       ÎNCHIDERE LA CLICK ÎN EXTERIOR
+    ===================================== */
+
+    document.addEventListener(
+        "click",
+        function (event) {
+
+            const selector =
+                document.getElementById(
+                    "incident-type-selector"
+                );
+
+            if (
+                !selector
+                ||
+                selector.contains(
+                    event.target
+                )
+            ) {
+
+                return;
+
+            }
+
+            closeIncidentTypeSelector();
+
+        }
+    );
+
+
+    /* =====================================
+       ÎNCHIDERE CU ESCAPE
+    ===================================== */
+
+    document.addEventListener(
+        "keydown",
+        function (event) {
+
+            if (
+                event.key ===
+                "Escape"
+            ) {
+
+                closeIncidentTypeSelector();
+
+            }
+
+        }
+    );
+
+
+    /* =====================================
+       CANTITĂȚILE DE VEHICULE
+    ===================================== */
+
+    resourceInputs.forEach(
+        function (input) {
+
+            input.addEventListener(
+                "input",
+                function () {
+
+                    normalizeResourceQuantity(
+                        input
+                    );
+
+                    updateRequiredResourcesSummary(
+                        resourceInputs
+                    );
+
+                }
+            );
+
+            input.addEventListener(
+                "change",
+                function () {
+
+                    normalizeResourceQuantity(
+                        input
+                    );
+
+                    updateRequiredResourcesSummary(
+                        resourceInputs
+                    );
+
+                }
+            );
+
+        }
+    );
+
+
+    /* =====================================
+       NUMĂR CARACTERE DETALII
+    ===================================== */
 
     incidentDetails.addEventListener(
         "input",
@@ -86,29 +400,26 @@ function initializeIncidentForm() {
         }
     );
 
+
+    /* =====================================
+       SALVARE INCIDENT
+    ===================================== */
+
     form.addEventListener(
         "submit",
         async function (event) {
 
             event.preventDefault();
 
-            const selectedOption =
-                incidentType.options[
-                    incidentType.selectedIndex
-                ];
-
-            const requiredVehicleType =
-                selectedOption
-                    .dataset
-                    .vehicleType;
-
             const title =
                 incidentName
                     .value
                     .trim();
 
-            const selectedIncidentType =
-                incidentType.value;
+            const selectedIncidentTypes =
+                collectSelectedIncidentTypes(
+                    incidentTypeCheckboxes
+                );
 
             const priority =
                 incidentPriority.value;
@@ -118,10 +429,15 @@ function initializeIncidentForm() {
                     .value
                     .trim();
 
+            const requiredResources =
+                collectRequiredResources(
+                    resourceInputs
+                );
+
             if (!title) {
 
                 alert(
-                    "Te rugăm să introduci numele evenimentului."
+                    "Introdu numele evenimentului."
                 );
 
                 incidentName.focus();
@@ -131,15 +447,64 @@ function initializeIncidentForm() {
             }
 
             if (
-                !selectedIncidentType ||
-                !requiredVehicleType
+                selectedIncidentTypes.length === 0
             ) {
 
                 alert(
-                    "Te rugăm să selectezi un tip de incident."
+                    "Selectează cel puțin un tip de incident."
                 );
 
-                incidentType.focus();
+                incidentTypeToggle.focus();
+
+                return;
+
+            }
+
+            if (
+                requiredResources.length === 0
+            ) {
+
+                alert(
+                    "Selectează cel puțin un vehicul necesar."
+                );
+
+                const firstResourceInput =
+                    resourceInputs[0];
+
+                if (firstResourceInput) {
+
+                    firstResourceInput.focus();
+
+                }
+
+                return;
+
+            }
+
+            const totalRequestedVehicles =
+                requiredResources.reduce(
+                    function (
+                        total,
+                        resource
+                    ) {
+
+                        return (
+                            total
+                            +
+                            resource.quantity
+                        );
+
+                    },
+                    0
+                );
+
+            if (
+                totalRequestedVehicles > 30
+            ) {
+
+                alert(
+                    "Un incident nu poate solicita mai mult de 30 de vehicule în total."
+                );
 
                 return;
 
@@ -160,16 +525,26 @@ function initializeIncidentForm() {
 
             try {
 
+                const primaryVehicleType =
+                    requiredResources[0]
+                        .vehicle_type;
+
                 const result =
                     await window.createIncident({
                         title:
                             title,
 
                         incident_type:
-                            selectedIncidentType,
+                            selectedIncidentTypes[0],
+
+                        incident_types:
+                            selectedIncidentTypes,
 
                         required_vehicle_type:
-                            requiredVehicleType,
+                            primaryVehicleType,
+
+                        required_resources:
+                            requiredResources,
 
                         priority:
                             priority,
@@ -180,6 +555,18 @@ function initializeIncidentForm() {
 
                 const incident =
                     result.incident;
+
+                if (
+                    !incident
+                    ||
+                    !incident.id
+                ) {
+
+                    throw new Error(
+                        "Serverul nu a returnat incidentul creat."
+                    );
+
+                }
 
                 activeIncidentId =
                     incident.id;
@@ -198,6 +585,9 @@ function initializeIncidentForm() {
 
                 recommendedVehicle =
                     null;
+
+                recommendedVehicles =
+                    [];
 
                 recommendedVehicleDistance =
                     null;
@@ -222,6 +612,21 @@ function initializeIncidentForm() {
 
                 form.reset();
 
+                resetIncidentTypeSelection(
+                    incidentTypeCheckboxes
+                );
+
+                resetIncidentResourceInputs(
+                    resourceInputs
+                );
+
+                incidentDetailsCount.textContent =
+                    "0 / 1000";
+
+                updateRequiredResourcesSummary(
+                    resourceInputs
+                );
+
                 if (formStatus) {
 
                     formStatus.textContent =
@@ -240,12 +645,14 @@ function initializeIncidentForm() {
             catch (error) {
 
                 console.error(
-                    "Incident save error:",
+                    "Eroare la salvarea incidentului:",
                     error
                 );
 
                 alert(
                     error.message
+                    ||
+                    "Incidentul nu a putut fi salvat."
                 );
 
                 if (formStatus) {
@@ -270,6 +677,11 @@ function initializeIncidentForm() {
         }
     );
 
+
+    /* =====================================
+       RESETARE FORMULAR
+    ===================================== */
+
     form.addEventListener(
         "reset",
         function () {
@@ -277,14 +689,27 @@ function initializeIncidentForm() {
             window.setTimeout(
                 function () {
 
-                    requiredVehicle.className =
-                        "required-vehicle";
+                    resetIncidentTypeSelection(
+                        incidentTypeCheckboxes
+                    );
 
-                    requiredVehicle.textContent =
-                        "Selectează un tip de incident";
+                    resetIncidentResourceInputs(
+                        resourceInputs
+                    );
 
                     incidentDetailsCount.textContent =
                         "0 / 1000";
+
+                    updateRequiredResourcesSummary(
+                        resourceInputs
+                    );
+
+                    if (formStatus) {
+
+                        formStatus.textContent =
+                            "Doar schiță";
+
+                    }
 
                 },
                 0
@@ -293,35 +718,387 @@ function initializeIncidentForm() {
         }
     );
 
+    updateIncidentTypeSelection(
+        incidentTypeCheckboxes
+    );
+
+    updateRequiredResourcesSummary(
+        resourceInputs
+    );
+
 }
 
 
 /* =====================================
-   UPDATE REQUIRED VEHICLE
+   COLECTARE TIPURI INCIDENT
 ===================================== */
 
-function updateRequiredVehicle(
-    incidentType,
-    requiredVehicle
+function collectSelectedIncidentTypes(
+    checkboxes
 ) {
 
-    const selectedOption =
-        incidentType.options[
-            incidentType.selectedIndex
-        ];
+    return checkboxes
+        .filter(
+            function (checkbox) {
 
-    const vehicleType =
-        selectedOption
-            .dataset
-            .vehicleType;
+                return checkbox.checked;
 
-    requiredVehicle.className =
-        "required-vehicle";
+            }
+        )
+        .map(
+            function (checkbox) {
 
-    if (!vehicleType) {
+                return String(
+                    checkbox.value
+                    ||
+                    ""
+                )
+                    .trim()
+                    .toLowerCase();
 
-        requiredVehicle.textContent =
-            "Selectează un tip de incident";
+            }
+        )
+        .filter(Boolean);
+
+}
+
+
+/* =====================================
+   ACTUALIZARE AFIȘARE TIPURI
+===================================== */
+
+function updateIncidentTypeSelection(
+    checkboxes
+) {
+
+    const toggleText =
+        document.getElementById(
+            "incident-type-toggle-text"
+        );
+
+    const selectedContainer =
+        document.getElementById(
+            "selected-incident-types"
+        );
+
+    const selected =
+        checkboxes.filter(
+            function (checkbox) {
+
+                return checkbox.checked;
+
+            }
+        );
+
+    if (toggleText) {
+
+        if (
+            selected.length === 0
+        ) {
+
+            toggleText.textContent =
+                "Selectează unul sau mai multe tipuri";
+
+        }
+
+        else if (
+            selected.length === 1
+        ) {
+
+            toggleText.textContent =
+                selected[0].dataset.label
+                ||
+                selected[0].value;
+
+        }
+
+        else {
+
+            toggleText.textContent =
+                `${selected.length} tipuri selectate`;
+
+        }
+
+    }
+
+    if (!selectedContainer) {
+
+        return;
+
+    }
+
+    if (
+        selected.length === 0
+    ) {
+
+        selectedContainer.innerHTML =
+            "";
+
+        return;
+
+    }
+
+    selectedContainer.innerHTML =
+        selected.map(
+            function (checkbox) {
+
+                const label =
+                    checkbox.dataset.label
+                    ||
+                    checkbox.value;
+
+                return `
+                    <span class="selected-incident-type">
+                        ${escapeHtml(
+                            label
+                        )}
+                    </span>
+                `;
+
+            }
+        ).join("");
+
+}
+
+
+/* =====================================
+   RESURSE AUTOMATE DUPĂ TIPURI
+===================================== */
+
+function applyResourcesFromIncidentTypes(
+    checkboxes,
+    resourceInputs
+) {
+
+    const selectedVehicleTypes =
+        new Set(
+            checkboxes
+                .filter(
+                    function (checkbox) {
+
+                        return checkbox.checked;
+
+                    }
+                )
+                .map(
+                    function (checkbox) {
+
+                        return (
+                            checkbox
+                                .dataset
+                                .vehicleType
+                        );
+
+                    }
+                )
+                .filter(Boolean)
+        );
+
+    resourceInputs.forEach(
+        function (input) {
+
+            const vehicleType =
+                input.dataset.vehicleType;
+
+            if (
+                selectedVehicleTypes.has(
+                    vehicleType
+                )
+            ) {
+
+                const currentQuantity =
+                    Number.parseInt(
+                        input.value,
+                        10
+                    );
+
+                if (
+                    !Number.isInteger(
+                        currentQuantity
+                    )
+                    ||
+                    currentQuantity < 1
+                ) {
+
+                    input.value =
+                        "1";
+
+                }
+
+            }
+
+            else {
+
+                input.value =
+                    "0";
+
+            }
+
+        }
+    );
+
+}
+
+
+/* =====================================
+   COLECTARE RESURSE
+===================================== */
+
+function collectRequiredResources(
+    resourceInputs
+) {
+
+    const resources = [];
+
+    resourceInputs.forEach(
+        function (input) {
+
+            const vehicleType =
+                String(
+                    input.dataset.vehicleType
+                    ||
+                    ""
+                )
+                    .trim()
+                    .toLowerCase();
+
+            const quantity =
+                Number.parseInt(
+                    input.value,
+                    10
+                );
+
+            if (
+                !vehicleType
+                ||
+                !Number.isInteger(
+                    quantity
+                )
+                ||
+                quantity < 1
+            ) {
+
+                return;
+
+            }
+
+            resources.push({
+                vehicle_type:
+                    vehicleType,
+
+                quantity:
+                    quantity
+            });
+
+        }
+    );
+
+    return resources;
+
+}
+
+
+/* =====================================
+   NORMALIZARE CANTITATE
+===================================== */
+
+function normalizeResourceQuantity(
+    input
+) {
+
+    let quantity =
+        Number.parseInt(
+            input.value,
+            10
+        );
+
+    if (
+        !Number.isInteger(
+            quantity
+        )
+        ||
+        quantity < 0
+    ) {
+
+        quantity =
+            0;
+
+    }
+
+    if (
+        quantity > 20
+    ) {
+
+        quantity =
+            20;
+
+    }
+
+    input.value =
+        String(
+            quantity
+        );
+
+}
+
+
+/* =====================================
+   RESETARE RESURSE
+===================================== */
+
+function resetIncidentResourceInputs(
+    resourceInputs
+) {
+
+    resourceInputs.forEach(
+        function (input) {
+
+            input.value =
+                "0";
+
+        }
+    );
+
+}
+
+
+/* =====================================
+   SUMAR RESURSE
+===================================== */
+
+function updateRequiredResourcesSummary(
+    resourceInputs
+) {
+
+    const summary =
+        document.getElementById(
+            "required-vehicle"
+        );
+
+    if (!summary) {
+
+        return;
+
+    }
+
+    const resources =
+        collectRequiredResources(
+            resourceInputs
+        );
+
+    summary.className =
+        "required-vehicle resource-summary";
+
+    if (
+        resources.length === 0
+    ) {
+
+        summary.textContent =
+            "Nu a fost selectat niciun vehicul.";
+
+        summary.classList.add(
+            "empty"
+        );
 
         return;
 
@@ -329,22 +1106,113 @@ function updateRequiredVehicle(
 
     const labels = {
         police:
-            "Vehicul de poliție",
+            "Poliție",
 
         ambulance:
             "Ambulanță",
 
         fire:
-            "Vehicul de pompieri"
+            "Pompieri"
     };
 
-    requiredVehicle.classList.add(
-        vehicleType
+    const descriptions =
+        resources.map(
+            function (resource) {
+
+                return (
+                    `${
+                        labels[
+                            resource.vehicle_type
+                        ]
+                        ||
+                        resource.vehicle_type
+                    }: ${resource.quantity}`
+                );
+
+            }
+        );
+
+    summary.textContent =
+        `Resurse selectate: ${descriptions.join(" • ")}`;
+
+    if (
+        resources.length === 1
+    ) {
+
+        summary.classList.add(
+            resources[0]
+                .vehicle_type
+        );
+
+    }
+
+    else {
+
+        summary.classList.add(
+            "multiple"
+        );
+
+    }
+
+}
+
+
+/* =====================================
+   RESETARE TIPURI INCIDENT
+===================================== */
+
+function resetIncidentTypeSelection(
+    checkboxes
+) {
+
+    checkboxes.forEach(
+        function (checkbox) {
+
+            checkbox.checked =
+                false;
+
+        }
     );
 
-    requiredVehicle.textContent =
-        labels[vehicleType]
-        ||
-        vehicleType;
+    updateIncidentTypeSelection(
+        checkboxes
+    );
+
+    closeIncidentTypeSelector();
+
+}
+
+
+/* =====================================
+   ÎNCHIDERE SELECTOR
+===================================== */
+
+function closeIncidentTypeSelector() {
+
+    const options =
+        document.getElementById(
+            "incident-type-options"
+        );
+
+    const toggle =
+        document.getElementById(
+            "incident-type-toggle"
+        );
+
+    if (options) {
+
+        options.hidden =
+            true;
+
+    }
+
+    if (toggle) {
+
+        toggle.setAttribute(
+            "aria-expanded",
+            "false"
+        );
+
+    }
 
 }

@@ -432,19 +432,54 @@ function createIncidentCard(
 
     }
 
-    const vehicleCode =
-        incident.assigned_vehicle_code
-        ||
-            "Neatribuit";
+    /* =====================================
+   TOATE VEHICULELE ASIGNATE
+===================================== */
 
-    const vehicleName =
-        incident.assigned_vehicle_code
-            ?
-            getVehicleDisplayName(
-                incident.assigned_vehicle_code
-            )
-            :
-                "Neatribuit";
+const assignedVehicles =
+    Array.isArray(
+        incident.assigned_vehicles
+    )
+        ?
+        incident.assigned_vehicles
+        :
+        [];
+
+
+/*
+ * Fallback pentru incidentele vechi sau
+ * pentru cazul în care API-ul nu trimite
+ * încă assigned_vehicles.
+ */
+if (
+    assignedVehicles.length === 0
+    &&
+    incident.assigned_vehicle_code
+) {
+
+    assignedVehicles.push({
+        vehicle_id:
+            incident.assigned_vehicle_id,
+
+        vehicle_code:
+            incident.assigned_vehicle_code,
+
+        vehicle_type:
+            incident.assigned_vehicle_type
+            ||
+            incident.required_vehicle_type,
+
+        assignment_type:
+            "primary"
+    });
+
+}
+
+
+const assignedVehiclesHtml =
+    createIncidentAssignedVehiclesHtml(
+        assignedVehicles
+    );
 
     const createdAt =
         formatIncidentDate(
@@ -534,19 +569,16 @@ function createIncidentCard(
                 )}
             </div>
 
-            <div>
-                <strong>Vehicul:</strong>
-                ${escapeHtml(
-                    vehicleName
-                )}
-            </div>
+            <div class="incident-assigned-vehicles">
 
-            <div>
-                <strong>Cod vehicul:</strong>
-                ${escapeHtml(
-                    vehicleCode
-                )}
-            </div>
+    <strong>
+        Vehicule asignate:
+        ${assignedVehicles.length}
+    </strong>
+
+    ${assignedVehiclesHtml}
+
+</div>
 
             <div>
                 <strong>Creat:</strong>
@@ -630,20 +662,36 @@ function createIncidentCard(
         </div>
     `;
 
-    /*
-     * Click pe card:
-     * afișează numai locația incidentului.
-     */
-    card.addEventListener(
-        "click",
-        function () {
+  /*
+ * Click pe card:
+ * pentru incidentul activ afișează toate rutele;
+ * pentru incidentul arhivat afișează doar locația.
+ */
 
-            showIncidentOnMap(
+card.addEventListener(
+    "click",
+    async function () {
+
+        if (
+            isIncidentActive(
+                incident
+            )
+        ) {
+
+            await openActiveRoute(
                 incident
             );
 
+            return;
+
         }
-    );
+
+        showIncidentOnMap(
+            incident
+        );
+
+    }
+);
 
     const routeButton =
         card.querySelector(
@@ -699,6 +747,261 @@ function createIncidentCard(
 
 }
 
+
+/* =====================================
+   VEHICULE ASIGNATE INCIDENTULUI
+===================================== */
+
+function createIncidentAssignedVehiclesHtml(
+    vehicles
+) {
+
+    if (
+        !Array.isArray(vehicles)
+        ||
+        vehicles.length === 0
+    ) {
+
+        return `
+            <div class="incident-assigned-vehicles-empty">
+                Neatribuit
+            </div>
+        `;
+
+    }
+
+
+    const groupedVehicles = {};
+
+
+    vehicles.forEach(
+        function (vehicle) {
+
+            const vehicleType =
+                String(
+                    vehicle.vehicle_type
+                    ||
+                    "unknown"
+                ).toLowerCase();
+
+
+            if (!groupedVehicles[vehicleType]) {
+
+                groupedVehicles[vehicleType] =
+                    [];
+
+            }
+
+
+            /*
+             * Evităm afișarea accidentală
+             * de două ori a aceleiași mașini.
+             */
+            const alreadyExists =
+                groupedVehicles[
+                    vehicleType
+                ].some(
+                    function (existingVehicle) {
+
+                        return (
+                            Number(
+                                existingVehicle.vehicle_id
+                            )
+                            ===
+                            Number(
+                                vehicle.vehicle_id
+                            )
+                        );
+
+                    }
+                );
+
+
+            if (!alreadyExists) {
+
+                groupedVehicles[
+                    vehicleType
+                ].push(
+                    vehicle
+                );
+
+            }
+
+        }
+    );
+
+
+    return Object
+        .entries(
+            groupedVehicles
+        )
+        .map(
+            function (
+                [
+                    vehicleType,
+                    typeVehicles
+                ]
+            ) {
+
+                const typeName =
+                    getIncidentVehicleTypeName(
+                        vehicleType
+                    );
+
+
+                const icon =
+                    getIncidentVehicleTypeIcon(
+                        vehicleType
+                    );
+
+
+                const vehicleCodes =
+                    typeVehicles
+                        .map(
+                            function (vehicle) {
+
+                                const code =
+                                    vehicle.vehicle_code
+                                    ||
+                                    (
+                                        "ID "
+                                        + vehicle.vehicle_id
+                                    );
+
+
+                                return `
+                                    <span class="incident-assigned-vehicle-code">
+
+                                        ${escapeHtml(
+                                            code
+                                        )}
+
+                                        ${
+                                            vehicle.vehicle_id
+                                                ?
+                                                `
+                                                    <small>
+                                                        ID ${escapeHtml(
+                                                            vehicle.vehicle_id
+                                                        )}
+                                                    </small>
+                                                `
+                                                :
+                                                ""
+                                        }
+
+                                    </span>
+                                `;
+
+                            }
+                        )
+                        .join("");
+
+
+                return `
+                    <div class="incident-assigned-vehicle-group">
+
+                        <div class="incident-assigned-vehicle-type">
+
+                            <span>
+                                ${icon}
+                            </span>
+
+                            <strong>
+                                ${escapeHtml(
+                                    typeName
+                                )}
+                                (${typeVehicles.length})
+                            </strong>
+
+                        </div>
+
+                        <div class="incident-assigned-vehicle-codes">
+                            ${vehicleCodes}
+                        </div>
+
+                    </div>
+                `;
+
+            }
+        )
+        .join("");
+
+}
+
+
+/* =====================================
+   NUME TIP VEHICUL
+===================================== */
+
+function getIncidentVehicleTypeName(
+    vehicleType
+) {
+
+    const names = {
+
+        police:
+            "Poliție",
+
+        ambulance:
+            "Ambulanță",
+
+        fire:
+            "Pompieri"
+
+    };
+
+
+    return (
+        names[
+            String(
+                vehicleType
+                ||
+                ""
+            ).toLowerCase()
+        ]
+        ||
+        "Alt tip"
+    );
+
+}
+
+
+/* =====================================
+   ICON TIP VEHICUL
+===================================== */
+
+function getIncidentVehicleTypeIcon(
+    vehicleType
+) {
+
+    const icons = {
+
+        police:
+            "🚓",
+
+        ambulance:
+            "🚑",
+
+        fire:
+            "🚒"
+
+    };
+
+
+    return (
+        icons[
+            String(
+                vehicleType
+                ||
+                ""
+            ).toLowerCase()
+        ]
+        ||
+        "🚗"
+    );
+
+}
 
 /* =====================================
    SHOW INCIDENT LOCATION ON MAP
@@ -804,43 +1107,29 @@ async function openActiveRoute(
     activeIncidentCode =
         incident.incident_code;
 
-    const assignedVehicle =
-        vehicles.find(
-            function (vehicle) {
+    activeIncidentLocation = {
+        latitude:
+            Number(
+                incident.latitude
+            ),
 
-                return (
-                    vehicle.vehicle_code ===
-                    incident.assigned_vehicle_code
-                );
+        longitude:
+            Number(
+                incident.longitude
+            )
+    };
 
-            }
-        );
+    selectedVehicleId =
+        null;
 
-    if (assignedVehicle) {
+    /*
+     * Nu mai afișăm manual primul vehicul.
+     * displayIncidentRoutes() va afișa toate
+     * vehiculele din răspunsul backend-ului.
+     */
+    updateVisibleMarkers([]);
 
-        selectedVehicleId =
-            assignedVehicle.vehicle_code;
-
-        updateVisibleMarkers([
-            assignedVehicle
-        ]);
-
-        displayVehicleDetails(
-            assignedVehicle
-        );
-
-    }
-
-    else {
-
-        selectedVehicleId =
-            null;
-
-        updateVisibleMarkers([]);
-
-        resetVehicleDetails();
-
-    }
+    resetVehicleDetails();
 
     displayIncidents();
 
@@ -854,15 +1143,20 @@ async function openActiveRoute(
         if (
             sidebarMode !== "routes"
             ||
-            Number(activeRouteId) !==
-            Number(incident.id)
+            Number(
+                activeRouteId
+            )
+            !==
+            Number(
+                incident.id
+            )
         ) {
 
             return;
 
         }
 
-        displayIncidentRoute(
+        displayIncidentRoutes(
             routeData
         );
 
@@ -871,7 +1165,7 @@ async function openActiveRoute(
     catch (error) {
 
         console.error(
-            "Could not open active route:",
+            "Rutele incidentului nu au putut fi deschise:",
             error
         );
 
@@ -884,7 +1178,6 @@ async function openActiveRoute(
     }
 
 }
-
 
 /* =====================================
    REFRESH OPEN ACTIVE ROUTE
@@ -914,11 +1207,18 @@ async function refreshOpenedActiveRoute() {
 
         const activeIncident =
             activeRoutes.find(
-                function (incident) {
+                function (
+                    incident
+                ) {
 
                     return (
-                        Number(incident.id) ===
-                        Number(routeId)
+                        Number(
+                            incident.id
+                        )
+                        ===
+                        Number(
+                            routeId
+                        )
                     );
 
                 }
@@ -932,39 +1232,6 @@ async function refreshOpenedActiveRoute() {
 
         }
 
-        const assignedVehicle =
-            vehicles.find(
-                function (vehicle) {
-
-                    return (
-                        vehicle.vehicle_code ===
-                        activeIncident.assigned_vehicle_code
-                    );
-
-                }
-            );
-
-        if (assignedVehicle) {
-
-            selectedVehicleId =
-                assignedVehicle.vehicle_code;
-
-            updateVisibleMarkers([
-                assignedVehicle
-            ]);
-
-            displayVehicleDetails(
-                assignedVehicle
-            );
-
-        }
-
-        else {
-
-            updateVisibleMarkers([]);
-
-        }
-
         const routeData =
             await window.getIncidentRoute(
                 routeId
@@ -973,15 +1240,24 @@ async function refreshOpenedActiveRoute() {
         if (
             sidebarMode !== "routes"
             ||
-            Number(activeRouteId) !==
-            Number(routeId)
+            Number(
+                activeRouteId
+            )
+            !==
+            Number(
+                routeId
+            )
         ) {
 
             return;
 
         }
 
-        displayIncidentRoute(
+        /*
+         * Răspunsul conține poziția actuală
+         * și ruta fiecărui vehicul asignat.
+         */
+        displayIncidentRoutes(
             routeData
         );
 
@@ -990,7 +1266,7 @@ async function refreshOpenedActiveRoute() {
     catch (error) {
 
         console.error(
-            "Could not refresh active route:",
+            "Rutele active nu au putut fi actualizate:",
             error
         );
 

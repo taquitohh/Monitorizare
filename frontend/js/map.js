@@ -6,9 +6,9 @@ let incidentLocationMarker = null;
 
 let pendingIncidentLocation = null;
 
-let incidentRouteLayer = null;
+let incidentRouteLayers = [];
 
-let routeStartMarker = null;
+let routeStartMarkers = [];
 
 let routeEndMarker = null;
 
@@ -156,6 +156,106 @@ const routeEndIcon = L.divIcon({
 
 });
 
+// =========================
+// ROUTE COLORS
+// =========================
+
+const incidentRouteColors = {
+    police:
+        "#2563eb",
+
+    ambulance:
+        "#dc2626",
+
+    fire:
+        "#ea580c"
+};
+
+
+// =========================
+// ROUTE SERVICE LABELS
+// =========================
+
+const incidentRouteLabels = {
+    police:
+        "Poliție",
+
+    ambulance:
+        "Ambulanță",
+
+    fire:
+        "Pompieri"
+};
+
+
+// =========================
+// ROUTE START ICON BY TYPE
+// =========================
+
+function getRouteStartIcon(
+    vehicleType
+) {
+
+    const normalizedType =
+        String(
+            vehicleType
+            ||
+            ""
+        ).toLowerCase();
+
+    const symbols = {
+        police:
+            "🚓",
+
+        ambulance:
+            "🚑",
+
+        fire:
+            "🚒"
+    };
+
+    const symbol =
+        symbols[normalizedType]
+        ||
+        "●";
+
+    return L.divIcon({
+        className:
+            "route-vehicle-start-wrapper",
+
+        html: `
+            <div
+                class="
+                    route-vehicle-start
+                    route-vehicle-start-${escapeHtml(
+                        normalizedType
+                    )}
+                "
+            >
+                ${symbol}
+            </div>
+        `,
+
+        iconSize:
+            [
+                38,
+                38
+            ],
+
+        iconAnchor:
+            [
+                19,
+                19
+            ],
+
+        popupAnchor:
+            [
+                0,
+                -22
+            ]
+    });
+
+}
 
 // =========================
 // INITIALIZE MAP
@@ -361,13 +461,17 @@ function updateVehicleMarker(
         marker.bindPopup(
             popupContent,
             {
+            
                 closeButton:
                     true,
 
                 autoClose:
-                    false,
+                    true,
 
                 closeOnClick:
+                    true,
+
+                autoPan:
                     false
             }
         );
@@ -401,13 +505,17 @@ function updateVehicleMarker(
             marker.bindPopup(
                 popupContent,
                 {
+                   
                     closeButton:
                         true,
 
                     autoClose:
-                        false,
+                        true,
 
                     closeOnClick:
+                        true,
+
+                    autoPan:
                         false
                 }
             );
@@ -562,7 +670,46 @@ function removeVehicleMarkersFromMap() {
 
 }
 
+// =========================
+// CLOSE VEHICLE POPUPS
+// =========================
 
+function closeAllVehiclePopups(
+    exceptVehicleId = null
+) {
+
+    Object.entries(
+        vehicleMarkers
+    ).forEach(
+        function (
+            [
+                vehicleId,
+                marker
+            ]
+        ) {
+
+            if (
+                exceptVehicleId !== null &&
+                vehicleId === exceptVehicleId
+            ) {
+
+                return;
+
+            }
+
+            if (
+                marker &&
+                marker.isPopupOpen()
+            ) {
+
+                marker.closePopup();
+
+            }
+
+        }
+    );
+
+}
 // =========================
 // FOCUS VEHICLE
 // =========================
@@ -590,6 +737,17 @@ function focusVehicle(
 
     }
 
+    const vehicleId =
+        vehicle.vehicle_code;
+
+    /*
+     * Închidem popup-ul oricărui vehicul
+     * selectat anterior.
+     */
+    closeAllVehiclePopups(
+        vehicleId
+    );
+
     const marker =
         updateVehicleMarker(
             vehicle
@@ -613,18 +771,30 @@ function focusVehicle(
 
     }
 
+    /*
+     * Oprim orice animație începută pentru
+     * vehiculul selectat anterior.
+     */
+    map.stop();
+
+    /*
+     * Centrăm harta exclusiv pe noul vehicul.
+     */
     map.setView(
         [
             latitude,
             longitude
         ],
-        16
+        16,
+        {
+            animate:
+                true
+        }
     );
 
     marker.openPopup();
 
 }
-
 
 // =========================
 // START INCIDENT SELECTION
@@ -1285,256 +1455,560 @@ function displayIncidentLocationMarker(
 }
 
 // =========================
-// DISPLAY INCIDENT ROUTE
+// NORMALIZE ROUTE COORDINATES
 // =========================
 
-function displayIncidentRoute(
+function normalizeIncidentRouteCoordinates(
+    coordinates
+) {
+
+    if (
+        !Array.isArray(
+            coordinates
+        )
+    ) {
+
+        return [];
+
+    }
+
+    return coordinates
+        .map(
+            function (coordinate) {
+
+                if (
+                    Array.isArray(
+                        coordinate
+                    )
+                ) {
+
+                    return [
+                        Number(
+                            coordinate[0]
+                        ),
+                        Number(
+                            coordinate[1]
+                        )
+                    ];
+
+                }
+
+                return [
+                    Number(
+                        coordinate?.latitude
+                    ),
+                    Number(
+                        coordinate?.longitude
+                    )
+                ];
+
+            }
+        )
+        .filter(
+            function (coordinate) {
+
+                return (
+                    Number.isFinite(
+                        coordinate[0]
+                    )
+                    &&
+                    Number.isFinite(
+                        coordinate[1]
+                    )
+                );
+
+            }
+        );
+
+}
+
+
+// =========================
+// ROUTE COLOR
+// =========================
+
+function getIncidentRouteColor(
+    vehicleType
+) {
+
+    const normalizedType =
+        String(
+            vehicleType
+            ||
+            ""
+        ).toLowerCase();
+
+    return (
+        incidentRouteColors[
+            normalizedType
+        ]
+        ||
+        "#7c3aed"
+    );
+
+}
+
+
+// =========================
+// ROUTE LABEL
+// =========================
+
+function getIncidentRouteLabel(
+    vehicleType
+) {
+
+    const normalizedType =
+        String(
+            vehicleType
+            ||
+            ""
+        ).toLowerCase();
+
+    return (
+        incidentRouteLabels[
+            normalizedType
+        ]
+        ||
+        getReadableStatus(
+            normalizedType
+        )
+    );
+
+}
+
+// =========================
+// DISPLAY ALL INCIDENT ROUTES
+// =========================
+
+function displayIncidentRoutes(
     routeData
 ) {
 
     clearIncidentRoute();
 
     if (
-        !routeData ||
+        !routeData
+        ||
         !Array.isArray(
-            routeData.coordinates
-        ) ||
-        routeData.coordinates.length < 2
+            routeData.routes
+        )
+        ||
+        routeData.routes.length === 0
     ) {
 
         throw new Error(
-            "The route does not contain valid coordinates."
+            "Incidentul nu conține rute valide."
         );
 
     }
 
-    const routeCoordinates =
-        routeData.coordinates
-            .map(
-                function (coordinate) {
+    removeVehicleMarkersFromMap();
 
-                    if (
-                        Array.isArray(
-                            coordinate
-                        )
-                    ) {
+    const allMapLayers = [];
 
-                        return [
-                            Number(
-                                coordinate[0]
-                            ),
-                            Number(
-                                coordinate[1]
-                            )
-                        ];
+    const assignedVehicleCodes =
+        new Set();
 
+    let destinationCoordinate =
+        null;
+
+    routeData.routes.forEach(
+        function (
+            vehicleRoute
+        ) {
+
+            const routeCoordinates =
+                normalizeIncidentRouteCoordinates(
+                    vehicleRoute.coordinates
+                );
+
+            if (
+                routeCoordinates.length < 2
+            ) {
+
+                return;
+
+            }
+
+            const vehicleType =
+                String(
+                    vehicleRoute.vehicle_type
+                    ||
+                    ""
+                ).toLowerCase();
+
+            const vehicleCode =
+                String(
+                    vehicleRoute.vehicle_code
+                    ||
+                    ""
+                ).trim();
+
+            if (!vehicleCode) {
+
+                return;
+
+            }
+
+            assignedVehicleCodes.add(
+                vehicleCode
+            );
+
+            const routeColor =
+                getIncidentRouteColor(
+                    vehicleType
+                );
+
+
+            /* =========================
+               TRASEUL VEHICULULUI
+            ========================= */
+
+            const routeLayer =
+                L.polyline(
+                    routeCoordinates,
+                    {
+                        color:
+                            routeColor,
+
+                        weight:
+                            6,
+
+                        opacity:
+                            0.9,
+
+                        lineJoin:
+                            "round",
+
+                        lineCap:
+                            "round"
                     }
+                ).addTo(
+                    map
+                );
 
-                    return [
-                        Number(
-                            coordinate.latitude
-                        ),
-                        Number(
-                            coordinate.longitude
-                        )
-                    ];
+            routeLayer.bindPopup(
+                `
+                    <div class="route-point-popup">
 
-                }
-            )
-            .filter(
-                function (coordinate) {
+                        <strong>
+                            ${escapeHtml(
+                                getIncidentRouteLabel(
+                                    vehicleType
+                                )
+                            )}
+                        </strong>
 
-                    return (
-                        Number.isFinite(
-                            coordinate[0]
-                        )
-                        &&
-                        Number.isFinite(
-                            coordinate[1]
-                        )
+                        <br>
+
+                        Vehicul:
+                        ${escapeHtml(
+                            vehicleCode
+                        )}
+
+                        <br>
+
+                        Distanță:
+                        ${
+                            Number.isFinite(
+                                Number(
+                                    vehicleRoute.distance_km
+                                )
+                            )
+                                ?
+                                `${Number(
+                                    vehicleRoute.distance_km
+                                ).toFixed(2)} km`
+                                :
+                                "-"
+                        }
+
+                    </div>
+                `
+            );
+
+            incidentRouteLayers.push(
+                routeLayer
+            );
+
+            allMapLayers.push(
+                routeLayer
+            );
+
+
+            /* =========================
+               MARKERUL REAL AL VEHICULULUI
+            ========================= */
+
+            const backendLatitude =
+                Number(
+                    vehicleRoute.vehicle_latitude
+                );
+
+            const backendLongitude =
+                Number(
+                    vehicleRoute.vehicle_longitude
+                );
+
+            const markerLatitude =
+                Number.isFinite(
+                    backendLatitude
+                )
+                    ?
+                    backendLatitude
+                    :
+                    routeCoordinates[0][0];
+
+            const markerLongitude =
+                Number.isFinite(
+                    backendLongitude
+                )
+                    ?
+                    backendLongitude
+                    :
+                    routeCoordinates[0][1];
+
+            const vehicleForMarker = {
+                id:
+                    vehicleRoute.vehicle_id,
+
+                vehicle_code:
+                    vehicleCode,
+
+                displayName:
+                    getVehicleDisplayName(
+                        vehicleCode
+                    ),
+
+                vehicle_type:
+                    vehicleType,
+
+                status:
+                    vehicleRoute.vehicle_status
+                    ||
+                    "busy",
+
+                speed:
+                    vehicleRoute.vehicle_speed
+                    ??
+                    0,
+
+                latitude:
+                    markerLatitude,
+
+                longitude:
+                    markerLongitude,
+
+                updated_at:
+                    vehicleRoute.position_updated_at
+                    ||
+                    null
+            };
+
+            const vehicleMarker =
+                updateVehicleMarker(
+                    vehicleForMarker
+                );
+
+            if (vehicleMarker) {
+
+                if (
+                    !map.hasLayer(
+                        vehicleMarker
+                    )
+                ) {
+
+                    vehicleMarker.addTo(
+                        map
                     );
 
                 }
-            );
+
+                vehicleMarker.setLatLng(
+                    [
+                        markerLatitude,
+                        markerLongitude
+                    ]
+                );
+
+                vehicleMarker.setZIndexOffset(
+                    3000
+                );
+
+                allMapLayers.push(
+                    vehicleMarker
+                );
+
+            }
+
+            destinationCoordinate =
+                routeCoordinates[
+                    routeCoordinates.length - 1
+                ];
+
+        }
+    );
+
+
+    /* =========================
+       ASCUNDEM VEHICULELE NEASIGNATE
+    ========================= */
+
+    Object.keys(
+        vehicleMarkers
+    ).forEach(
+        function (
+            vehicleCode
+        ) {
+
+            if (
+                assignedVehicleCodes.has(
+                    vehicleCode
+                )
+            ) {
+
+                return;
+
+            }
+
+            const marker =
+                vehicleMarkers[
+                    vehicleCode
+                ];
+
+            if (
+                marker
+                &&
+                map.hasLayer(
+                    marker
+                )
+            ) {
+
+                map.removeLayer(
+                    marker
+                );
+
+            }
+
+        }
+    );
+
 
     if (
-        routeCoordinates.length < 2
+        incidentRouteLayers.length === 0
+        ||
+        !destinationCoordinate
     ) {
 
         throw new Error(
-            "The route coordinates are invalid."
+            "Nicio rută validă nu a putut fi afișată."
         );
 
     }
 
-    /*
-     * Traseul real calculat de NetworkX.
-     */
-    incidentRouteLayer =
-        L.polyline(
-            routeCoordinates,
-            {
-                color:
-                    "#7d3c98",
 
-                weight:
-                    6,
-
-                opacity:
-                    0.9,
-
-                lineJoin:
-                    "round",
-
-                lineCap:
-                    "round"
-            }
-        ).addTo(map);
-
-    const startCoordinate =
-        routeCoordinates[0];
-
-    const endCoordinate =
-        routeCoordinates[
-            routeCoordinates.length - 1
-        ];
+    /* =========================
+       MARKERUL INCIDENTULUI
+    ========================= */
 
     /*
-     * Marker A — poziția vehiculului.
+     * Nu mai folosim markerul B.
+     * Păstrăm markerul mov cu semnul exclamării.
      */
-    routeStartMarker =
-        L.marker(
-            startCoordinate,
-            {
-                icon:
-                    routeStartIcon,
 
-                zIndexOffset:
-                    2500
-            }
-        ).addTo(map);
-
-    routeStartMarker.bindPopup(
-        `
-            <div class="route-point-popup">
-
-                <strong>
-                    Route start
-                </strong>
-
-                <br>
-
-                Vehicle:
-                ${
-                    routeData.vehicle_code
-                    ||
-                    recommendedVehicle?.vehicle_code
-                    ||
-                    "-"
-                }
-
-                <br>
-
-                Latitude:
-                ${startCoordinate[0].toFixed(6)}
-
-                <br>
-
-                Longitude:
-                ${startCoordinate[1].toFixed(6)}
-
-            </div>
-        `,
-        {
-            closeButton:
-                true,
-
-            autoClose:
-                false,
-
-            closeOnClick:
-                false
-        }
-    );
-
-    /*
-     * Marker B — locația incidentului.
-     */
-    routeEndMarker =
-        L.marker(
-            endCoordinate,
-            {
-                icon:
-                    routeEndIcon,
-
-                zIndexOffset:
-                    2600
-            }
-        ).addTo(map);
-
-    routeEndMarker.bindPopup(
-        `
-            <div class="route-point-popup">
-
-                <strong>
-                    Incident destination
-                </strong>
-
-                <br>
-
-                Incident:
-                ${
-                    routeData.incident_code
-                    ||
-                    activeIncidentCode
-                    ||
-                    "-"
-                }
-
-                <br>
-
-                Latitude:
-                ${endCoordinate[0].toFixed(6)}
-
-                <br>
-
-                Longitude:
-                ${endCoordinate[1].toFixed(6)}
-
-            </div>
-        `,
-        {
-            closeButton:
-                true,
-
-            autoClose:
-                false,
-
-            closeOnClick:
-                false
-        }
-    );
-
-    /*
-     * Actualizăm popup-ul markerului
-     * incidentului existent.
-     */
-    if (incidentLocationMarker) {
-
+    if (
         incidentLocationMarker
-            .setLatLng(
-                endCoordinate
-            );
+        &&
+        map.hasLayer(
+            incidentLocationMarker
+        )
+    ) {
+
+        map.removeLayer(
+            incidentLocationMarker
+        );
 
     }
 
-    /*
-     * Harta face zoom astfel încât întreg
-     * traseul să fie vizibil.
-     */
+    incidentLocationMarker =
+        L.marker(
+            destinationCoordinate,
+            {
+                icon:
+                    incidentIcon,
+
+                zIndexOffset:
+                    3500
+            }
+        ).addTo(
+            map
+        );
+
+    incidentLocationMarker.bindPopup(
+        `
+            <div class="incident-saved-popup">
+
+                <strong>
+                    ${escapeHtml(
+                        routeData.incident_code
+                        ||
+                        activeIncidentCode
+                        ||
+                        "-"
+                    )}
+                </strong>
+
+                <br><br>
+
+                <strong>
+                    Destinația incidentului
+                </strong>
+
+                <br>
+
+                Echipaje pe traseu:
+                ${incidentRouteLayers.length}
+
+                <br>
+
+                Latitudine:
+                ${destinationCoordinate[0].toFixed(6)}
+
+                <br>
+
+                Longitudine:
+                ${destinationCoordinate[1].toFixed(6)}
+
+            </div>
+        `,
+        {
+            closeButton:
+                true,
+
+            autoClose:
+                false,
+
+            closeOnClick:
+                false
+        }
+    );
+
+    allMapLayers.push(
+        incidentLocationMarker
+    );
+
+
+    /* =========================
+       ÎNCADRAREA HĂRȚII
+    ========================= */
+
+    const routeGroup =
+        L.featureGroup(
+            allMapLayers
+        );
+
     const routeBounds =
-        incidentRouteLayer
-            .getBounds();
+        routeGroup.getBounds();
 
     if (
         routeBounds.isValid()
@@ -1545,12 +2019,12 @@ function displayIncidentRoute(
             {
                 padding:
                     [
-                        45,
-                        45
+                        55,
+                        55
                     ],
 
                 maxZoom:
-                    16
+                    15
             }
         );
 
@@ -1558,41 +2032,110 @@ function displayIncidentRoute(
 
 }
 
+// =========================
+// SINGLE ROUTE COMPATIBILITY
+// =========================
+
+function displayIncidentRoute(
+    routeData
+) {
+
+    if (
+        routeData
+        &&
+        Array.isArray(
+            routeData.routes
+        )
+    ) {
+
+        displayIncidentRoutes(
+            routeData
+        );
+
+        return;
+
+    }
+
+    if (
+        routeData
+        &&
+        Array.isArray(
+            routeData.coordinates
+        )
+    ) {
+
+        displayIncidentRoutes({
+            incident_code:
+                routeData.incident_code,
+
+            routes: [
+                routeData
+            ]
+        });
+
+        return;
+
+    }
+
+    throw new Error(
+        "Datele rutei nu sunt valide."
+    );
+
+}
 
 // =========================
-// CLEAR INCIDENT ROUTE
+// CLEAR ALL INCIDENT ROUTES
 // =========================
 
 function clearIncidentRoute() {
 
+    incidentRouteLayers.forEach(
+        function (
+            routeLayer
+        ) {
+
+            if (
+                routeLayer
+                &&
+                map.hasLayer(
+                    routeLayer
+                )
+            ) {
+
+                map.removeLayer(
+                    routeLayer
+                );
+
+            }
+
+        }
+    );
+
+    routeStartMarkers.forEach(
+        function (
+            marker
+        ) {
+
+            if (
+                marker
+                &&
+                map.hasLayer(
+                    marker
+                )
+            ) {
+
+                map.removeLayer(
+                    marker
+                );
+
+            }
+
+        }
+    );
+
     if (
-        incidentRouteLayer &&
-        map.hasLayer(
-            incidentRouteLayer
-        )
-    ) {
-
-        map.removeLayer(
-            incidentRouteLayer
-        );
-
-    }
-
-    if (
-        routeStartMarker &&
-        map.hasLayer(
-            routeStartMarker
-        )
-    ) {
-
-        map.removeLayer(
-            routeStartMarker
-        );
-
-    }
-
-    if (
-        routeEndMarker &&
+        routeEndMarker
+        &&
         map.hasLayer(
             routeEndMarker
         )
@@ -1604,11 +2147,11 @@ function clearIncidentRoute() {
 
     }
 
-    incidentRouteLayer =
-        null;
+    incidentRouteLayers =
+        [];
 
-    routeStartMarker =
-        null;
+    routeStartMarkers =
+        [];
 
     routeEndMarker =
         null;
@@ -1617,7 +2160,7 @@ function clearIncidentRoute() {
 
 
 // =========================
-// LOAD AND DISPLAY ROUTE
+// LOAD AND DISPLAY ALL ROUTES
 // =========================
 
 async function loadAndDisplayIncidentRoute(
@@ -1627,93 +2170,20 @@ async function loadAndDisplayIncidentRoute(
     if (!incidentId) {
 
         throw new Error(
-            "Incident id is missing."
+            "ID-ul incidentului lipsește."
         );
 
     }
 
-    const message =
-        document.getElementById(
-            "map-selection-message"
+    const routeData =
+        await window.getIncidentRoute(
+            incidentId
         );
 
-    if (message) {
+    displayIncidentRoutes(
+        routeData
+    );
 
-        message.classList.add(
-            "show"
-        );
-
-        message.textContent =
-            "Se calculează traseul către incident...";
-
-    }
-
-    try {
-
-        const routeData =
-            await window.getIncidentRoute(
-                incidentId
-            );
-
-        displayIncidentRoute(
-            routeData
-        );
-
-        if (message) {
-
-            const distanceText =
-                Number.isFinite(
-                    Number(
-                        routeData.distance_km
-                    )
-                )
-                    ?
-                    ` — ${Number(
-                        routeData.distance_km
-                    ).toFixed(2)} km`
-                    :
-                    "";
-
-            message.textContent =
-                `Traseul a fost calculat${distanceText}`;
-
-            window.setTimeout(
-                function () {
-
-                    message.classList.remove(
-                        "show"
-                    );
-
-                    message.textContent =
-                        "";
-
-                },
-                2500
-            );
-
-        }
-
-        return routeData;
-
-    }
-
-    catch (error) {
-
-        clearIncidentRoute();
-
-        if (message) {
-
-            message.classList.add(
-                "show"
-            );
-
-            message.textContent =
-                "Traseul nu a putut fi calculat.";
-
-        }
-
-        throw error;
-
-    }
+    return routeData;
 
 }
