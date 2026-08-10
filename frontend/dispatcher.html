@@ -19,7 +19,7 @@
     >
     <link
         rel="stylesheet"
-        href="css/components.css?v=19"
+        href="css/components.css?v=20"
     >
     <link
         rel="stylesheet"
@@ -27,7 +27,11 @@
     >
     <link
         rel="stylesheet"
-        href="css/style.css?v=16"
+        href="css/style.css?v=18"
+    >
+    <link
+        rel="stylesheet"
+        href="css/topbar.css?v=1"
     >
     <link
         rel="stylesheet"
@@ -35,39 +39,88 @@
     >
 </head>
 <body>
-    <header class="topbar">
-        <div>
-            <h1>
-                Sistem de monitorizare GPS
-            </h1>
-            <p>
-                Monitorizare în timp real a vehiculelor
-            </p>
+   <header class="app-topbar">
+
+    <div class="app-topbar-brand">
+
+        <h1>
+            Sistem de monitorizare GPS
+        </h1>
+
+        <p>
+            Monitorizare în timp real a vehiculelor
+        </p>
+
+    </div>
+
+
+    <div class="app-topbar-status">
+
+        <span class="app-topbar-status-dot"></span>
+
+        Sistem online
+
+    </div>
+
+
+    <nav
+        id="dispatcher-admin-navigation"
+        class="app-topbar-navigation"
+        hidden
+    >
+
+        <a
+            href="/admin.html"
+            class="app-topbar-navigation-link"
+        >
+            Administrare
+        </a>
+
+        <a
+            href="/dispatcher.html"
+            class="
+                app-topbar-navigation-link
+                active
+            "
+        >
+            Dispecerat
+        </a>
+
+    </nav>
+
+
+    <div class="app-topbar-user">
+
+        <div class="app-topbar-user-info">
+
+            <strong
+                id="current-user-name"
+                class="app-topbar-user-name"
+            >
+                Se încarcă...
+            </strong>
+
+            <span
+                id="current-user-role"
+                class="app-topbar-user-role"
+            >
+                -
+            </span>
+
         </div>
-        <div class="topbar-user-area">
-            <div class="system-status">
-                <span class="status-dot"></span>
-                Sistem online
-            </div>
-            <div class="current-user">
-                <div class="current-user-info">
-                    <span id="current-user-name">
-                        Se încarcă...
-                    </span>
-                    <span id="current-user-role">
-                        -
-                    </span>
-                </div>
-                <button
-                    type="button"
-                    id="logout-button"
-                    class="secondary-button"
-                >
-                    Deconectare
-                </button>
-            </div>
-        </div>
-    </header>
+
+
+        <button
+            type="button"
+            id="logout-button"
+            class="app-topbar-logout"
+        >
+            Deconectare
+        </button>
+
+    </div>
+
+</header>
     <main class="dashboard">
         <!-- ===========================
              VEHICLES / INCIDENTS PANEL
@@ -978,6 +1031,6 @@
     <script src="js/incident-form.js?v=8"></script>
     <script src="js/recommendation.js?v=4"></script>
     <script src="js/ui-controller.js?v=10"></script>
-    <script src="js/bootstrap.js?v=6"></script>
+    <script src="js/bootstrap.js?v=7"></script>
 </body>
 </html>

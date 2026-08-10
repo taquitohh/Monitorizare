@@ -11,90 +11,103 @@
     >
 
     <title>
-        Administrare
+        Administrare - Sistem de monitorizare GPS
     </title>
 
-    <link
-        rel="stylesheet"
-        href="css/admin.css?v=1"
-    >
+   <link
+    rel="stylesheet"
+    href="css/topbar.css?v=1"
+>
 
+<link
+    rel="stylesheet"
+    href="css/admin.css?v=13"
+>
 </head>
 
 
 <body>
 
+
     <!-- =====================================
          TOPBAR
     ====================================== -->
 
-    <header class="admin-topbar">
+    <header class="app-topbar">
 
-        <div class="admin-brand">
+    <div class="app-topbar-brand">
 
-            <div class="admin-brand-mark">
-                GPS
-            </div>
+        <h1>
+            Sistem de monitorizare GPS
+        </h1>
 
-            <div>
+        <p>
+            Monitorizare în timp real a vehiculelor
+        </p>
 
-                <strong>
-                    Sistem monitorizare GPS
-                </strong>
+    </div>
 
-                <span>
-                    Administrare
-                </span>
 
-            </div>
+    <div class="app-topbar-status">
+
+        <span class="app-topbar-status-dot"></span>
+
+        Sistem online
+
+    </div>
+
+
+    <nav class="app-topbar-navigation">
+
+        <a
+            href="/admin.html"
+            class="
+                app-topbar-navigation-link
+                active
+            "
+        >
+            Administrare
+        </a>
+
+        <a
+            href="/dispatcher.html"
+            class="app-topbar-navigation-link"
+        >
+            Dispecerat
+        </a>
+
+    </nav>
+
+
+    <div class="app-topbar-user">
+
+        <div class="app-topbar-user-info">
+
+            <strong
+                id="admin-current-user-name"
+                class="app-topbar-user-name"
+            >
+                Administrator
+            </strong>
+
+            <span class="app-topbar-user-role">
+                Administrator
+            </span>
 
         </div>
 
 
-        <nav class="admin-main-navigation">
+        <button
+            type="button"
+            id="admin-logout-button"
+            class="app-topbar-logout"
+        >
+            Deconectare
+        </button>
 
-            <a
-                href="admin.html"
-                class="admin-main-navigation-link active"
-            >
-                Administrare
-            </a>
+    </div>
 
-            <a
-                href="dispatcher.html"
-                class="admin-main-navigation-link"
-            >
-                Dispecerat
-            </a>
-
-        </nav>
-
-
-        <div class="admin-user-area">
-
-            <div class="admin-user-information">
-
-                <span>
-                    Administrator
-                </span>
-
-                <strong id="admin-current-user-name">
-                    -
-                </strong>
-
-            </div>
-
-            <button
-                type="button"
-                id="admin-logout-button"
-                class="admin-logout-button"
-            >
-                Deconectare
-            </button>
-
-        </div>
-
-    </header>
+</header>
 
 
     <!-- =====================================
@@ -113,7 +126,7 @@
             <div class="admin-sidebar-heading">
 
                 <span>
-                    Panou administrator
+                    Administrare
                 </span>
 
                 <strong>
@@ -130,10 +143,7 @@
                     class="admin-sidebar-link active"
                     data-admin-section="overview"
                 >
-                    <span>
-                        ◫
-                    </span>
-
+                    <span>◫</span>
                     Prezentare generală
                 </button>
 
@@ -143,10 +153,7 @@
                     class="admin-sidebar-link"
                     data-admin-section="users"
                 >
-                    <span>
-                        👤
-                    </span>
-
+                    <span>👤</span>
                     Utilizatori
                 </button>
 
@@ -156,10 +163,7 @@
                     class="admin-sidebar-link"
                     data-admin-section="vehicles"
                 >
-                    <span>
-                        🚓
-                    </span>
-
+                    <span>🚓</span>
                     Vehicule
                 </button>
 
@@ -169,10 +173,7 @@
                     class="admin-sidebar-link"
                     data-admin-section="database"
                 >
-                    <span>
-                        ▦
-                    </span>
-
+                    <span>▦</span>
                     Bază de date
                 </button>
 
@@ -182,10 +183,7 @@
                     class="admin-sidebar-link"
                     data-admin-section="sql"
                 >
-                    <span>
-                        &gt;_
-                    </span>
-
+                    <span>&gt;_</span>
                     SQL Console
                 </button>
 
@@ -201,9 +199,7 @@
         <main class="admin-main">
 
 
-            <!-- =====================================
-                 STATUS GLOBAL
-            ====================================== -->
+            <!-- STATUS GLOBAL -->
 
             <div
                 id="admin-global-message"
@@ -243,9 +239,9 @@
                     <button
                         type="button"
                         id="admin-refresh-dashboard-button"
-                        class="admin-secondary-button"
+                        class="admin-primary-button"
                     >
-                        Reîncarcă
+                        Reîmprospătează
                     </button>
 
                 </div>
@@ -254,7 +250,6 @@
                 <!-- STATISTICI -->
 
                 <div class="admin-statistics-grid">
-
 
                     <article class="admin-stat-card">
 
@@ -758,7 +753,7 @@
                             id="admin-refresh-users-button"
                             class="admin-secondary-button"
                         >
-                            Reîncarcă
+                            Reîmprospătează
                         </button>
 
                     </div>
@@ -771,35 +766,13 @@
                             <thead>
 
                                 <tr>
-
-                                    <th>
-                                        ID
-                                    </th>
-
-                                    <th>
-                                        Utilizator
-                                    </th>
-
-                                    <th>
-                                        Nume
-                                    </th>
-
-                                    <th>
-                                        Rol
-                                    </th>
-
-                                    <th>
-                                        Stare
-                                    </th>
-
-                                    <th>
-                                        Creat
-                                    </th>
-
-                                    <th>
-                                        Acțiuni
-                                    </th>
-
+                                    <th>ID</th>
+                                    <th>Utilizator</th>
+                                    <th>Nume</th>
+                                    <th>Rol</th>
+                                    <th>Stare</th>
+                                    <th>Creat</th>
+                                    <th>Acțiuni</th>
                                 </tr>
 
                             </thead>
@@ -858,9 +831,9 @@
                     <button
                         type="button"
                         id="admin-refresh-vehicles-button"
-                        class="admin-secondary-button"
+                        class="admin-primary-button"
                     >
-                        Reîncarcă
+                        Reîmprospătează
                     </button>
 
                 </div>
@@ -875,43 +848,15 @@
                             <thead>
 
                                 <tr>
-
-                                    <th>
-                                        ID
-                                    </th>
-
-                                    <th>
-                                        Cod
-                                    </th>
-
-                                    <th>
-                                        Nume
-                                    </th>
-
-                                    <th>
-                                        Tip
-                                    </th>
-
-                                    <th>
-                                        Stare
-                                    </th>
-
-                                    <th>
-                                        Latitudine
-                                    </th>
-
-                                    <th>
-                                        Longitudine
-                                    </th>
-
-                                    <th>
-                                        Viteză
-                                    </th>
-
-                                    <th>
-                                        Actualizat
-                                    </th>
-
+                                    <th>ID</th>
+                                    <th>Cod</th>
+                                    <th>Nume</th>
+                                    <th>Tip</th>
+                                    <th>Stare</th>
+                                    <th>Latitudine</th>
+                                    <th>Longitudine</th>
+                                    <th>Viteză</th>
+                                    <th>Actualizat</th>
                                 </tr>
 
                             </thead>
@@ -970,9 +915,9 @@
                     <button
                         type="button"
                         id="admin-refresh-database-button"
-                        class="admin-secondary-button"
+                        class="admin-primary-button"
                     >
-                        Reîncarcă tabelele
+                        Reîmprospătează tabelele
                     </button>
 
                 </div>
@@ -1037,9 +982,7 @@
                             id="admin-database-empty-state"
                             class="admin-empty-state"
                         >
-
                             Selectează un tabel din lista din stânga.
-
                         </div>
 
 
@@ -1069,7 +1012,9 @@
                             </div>
 
 
-                            <!-- DATE -->
+                            <!-- =====================================
+                                 DATE
+                            ====================================== -->
 
                             <div
                                 id="admin-database-tab-rows"
@@ -1081,7 +1026,6 @@
                                     <span id="admin-database-row-summary">
                                         -
                                     </span>
-
 
                                     <div class="admin-pagination-controls">
 
@@ -1110,18 +1054,44 @@
                                 </div>
 
 
-                                <div class="admin-table-wrapper">
+                                <!-- SCROLL ORIZONTAL SUS -->
+
+                                <div
+                                    id="admin-database-top-scroll"
+                                    class="admin-table-top-scroll"
+                                    aria-hidden="true"
+                                >
+
+                                    <div
+                                        id="admin-database-top-scroll-content"
+                                        class="admin-table-top-scroll-content"
+                                    ></div>
+
+                                </div>
+
+
+                                <!-- TABEL DATE -->
+
+                                <div
+                                    id="admin-database-data-wrapper"
+                                    class="
+                                        admin-table-wrapper
+                                        admin-database-data-wrapper
+                                    "
+                                >
 
                                     <table
                                         id="admin-database-data-table"
                                         class="admin-table"
                                     >
 
-                                        <thead id="admin-database-data-head">
-                                        </thead>
+                                        <thead
+                                            id="admin-database-data-head"
+                                        ></thead>
 
-                                        <tbody id="admin-database-data-body">
-                                        </tbody>
+                                        <tbody
+                                            id="admin-database-data-body"
+                                        ></tbody>
 
                                     </table>
 
@@ -1130,7 +1100,9 @@
                             </div>
 
 
-                            <!-- STRUCTURĂ -->
+                            <!-- =====================================
+                                 STRUCTURĂ
+                            ====================================== -->
 
                             <div
                                 id="admin-database-tab-structure"
@@ -1145,42 +1117,20 @@
                                         <thead>
 
                                             <tr>
-
-                                                <th>
-                                                    #
-                                                </th>
-
-                                                <th>
-                                                    Coloană
-                                                </th>
-
-                                                <th>
-                                                    Tip
-                                                </th>
-
-                                                <th>
-                                                    Null
-                                                </th>
-
-                                                <th>
-                                                    Default
-                                                </th>
-
-                                                <th>
-                                                    Cheie
-                                                </th>
-
-                                                <th>
-                                                    Extra
-                                                </th>
-
+                                                <th>#</th>
+                                                <th>Coloană</th>
+                                                <th>Tip</th>
+                                                <th>Null</th>
+                                                <th>Default</th>
+                                                <th>Cheie</th>
+                                                <th>Extra</th>
                                             </tr>
 
                                         </thead>
 
-
-                                        <tbody id="admin-database-structure-body">
-                                        </tbody>
+                                        <tbody
+                                            id="admin-database-structure-body"
+                                        ></tbody>
 
                                     </table>
 
@@ -1434,7 +1384,7 @@
 
     <script src="js/admin-api.js?v=1"></script>
 
-    <script src="js/admin.js?v=3"></script>
+    <script src="js/admin.js?v=7"></script>
 
 </body>
 

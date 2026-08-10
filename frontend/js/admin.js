@@ -72,6 +72,8 @@ async function initializeAdminPage() {
 
     bindAdminDatabaseActions();
 
+    initializeDatabaseTableScroll();
+
     bindAdminSqlActions();
 
     bindAdminPasswordModal();
@@ -2115,25 +2117,29 @@ function renderAdminDatabaseRows(
     }
 
 
-    if (
-        rows.length ===
-        0
-    ) {
+   if (
+    rows.length ===
+    0
+) {
 
-        head.innerHTML =
-            "";
+    head.innerHTML =
+        "";
 
-        body.innerHTML = `
-            <tr>
-                <td>
-                    Tabelul nu conține date.
-                </td>
-            </tr>
-        `;
+    body.innerHTML = `
+        <tr>
+            <td>
+                Tabelul nu conține date.
+            </td>
+        </tr>
+    `;
 
-        return;
 
-    }
+    refreshDatabaseTableScroll();
+
+
+    return;
+
+}
 
 
     head.innerHTML = `
@@ -2160,37 +2166,40 @@ function renderAdminDatabaseRows(
 
 
     body.innerHTML =
-        rows
-            .map(
-                function (row) {
+    rows
+        .map(
+            function (row) {
 
-                    return `
-                        <tr>
-                            ${
-                                columns
-                                    .map(
-                                        function (column) {
+                return `
+                    <tr>
+                        ${
+                            columns
+                                .map(
+                                    function (column) {
 
-                                            return `
-                                                <td>
-                                                    ${escapeAdminHtml(
-                                                        formatAdminDatabaseValue(
-                                                            row[column]
-                                                        )
-                                                    )}
-                                                </td>
-                                            `;
+                                        return `
+                                            <td>
+                                                ${escapeAdminHtml(
+                                                    formatAdminDatabaseValue(
+                                                        row[column]
+                                                    )
+                                                )}
+                                            </td>
+                                        `;
 
-                                        }
-                                    )
-                                    .join("")
-                            }
-                        </tr>
-                    `;
+                                    }
+                                )
+                                .join("")
+                        }
+                    </tr>
+                `;
 
-                }
-            )
-            .join("");
+            }
+        )
+        .join("");
+
+
+refreshDatabaseTableScroll();
 
 }
 
@@ -3422,3 +3431,338 @@ window.openAdminPasswordModal =
 
 window.selectAdminDatabaseTable =
     selectAdminDatabaseTable;
+
+    /* =====================================
+   SCROLL ORIZONTAL TABEL - SUS + JOS
+===================================== */
+
+function initializeDatabaseTableScroll() {
+
+    const tableWrapper =
+        document.querySelector(
+            ".admin-database-content .admin-table-wrapper"
+        );
+
+
+    if (!tableWrapper) {
+
+        return;
+
+    }
+
+
+    /*
+     * Eliminăm scrollbar-ul superior
+     * vechi dacă tabelul a fost
+     * reîncărcat.
+     */
+    const oldTopScroll =
+        document.querySelector(
+            ".admin-table-top-scroll"
+        );
+
+
+    if (oldTopScroll) {
+
+        oldTopScroll.remove();
+
+    }
+
+
+    /*
+     * Creăm scrollbar-ul superior.
+     */
+    const topScroll =
+        document.createElement(
+            "div"
+        );
+
+
+    topScroll.className =
+        "admin-table-top-scroll";
+
+
+    const topScrollContent =
+        document.createElement(
+            "div"
+        );
+
+
+    topScrollContent.className =
+        "admin-table-top-scroll-content";
+
+
+    topScroll.appendChild(
+        topScrollContent
+    );
+
+
+    /*
+     * Îl introducem imediat
+     * deasupra tabelului.
+     */
+    tableWrapper.parentNode.insertBefore(
+        topScroll,
+        tableWrapper
+    );
+
+
+    /*
+     * Lățimea elementului invizibil
+     * trebuie să fie identică cu
+     * lățimea reală a tabelului.
+     */
+    function updateScrollWidth() {
+
+        topScrollContent.style.width =
+            `${tableWrapper.scrollWidth}px`;
+
+    }
+
+
+    updateScrollWidth();
+
+
+    /*
+     * Scroll sus -> scroll tabel.
+     */
+    topScroll.addEventListener(
+        "scroll",
+        function () {
+
+            tableWrapper.scrollLeft =
+                topScroll.scrollLeft;
+
+        }
+    );
+
+
+    /*
+     * Scroll tabel -> scroll sus.
+     */
+    tableWrapper.addEventListener(
+        "scroll",
+        function () {
+
+            topScroll.scrollLeft =
+                tableWrapper.scrollLeft;
+
+        }
+    );
+
+
+    /*
+     * Dacă dimensiunea ferestrei
+     * se schimbă, recalculăm lățimea.
+     */
+    window.addEventListener(
+        "resize",
+        updateScrollWidth
+    );
+
+}
+
+/* =====================================
+   SCROLL ORIZONTAL TABEL - SUS + JOS
+===================================== */
+
+let adminDatabaseScrollIsBound =
+    false;
+
+
+function initializeDatabaseTableScroll() {
+
+    if (adminDatabaseScrollIsBound) {
+
+        refreshDatabaseTableScroll();
+
+        return;
+
+    }
+
+
+    const topScroll =
+        document.getElementById(
+            "admin-database-top-scroll"
+        );
+
+
+    const tableWrapper =
+        document.getElementById(
+            "admin-database-data-wrapper"
+        );
+
+
+    if (
+        !topScroll
+        ||
+        !tableWrapper
+    ) {
+
+        return;
+
+    }
+
+
+    let syncingFromTop =
+        false;
+
+    let syncingFromBottom =
+        false;
+
+
+    topScroll.addEventListener(
+        "scroll",
+        function () {
+
+            if (syncingFromBottom) {
+
+                return;
+
+            }
+
+
+            syncingFromTop =
+                true;
+
+            tableWrapper.scrollLeft =
+                topScroll.scrollLeft;
+
+            syncingFromTop =
+                false;
+
+        }
+    );
+
+
+    tableWrapper.addEventListener(
+        "scroll",
+        function () {
+
+            if (syncingFromTop) {
+
+                return;
+
+            }
+
+
+            syncingFromBottom =
+                true;
+
+            topScroll.scrollLeft =
+                tableWrapper.scrollLeft;
+
+            syncingFromBottom =
+                false;
+
+        }
+    );
+
+
+    window.addEventListener(
+        "resize",
+        refreshDatabaseTableScroll
+    );
+
+
+    adminDatabaseScrollIsBound =
+        true;
+
+
+    refreshDatabaseTableScroll();
+
+}
+
+
+function refreshDatabaseTableScroll() {
+
+    const topScroll =
+        document.getElementById(
+            "admin-database-top-scroll"
+        );
+
+
+    const topScrollContent =
+        document.getElementById(
+            "admin-database-top-scroll-content"
+        );
+
+
+    const tableWrapper =
+        document.getElementById(
+            "admin-database-data-wrapper"
+        );
+
+
+    const table =
+        document.getElementById(
+            "admin-database-data-table"
+        );
+
+
+    if (
+        !topScroll
+        ||
+        !topScrollContent
+        ||
+        !tableWrapper
+        ||
+        !table
+    ) {
+
+        return;
+
+    }
+
+
+    window.requestAnimationFrame(
+        function () {
+
+            const tableWidth =
+                Math.max(
+                    table.scrollWidth,
+                    table.offsetWidth,
+                    tableWrapper.clientWidth
+                );
+
+
+            topScrollContent.style.width =
+                `${tableWidth}px`;
+
+
+            const hasHorizontalOverflow =
+                (
+                    tableWidth
+                    >
+                    tableWrapper.clientWidth
+                    +
+                    1
+                );
+
+
+            topScroll.classList.toggle(
+                "is-hidden",
+                !hasHorizontalOverflow
+            );
+
+
+            if (!hasHorizontalOverflow) {
+
+                topScroll.scrollLeft =
+                    0;
+
+                tableWrapper.scrollLeft =
+                    0;
+
+                return;
+
+            }
+
+
+            topScroll.scrollLeft =
+                tableWrapper.scrollLeft;
+
+        }
+    );
+
+}

@@ -25,6 +25,10 @@ window.addEventListener(
                 currentUser
             );
 
+            initializeAdminNavigation(
+                currentUser
+            );
+
             initializeLogoutButton();
 
             initializeMap();
@@ -120,6 +124,39 @@ function displayCurrentUser(
 
 }
 
+/* =====================================
+   NAVIGARE ADMINISTRATOR
+===================================== */
+
+function initializeAdminNavigation(
+    user
+) {
+
+    const navigation =
+        document.getElementById(
+            "dispatcher-admin-navigation"
+        );
+
+    if (!navigation) {
+
+        return;
+
+    }
+
+
+    const isAdministrator =
+        (
+            user
+            &&
+            user.role ===
+                "administrator"
+        );
+
+
+    navigation.hidden =
+        !isAdministrator;
+
+}
 
 /* =====================================
    BUTON DECONECTARE
