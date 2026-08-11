@@ -395,6 +395,7 @@ async function confirmRecommendedVehicle() {
 
     }
 
+
     const confirmButton =
         document.getElementById(
             "confirm-assignment-button"
@@ -410,8 +411,10 @@ async function confirmRecommendedVehicle() {
             "recommendation-status"
         );
 
+
     assignmentSaving =
         true;
+
 
     if (confirmButton) {
 
@@ -423,12 +426,14 @@ async function confirmRecommendedVehicle() {
 
     }
 
+
     if (cancelButton) {
 
         cancelButton.disabled =
             true;
 
     }
+
 
     if (status) {
 
@@ -437,7 +442,26 @@ async function confirmRecommendedVehicle() {
 
     }
 
+
     try {
+
+        /*
+         * Salvăm ID-ul incidentului înainte
+         * de orice modificare de interfață.
+         *
+         * Acest incident va fi folosit pentru
+         * încărcarea chestionarelor specializate.
+         */
+
+        const assignedIncidentId =
+            activeIncidentId;
+
+
+        /*
+         * =================================
+         * VEHICULELE RECOMANDATE
+         * =================================
+         */
 
         const vehicleIds =
             recommendedVehicles.map(
@@ -450,26 +474,59 @@ async function confirmRecommendedVehicle() {
                 }
             );
 
+
+        /*
+         * =================================
+         * ASIGNARE BACKEND
+         * =================================
+         */
+
         const result =
             await window
                 .assignVehicleToIncident(
-                    activeIncidentId,
+                    assignedIncidentId,
                     vehicleIds
                 );
 
+
+        /*
+         * Incidentul devine ruta activă.
+         */
+
         activeRouteId =
-            activeIncidentId;
+            assignedIncidentId;
+
+
+        /*
+         * Actualizăm datele din interfață.
+         */
 
         await loadVehicles();
 
         await loadIncidents();
 
+
+        /*
+         * =================================
+         * NUMĂR VEHICULE ASIGNATE
+         * =================================
+         */
+
         const assignedCount =
             Array.isArray(
                 result.assignments
             )
-                ? result.assignments.length
-                : vehicleIds.length;
+                ?
+                result.assignments.length
+                :
+                vehicleIds.length;
+
+
+        /*
+         * =================================
+         * ÎNCHIDEM RECOMANDAREA
+         * =================================
+         */
 
         recommendationModeActive =
             false;
@@ -486,17 +543,79 @@ async function confirmRecommendedVehicle() {
         recommendedVehicleDistance =
             null;
 
+
         hideRecommendationPanel();
 
         resetVehicleDetails();
 
-        showVehiclesSidebar();
+
+        /*
+         * =================================
+         * PORNIRE CHESTIONARE SPECIALIZATE
+         * =================================
+         *
+         * IMPORTANT:
+         *
+         * NU revenim la modul "normal".
+         *
+         * Formularul "Incident nou" trebuie
+         * să rămână ascuns până când toate
+         * chestionarele specializate sunt
+         * confirmate.
+         */
+
+        dispatcherWorkspaceMode =
+            "questionnaires";
+
+
+        if (
+            typeof refreshDispatcherWorkspace ===
+            "function"
+        ) {
+
+            refreshDispatcherWorkspace();
+
+        }
+
+
+        /*
+         * =================================
+         * ÎNCĂRCARE CHESTIONARE
+         * =================================
+         */
+
+        if (
+            typeof startIncidentQuestionnaires ===
+            "function"
+        ) {
+
+            await startIncidentQuestionnaires(
+                assignedIncidentId
+            );
+
+        }
+
+        else {
+
+            throw new Error(
+                "Modulul chestionarelor specializate nu este disponibil."
+            );
+
+        }
+
+
+        /*
+         * =================================
+         * MESAJ CONFIRMARE
+         * =================================
+         */
 
         alert(
             `${assignedCount} vehicule au fost asignate incidentului.`
         );
 
     }
+
 
     catch (error) {
 
@@ -505,9 +624,11 @@ async function confirmRecommendedVehicle() {
             error
         );
 
+
         alert(
             error.message
         );
+
 
         if (status) {
 
@@ -518,10 +639,12 @@ async function confirmRecommendedVehicle() {
 
     }
 
+
     finally {
 
         assignmentSaving =
             false;
+
 
         if (confirmButton) {
 
@@ -533,6 +656,7 @@ async function confirmRecommendedVehicle() {
 
         }
 
+
         if (cancelButton) {
 
             cancelButton.disabled =
@@ -543,7 +667,6 @@ async function confirmRecommendedVehicle() {
     }
 
 }
-
 
 /* =====================================
    ANULARE RECOMANDARE
@@ -575,6 +698,27 @@ function cancelRecommendedVehicle() {
     hideRecommendationPanel();
 
     resetVehicleDetails();
+
+
+    /*
+     * Dacă operatorul anulează alegerea
+     * vehiculului, ieșim din modul
+     * de asignare și revenim la
+     * interfața normală.
+     */
+
+    dispatcherWorkspaceMode =
+        "normal";
+
+    if (
+        typeof refreshDispatcherWorkspace ===
+        "function"
+    ) {
+
+        refreshDispatcherWorkspace();
+
+    }
+
 
     if (
         typeof clearIncidentRoute ===

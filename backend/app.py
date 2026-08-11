@@ -3,6 +3,7 @@ from flask_cors import CORS
 from routes.auth import auth_bp
 from routes.driver import driver_bp
 from routes.admin import admin_bp
+from routes.specialist import specialist_bp
 
 import os
 import uuid
@@ -14,6 +15,7 @@ from services.report_service import IncidentReportService
 from utils.validation import calculate_haversine_distance, validate_coordinates
 from services.incident_service import IncidentService
 from services.auth_service import AuthService
+from services.specialist_service import SpecialistService
 
 app = Flask(__name__)
 
@@ -45,6 +47,9 @@ app.register_blueprint(
 )
 app.register_blueprint(
     admin_bp
+)
+app.register_blueprint(
+    specialist_bp
 )
 DB_CONFIG = {
     "host": os.getenv("DB_HOST"),
@@ -153,6 +158,89 @@ def get_vehicles():
 
         connection.close()
 
+# =====================================
+# GET VEHICLES FOR SIMULATOR
+# =====================================
+
+@app.route(
+    "/api/vehicles/simulator",
+    methods=["GET"]
+)
+def get_simulator_vehicles():
+
+    connection = get_db_connection()
+
+    try:
+
+        with connection.cursor() as cursor:
+
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    vehicle_code,
+                    vehicle_type,
+                    status
+
+                FROM vehicles
+
+                ORDER BY id ASC
+                """
+            )
+
+            rows = (
+                cursor.fetchall()
+                or
+                []
+            )
+
+            vehicles = []
+
+            for row in rows:
+
+                vehicles.append({
+                    "id":
+                        row["id"],
+
+                    "vehicle_code":
+                        row["vehicle_code"],
+
+                    "vehicle_type":
+                        row["vehicle_type"],
+
+                    "status":
+                        row["status"]
+                })
+
+            return jsonify({
+                "status":
+                    "success",
+
+                "vehicle_count":
+                    len(vehicles),
+
+                "vehicles":
+                    vehicles
+            }), 200
+
+    except Exception as error:
+
+        app.logger.exception(
+            "Vehiculele pentru simulator "
+            "nu au putut fi încărcate"
+        )
+
+        return jsonify({
+            "status":
+                "error",
+
+            "message":
+                str(error)
+        }), 500
+
+    finally:
+
+        connection.close()
 
 # =====================================
 # RECEIVE VEHICLE POSITION
@@ -1648,6 +1736,12 @@ def assign_vehicle(
                 )
             )
 
+            SpecialistService.create_required_reports(
+                cursor,
+                incident_id
+            )
+
+         
             connection.commit()
 
             cursor.execute(

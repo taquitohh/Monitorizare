@@ -634,8 +634,6 @@ function initializeIncidentForm() {
 
                 }
 
-                showVehiclesSidebar();
-
                 startIncidentLocationSelection(
                     incident
                 );

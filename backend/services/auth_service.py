@@ -942,6 +942,9 @@ class AuthService:
                         "mission":
                             None,
 
+                        "specialist_details":
+                            None,
+
                         "same_type_vehicles":
                             []
                     }
@@ -950,8 +953,26 @@ class AuthService:
                     vehicle["id"]
                 )
 
-                vehicle_type = (
+                vehicle_type = str(
                     vehicle["vehicle_type"]
+                    or
+                    ""
+                ).strip().lower()
+
+                specialist_service_type = {
+                    "police":
+                        "police",
+
+                    "ambulance":
+                        "ambulance",
+
+                    "fire":
+                        "firefighters",
+
+                    "firefighters":
+                        "firefighters"
+                }.get(
+                    vehicle_type
                 )
 
                 # =====================================
@@ -1014,6 +1035,126 @@ class AuthService:
                 )
 
                 # =====================================
+                # DETALII SPECIALIZATE
+                # =====================================
+
+                specialist_details = None
+
+                if (
+                    mission
+                    and
+                    specialist_service_type
+                ):
+
+                    cursor.execute(
+                        """
+                        SELECT
+                            id,
+                            incident_id,
+                            service_type,
+                            status,
+                            created_at,
+                            updated_at,
+                            confirmed_at,
+                            confirmed_by_user_id
+
+                        FROM incident_specialist_reports
+
+                        WHERE
+                            incident_id = %s
+                            AND service_type = %s
+
+                        LIMIT 1
+                        """,
+                        (
+                            mission["id"],
+                            specialist_service_type
+                        )
+                    )
+
+                    specialist_report = (
+                        cursor.fetchone()
+                    )
+
+                    if specialist_report:
+
+                        cursor.execute(
+                            """
+                            SELECT
+                                question_code,
+                                answer_value,
+                                created_at,
+                                updated_at
+
+                            FROM incident_specialist_answers
+
+                            WHERE report_id = %s
+
+                            ORDER BY id
+                            """,
+                            (
+                                specialist_report["id"],
+                            )
+                        )
+
+                        specialist_answer_rows = (
+                            cursor.fetchall()
+                            or
+                            []
+                        )
+
+                        specialist_answers = {}
+
+                        for answer_row in (
+                            specialist_answer_rows
+                        ):
+
+                            specialist_answers[
+                                answer_row[
+                                    "question_code"
+                                ]
+                            ] = (
+                                answer_row[
+                                    "answer_value"
+                                ]
+                            )
+
+                        specialist_details = {
+                            "report_id":
+                                specialist_report[
+                                    "id"
+                                ],
+
+                            "incident_id":
+                                specialist_report[
+                                    "incident_id"
+                                ],
+
+                            "service_type":
+                                specialist_report[
+                                    "service_type"
+                                ],
+
+                            "status":
+                                specialist_report[
+                                    "status"
+                                ],
+
+                            "updated_at":
+                                specialist_report[
+                                    "updated_at"
+                                ],
+
+                            "confirmed_at":
+                                specialist_report[
+                                    "confirmed_at"
+                                ],
+
+                            "answers":
+                                specialist_answers
+                        }
+
+                # =====================================
                 # VEHICULE DE ACELAȘI TIP
                 # =====================================
 
@@ -1052,6 +1193,8 @@ class AuthService:
 
                 same_type_vehicles = (
                     cursor.fetchall()
+                    or
+                    []
                 )
 
                 return {
@@ -1067,6 +1210,9 @@ class AuthService:
                     "mission":
                         mission,
 
+                    "specialist_details":
+                        specialist_details,
+
                     "same_type_vehicles":
                         same_type_vehicles
                 }
@@ -1076,7 +1222,7 @@ class AuthService:
             connection.close()
 
 
-        # =====================================
+    # =====================================
     # CREARE CERERE DE ÎNTĂRIRI
     # =====================================
 

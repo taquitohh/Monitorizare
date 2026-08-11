@@ -24,6 +24,7 @@ function initializeSidebarSwitch() {
             "requests-tab"
         );
 
+
     if (vehiclesTab) {
 
         vehiclesTab.addEventListener(
@@ -37,6 +38,7 @@ function initializeSidebarSwitch() {
 
     }
 
+
     if (incidentsTab) {
 
         incidentsTab.addEventListener(
@@ -49,6 +51,7 @@ function initializeSidebarSwitch() {
         );
 
     }
+
 
     if (requestsTab) {
 
@@ -67,13 +70,178 @@ function initializeSidebarSwitch() {
 
 
 /* =====================================
-   AFIȘARE VEHICULE
+   DISPATCHER WORKSPACE
 ===================================== */
 
-function showVehiclesSidebar() {
+function refreshDispatcherWorkspace() {
 
-    sidebarMode =
-        "vehicles";
+    const vehicleDetailsPanel =
+        document.getElementById(
+            "vehicle-details-panel"
+        );
+
+    const incidentPanel =
+        document.getElementById(
+            "incident-panel"
+        );
+
+    const recommendationPanel =
+        document.getElementById(
+            "recommendation-panel"
+        );
+
+    const specialistPanel =
+        document.getElementById(
+            "specialist-questionnaires-panel"
+        );
+
+
+    const locationMode =
+        dispatcherWorkspaceMode ===
+        "incident_location";
+
+    const assignmentMode =
+        dispatcherWorkspaceMode ===
+        "assignment";
+
+    const questionnairesMode =
+        dispatcherWorkspaceMode ===
+        "questionnaires";
+
+
+    /*
+     * =================================
+     * MOD SELECTARE LOCAȚIE
+     * =================================
+     */
+
+    if (locationMode) {
+
+        if (incidentPanel) {
+            incidentPanel.hidden = true;
+        }
+
+        if (vehicleDetailsPanel) {
+            vehicleDetailsPanel.hidden = true;
+        }
+
+        if (recommendationPanel) {
+            recommendationPanel.hidden = true;
+        }
+
+        if (specialistPanel) {
+            specialistPanel.hidden = true;
+        }
+
+        return;
+    }
+
+
+    /*
+     * =================================
+     * MOD AȘTEPTARE ASIGNARE
+     * =================================
+     */
+
+    if (assignmentMode) {
+
+        if (incidentPanel) {
+            incidentPanel.hidden = true;
+        }
+
+        if (vehicleDetailsPanel) {
+            vehicleDetailsPanel.hidden =
+                sidebarMode ===
+                "requests";
+        }
+
+        if (specialistPanel) {
+            specialistPanel.hidden = true;
+        }
+
+        /*
+         * recommendationPanel este controlat
+         * de recommendation.js.
+         */
+
+        return;
+    }
+
+
+    /*
+     * =================================
+     * MOD CHESTIONARE SPECIALIZATE
+     * =================================
+     */
+
+    if (questionnairesMode) {
+
+        if (incidentPanel) {
+            incidentPanel.hidden = true;
+        }
+
+        if (vehicleDetailsPanel) {
+            vehicleDetailsPanel.hidden = true;
+        }
+
+        if (recommendationPanel) {
+            recommendationPanel.hidden = true;
+        }
+
+        if (specialistPanel) {
+            specialistPanel.hidden = false;
+        }
+
+        return;
+    }
+
+
+    /*
+     * =================================
+     * MOD NORMAL
+     * =================================
+     */
+
+    if (incidentPanel) {
+        incidentPanel.hidden = false;
+    }
+
+    if (specialistPanel) {
+        specialistPanel.hidden = true;
+    }
+
+    if (vehicleDetailsPanel) {
+
+        vehicleDetailsPanel.hidden =
+            sidebarMode ===
+            "requests";
+
+    }
+
+}
+
+
+/* =====================================
+   RESETARE CONTEXT LA SCHIMBAREA TABULUI
+===================================== */
+
+function resetSidebarOperationalContext() {
+
+    if (
+        dispatcherWorkspaceMode ===
+            "incident_location"
+        ||
+        dispatcherWorkspaceMode ===
+            "assignment"
+        ||
+        dispatcherWorkspaceMode ===
+            "questionnaires"
+    ) {
+
+        return;
+
+    }
+
 
     activeRouteId =
         null;
@@ -92,6 +260,45 @@ function showVehiclesSidebar() {
 
     selectedReinforcementRequestId =
         null;
+
+
+    if (
+        typeof clearIncidentRoute ===
+        "function"
+    ) {
+
+        clearIncidentRoute();
+
+    }
+
+
+    if (
+        typeof removeIncidentMarker ===
+        "function"
+    ) {
+
+        removeIncidentMarker();
+
+    }
+
+
+    resetVehicleDetails();
+
+}
+
+
+/* =====================================
+   AFIȘARE VEHICULE
+===================================== */
+
+function showVehiclesSidebar() {
+
+    sidebarMode =
+        "vehicles";
+
+
+    resetSidebarOperationalContext();
+
 
     const vehiclesTab =
         document.getElementById(
@@ -132,100 +339,76 @@ function showVehiclesSidebar() {
         document.getElementById(
             "sidebar-title"
         );
-        
-    
-    const vehicleDetailsPanel =
-    document.getElementById(
-        "vehicle-details-panel"
-    );
+
 
     if (vehiclesTab) {
-
         vehiclesTab.classList.add(
             "active"
         );
-
     }
 
-    if (incidentsTab) {
 
+    if (incidentsTab) {
         incidentsTab.classList.remove(
             "active"
         );
-
     }
 
-    if (requestsTab) {
 
+    if (requestsTab) {
         requestsTab.classList.remove(
             "active"
         );
-
     }
+
 
     if (vehiclesContainer) {
-
         vehiclesContainer.hidden =
             false;
-
     }
+
 
     if (incidentsContainer) {
-
         incidentsContainer.hidden =
             true;
-
     }
+
 
     if (requestsContainer) {
-
         requestsContainer.hidden =
             true;
-
     }
+
 
     if (vehicleFilters) {
-
         vehicleFilters.hidden =
             false;
-
     }
+
 
     if (sidebarTitle) {
-
         sidebarTitle.textContent =
             "Vehicule";
-
     }
 
-    if (vehicleDetailsPanel) {
 
-    vehicleDetailsPanel.hidden =
-        false;
+    refreshDispatcherWorkspace();
 
-}
 
     if (
-        typeof clearIncidentRoute ===
-        "function"
+        dispatcherWorkspaceMode !==
+            "incident_location"
+        &&
+        dispatcherWorkspaceMode !==
+            "assignment"
+        &&
+        dispatcherWorkspaceMode !==
+            "questionnaires"
     ) {
 
-        clearIncidentRoute();
+        refreshVehicleView();
 
     }
-
-    if (
-        typeof removeIncidentMarker ===
-        "function"
-    ) {
-
-        removeIncidentMarker();
-
-    }
-
-    resetVehicleDetails();
-
-    refreshVehicleView();
 
 }
 
@@ -239,23 +422,9 @@ async function showIncidentsSidebar() {
     sidebarMode =
         "routes";
 
-    activeRouteId =
-        null;
 
-    activeIncidentId =
-        null;
+    resetSidebarOperationalContext();
 
-    activeIncidentCode =
-        null;
-
-    activeIncidentLocation =
-        null;
-
-    selectedVehicleId =
-        null;
-
-    selectedReinforcementRequestId =
-        null;
 
     const vehiclesTab =
         document.getElementById(
@@ -297,107 +466,81 @@ async function showIncidentsSidebar() {
             "sidebar-title"
         );
 
-    const vehicleDetailsPanel =
-    document.getElementById(
-        "vehicle-details-panel"
-    );
 
     if (vehiclesTab) {
-
         vehiclesTab.classList.remove(
             "active"
         );
-
     }
 
-    if (incidentsTab) {
 
+    if (incidentsTab) {
         incidentsTab.classList.add(
             "active"
         );
-
     }
 
-    if (requestsTab) {
 
+    if (requestsTab) {
         requestsTab.classList.remove(
             "active"
+        );
+    }
+
+
+    if (vehiclesContainer) {
+        vehiclesContainer.hidden =
+            true;
+    }
+
+
+    if (incidentsContainer) {
+        incidentsContainer.hidden =
+            false;
+    }
+
+
+    if (requestsContainer) {
+        requestsContainer.hidden =
+            true;
+    }
+
+
+    if (vehicleFilters) {
+        vehicleFilters.hidden =
+            true;
+    }
+
+
+    if (sidebarTitle) {
+        sidebarTitle.textContent =
+            "Incidente";
+    }
+
+
+    refreshDispatcherWorkspace();
+
+
+    if (
+        dispatcherWorkspaceMode !==
+            "incident_location"
+        &&
+        dispatcherWorkspaceMode !==
+            "assignment"
+        &&
+        dispatcherWorkspaceMode !==
+            "questionnaires"
+        &&
+        typeof updateVisibleMarkers ===
+            "function"
+    ) {
+
+        updateVisibleMarkers(
+            []
         );
 
     }
 
-    if (vehiclesContainer) {
-
-        vehiclesContainer.hidden =
-            true;
-
-    }
-
-    if (incidentsContainer) {
-
-        incidentsContainer.hidden =
-            false;
-
-    }
-
-    if (requestsContainer) {
-
-        requestsContainer.hidden =
-            true;
-
-    }
-
-    if (vehicleFilters) {
-
-        vehicleFilters.hidden =
-            true;
-
-    }
-
-   if (sidebarTitle) {
-
-    sidebarTitle.textContent =
-        "Incidente";
-
-}
-
-resetVehicleDetails();
-
-if (vehicleDetailsPanel) {
-
-    vehicleDetailsPanel.hidden =
-        true;
-
-}
-
-    
-
-    if (
-        typeof clearIncidentRoute ===
-        "function"
-    ) {
-
-        clearIncidentRoute();
-
-    }
-
-    if (
-        typeof removeIncidentMarker ===
-        "function"
-    ) {
-
-        removeIncidentMarker();
-
-    }
-
-    if (
-        typeof updateVisibleMarkers ===
-        "function"
-    ) {
-
-        updateVisibleMarkers([]);
-
-    }
 
     await loadIncidents();
 
@@ -413,23 +556,9 @@ async function showRequestsSidebar() {
     sidebarMode =
         "requests";
 
-    activeRouteId =
-        null;
 
-    activeIncidentId =
-        null;
+    resetSidebarOperationalContext();
 
-    activeIncidentCode =
-        null;
-
-    activeIncidentLocation =
-        null;
-
-    selectedVehicleId =
-        null;
-
-    selectedReinforcementRequestId =
-        null;
 
     const vehiclesTab =
         document.getElementById(
@@ -471,107 +600,81 @@ async function showRequestsSidebar() {
             "sidebar-title"
         );
 
-    const vehicleDetailsPanel =
-    document.getElementById(
-        "vehicle-details-panel"
-    );
 
     if (vehiclesTab) {
-
         vehiclesTab.classList.remove(
             "active"
         );
-
     }
 
-    if (incidentsTab) {
 
+    if (incidentsTab) {
         incidentsTab.classList.remove(
             "active"
         );
-
     }
 
-    if (requestsTab) {
 
+    if (requestsTab) {
         requestsTab.classList.add(
             "active"
+        );
+    }
+
+
+    if (vehiclesContainer) {
+        vehiclesContainer.hidden =
+            true;
+    }
+
+
+    if (incidentsContainer) {
+        incidentsContainer.hidden =
+            true;
+    }
+
+
+    if (requestsContainer) {
+        requestsContainer.hidden =
+            false;
+    }
+
+
+    if (vehicleFilters) {
+        vehicleFilters.hidden =
+            true;
+    }
+
+
+    if (sidebarTitle) {
+        sidebarTitle.textContent =
+            "Cereri";
+    }
+
+
+    refreshDispatcherWorkspace();
+
+
+    if (
+        dispatcherWorkspaceMode !==
+            "incident_location"
+        &&
+        dispatcherWorkspaceMode !==
+            "assignment"
+        &&
+        dispatcherWorkspaceMode !==
+            "questionnaires"
+        &&
+        typeof updateVisibleMarkers ===
+            "function"
+    ) {
+
+        updateVisibleMarkers(
+            []
         );
 
     }
 
-    if (vehiclesContainer) {
-
-        vehiclesContainer.hidden =
-            true;
-
-    }
-
-    if (incidentsContainer) {
-
-        incidentsContainer.hidden =
-            true;
-
-    }
-
-    if (requestsContainer) {
-
-        requestsContainer.hidden =
-            false;
-
-    }
-
-    if (vehicleFilters) {
-
-        vehicleFilters.hidden =
-            true;
-
-    }
-
-   if (sidebarTitle) {
-
-    sidebarTitle.textContent =
-        "Cereri";
-
-}
-
-resetVehicleDetails();
-
-if (vehicleDetailsPanel) {
-
-    vehicleDetailsPanel.hidden =
-        true;
-
-}
-
-    resetVehicleDetails();
-
-    if (
-        typeof clearIncidentRoute ===
-        "function"
-    ) {
-
-        clearIncidentRoute();
-
-    }
-
-    if (
-        typeof removeIncidentMarker ===
-        "function"
-    ) {
-
-        removeIncidentMarker();
-
-    }
-
-    if (
-        typeof updateVisibleMarkers ===
-        "function"
-    ) {
-
-        updateVisibleMarkers([]);
-
-    }
 
     if (
         typeof loadReinforcementRequests ===
@@ -607,11 +710,13 @@ function initializeRefreshButton() {
             "refresh-button"
         );
 
+
     if (!refreshButton) {
 
         return;
 
     }
+
 
     refreshButton.addEventListener(
         "click",
@@ -627,10 +732,27 @@ function initializeRefreshButton() {
 
 async function refreshApplication() {
 
+    if (
+        dispatcherWorkspaceMode ===
+            "incident_location"
+        ||
+        dispatcherWorkspaceMode ===
+            "assignment"
+        ||
+        dispatcherWorkspaceMode ===
+            "questionnaires"
+    ) {
+
+        return;
+
+    }
+
+
     const refreshButton =
         document.getElementById(
             "refresh-button"
         );
+
 
     if (refreshButton) {
 
@@ -642,11 +764,12 @@ async function refreshApplication() {
 
     }
 
+
     try {
 
         resetVehicleFilters();
-
         resetIncidentFilters();
+
 
         if (
             typeof resetReinforcementRequestFilters ===
@@ -657,11 +780,13 @@ async function refreshApplication() {
 
         }
 
+
         recommendationModeActive =
             false;
 
         recommendedVehicle =
             null;
+
 
         if (
             typeof recommendedVehicles !==
@@ -672,6 +797,7 @@ async function refreshApplication() {
                 [];
 
         }
+
 
         recommendedVehicleDistance =
             null;
@@ -694,9 +820,15 @@ async function refreshApplication() {
         activeIncidentLocation =
             null;
 
+
+        dispatcherWorkspaceMode =
+            "normal";
+
+
         hideRecommendationPanel();
 
         resetVehicleDetails();
+
 
         if (
             typeof clearIncidentRoute ===
@@ -707,6 +839,7 @@ async function refreshApplication() {
 
         }
 
+
         if (
             typeof removeIncidentMarker ===
             "function"
@@ -716,9 +849,10 @@ async function refreshApplication() {
 
         }
 
-        await loadVehicles();
 
+        await loadVehicles();
         await loadIncidents();
+
 
         if (
             typeof loadReinforcementRequests ===
@@ -728,6 +862,7 @@ async function refreshApplication() {
             await loadReinforcementRequests();
 
         }
+
 
         if (
             sidebarMode ===
@@ -752,6 +887,9 @@ async function refreshApplication() {
             showVehiclesSidebar();
 
         }
+
+
+        refreshDispatcherWorkspace();
 
     }
 
@@ -796,6 +934,7 @@ function startAutomaticRefresh() {
         REFRESH_INTERVAL
     );
 
+
     window.setInterval(
         async function () {
 
@@ -805,14 +944,32 @@ function startAutomaticRefresh() {
         ACTIVE_ROUTES_INTERVAL
     );
 
+
     window.setInterval(
         async function () {
+
+            if (
+                dispatcherWorkspaceMode ===
+                    "incident_location"
+                ||
+                dispatcherWorkspaceMode ===
+                    "assignment"
+                ||
+                dispatcherWorkspaceMode ===
+                    "questionnaires"
+            ) {
+
+                return;
+
+            }
+
 
             await refreshOpenedActiveRoute();
 
         },
         ROUTE_REFRESH_INTERVAL
     );
+
 
     window.setInterval(
         async function () {
@@ -826,6 +983,7 @@ function startAutomaticRefresh() {
 
             }
 
+
             if (
                 typeof loadReinforcementRequests !==
                 "function"
@@ -834,6 +992,7 @@ function startAutomaticRefresh() {
                 return;
 
             }
+
 
             await loadReinforcementRequests();
 
@@ -854,6 +1013,10 @@ function initializeFilters() {
 
 }
 
+
+/* =====================================
+   RESETARE FILTRE
+===================================== */
 
 function resetFilters() {
 
@@ -907,5 +1070,7 @@ function initializeUiController() {
     initializeSidebarSwitch();
 
     initializeRefreshButton();
+
+    refreshDispatcherWorkspace();
 
 }

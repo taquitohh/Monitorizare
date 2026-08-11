@@ -371,6 +371,144 @@ function getVehiclePopupContent(
 
 }
 
+// =========================
+// SELECT VEHICLE FROM MAP
+// =========================
+
+function selectVehicleFromMap(
+    vehicle
+) {
+
+    if (
+        !vehicle
+        ||
+        !vehicle.vehicle_code
+    ) {
+
+        return;
+
+    }
+
+
+    const vehicleCode =
+        String(
+            vehicle.vehicle_code
+        ).trim();
+
+
+    /*
+     * Încercăm să folosim datele cele
+     * mai recente din lista globală.
+     *
+     * Este important în tabul Incidente,
+     * deoarece vehiculul de pe rută poate
+     * avea date mai vechi decât refresh-ul
+     * GPS curent.
+     */
+
+    const liveVehicle =
+        Array.isArray(
+            vehicles
+        )
+            ?
+            vehicles.find(
+                function (
+                    currentVehicle
+                ) {
+
+                    return (
+                        String(
+                            currentVehicle.vehicle_code
+                        ).trim()
+                        ===
+                        vehicleCode
+                    );
+
+                }
+            )
+            :
+            null;
+
+
+    const selectedVehicle =
+        liveVehicle
+        ||
+        vehicle;
+
+
+    selectedVehicleId =
+        vehicleCode;
+
+
+    /*
+     * Completăm panoul
+     * "Vehicul selectat".
+     */
+
+    if (
+        typeof displayVehicleDetails ===
+        "function"
+    ) {
+
+        displayVehicleDetails(
+            selectedVehicle
+        );
+
+    }
+
+
+    /*
+     * Ne asigurăm explicit că panoul
+     * este vizibil în:
+     *
+     * - Vehicule
+     * - Incidente
+     *
+     * Nu îl afișăm în Cereri.
+     */
+
+    const vehicleDetailsPanel =
+        document.getElementById(
+            "vehicle-details-panel"
+        );
+
+
+    if (
+        vehicleDetailsPanel
+        &&
+        sidebarMode !==
+        "requests"
+    ) {
+
+        vehicleDetailsPanel.hidden =
+            false;
+
+    }
+
+
+    /*
+     * Dacă suntem în lista Vehicule,
+     * actualizăm și cardul selectat.
+     *
+     * În Incidente NU schimbăm tabul
+     * și NU ștergem ruta incidentului.
+     */
+
+    if (
+        sidebarMode ===
+        "vehicles"
+        &&
+        typeof displayVehicles ===
+        "function"
+    ) {
+
+        displayVehicles(
+            filteredVehicles
+        );
+
+    }
+
+}
 
 // =========================
 // CREATE OR UPDATE MARKER
@@ -449,15 +587,40 @@ function updateVehicleMarker(
      */
     if (!marker) {
 
-        marker =
-            L.marker(
-                position,
-                {
-                    icon:
-                        vehicleIcon
-                }
+    marker =
+        L.marker(
+            position,
+            {
+                icon:
+                    vehicleIcon
+            }
+        );
+
+
+    /*
+     * Păstrăm datele curente ale
+     * vehiculului pe marker.
+     */
+
+    marker._dispatcherVehicleData =
+        vehicle;
+
+
+    /*
+     * Click pe marker:
+     * afișăm și Vehicul selectat.
+     */
+
+    marker.on(
+        "click",
+        function () {
+
+            selectVehicleFromMap(
+                marker._dispatcherVehicleData
             );
 
+        }
+    );
         marker.bindPopup(
             popupContent,
             {
@@ -483,6 +646,8 @@ function updateVehicleMarker(
     }
 
     else {
+        marker._dispatcherVehicleData =
+    vehicle;
 
         marker.setLatLng(
             position
@@ -819,6 +984,18 @@ function startIncidentLocationSelection(
     incidentLocationSelectionActive =
         true;
 
+        dispatcherWorkspaceMode =
+    "incident_location";
+
+if (
+    typeof refreshDispatcherWorkspace ===
+    "function"
+) {
+
+    refreshDispatcherWorkspace();
+
+}
+
     recommendationModeActive =
         false;
 
@@ -1127,6 +1304,19 @@ function removeIncidentMarker() {
 function finishIncidentLocationSelection(
     incident
 ) {
+
+
+    dispatcherWorkspaceMode =
+    "assignment";
+
+if (
+    typeof refreshDispatcherWorkspace ===
+    "function"
+) {
+
+    refreshDispatcherWorkspace();
+
+}
 
     const mapElement =
         document.getElementById(

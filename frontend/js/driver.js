@@ -8,6 +8,8 @@ let driverVehicle = null;
 
 let driverMission = null;
 
+let driverSpecialistDetails = null;
+
 let driverSameTypeVehicles = [];
 
 let driverFilteredVehicles = [];
@@ -239,6 +241,11 @@ async function loadDriverDashboard(
 
         driverMission =
             dashboard.mission ||
+            null;
+        
+        driverSpecialistDetails =
+            dashboard.specialist_details
+            ||
             null;
 
         driverSameTypeVehicles =
@@ -717,10 +724,719 @@ function displayDriverOperationalSummary() {
             </div>
 
         </div>
+
+        ${buildDriverSpecialistDetailsHtml()}
     `;
 
 }
 
+/* =====================================
+   INFORMAȚII SPECIALIZATE MISIUNE
+===================================== */
+
+function buildDriverSpecialistDetailsHtml() {
+
+    if (
+        !driverMission
+        ||
+        !driverVehicle
+        ||
+        !driverSpecialistDetails
+    ) {
+
+        return "";
+
+    }
+
+
+    const vehicleType =
+        String(
+            driverVehicle.vehicle_type
+            ||
+            ""
+        )
+            .trim()
+            .toLowerCase();
+
+
+    const expectedServiceType = {
+
+        police:
+            "police",
+
+        ambulance:
+            "ambulance",
+
+        fire:
+            "firefighters"
+
+    }[
+        vehicleType
+    ];
+
+
+    const receivedServiceType =
+        String(
+            driverSpecialistDetails.service_type
+            ||
+            ""
+        )
+            .trim()
+            .toLowerCase();
+
+
+    /*
+     * Protecție suplimentară:
+     *
+     * chiar dacă backend-ul trimite din greșeală
+     * alt chestionar, nu îl afișăm șoferului.
+     */
+
+    if (
+        !expectedServiceType
+        ||
+        expectedServiceType !==
+        receivedServiceType
+    ) {
+
+        return "";
+
+    }
+
+
+    const answers =
+        driverSpecialistDetails.answers
+        &&
+        typeof driverSpecialistDetails.answers ===
+            "object"
+            ?
+            driverSpecialistDetails.answers
+            :
+            {};
+
+
+    const questions =
+        getDriverSpecialistQuestions(
+            receivedServiceType
+        );
+
+
+    const visibleQuestions =
+        questions.filter(
+            function (
+                question
+            ) {
+
+                const value =
+                    answers[
+                        question.code
+                    ];
+
+                return (
+                    value !== null
+                    &&
+                    value !== undefined
+                    &&
+                    String(
+                        value
+                    ).trim() !==
+                    ""
+                );
+
+            }
+        );
+
+
+    const serviceInformation =
+        getDriverSpecialistServiceInformation(
+            receivedServiceType
+        );
+
+
+    const status =
+        getDriverSpecialistStatus(
+            driverSpecialistDetails.status
+        );
+
+
+    /*
+     * Raportul există, dar dispecerul încă
+     * nu a introdus informații.
+     */
+
+    if (
+        visibleQuestions.length ===
+        0
+    ) {
+
+        return `
+            <section class="
+                driver-specialist-details
+                driver-specialist-details-empty
+            ">
+
+                <div class="driver-specialist-header">
+
+                    <div class="driver-specialist-heading">
+
+                        <span class="driver-specialist-icon">
+                            ${serviceInformation.icon}
+                        </span>
+
+                        <div>
+
+                            <span class="driver-specialist-kicker">
+                                INFORMAȚII OPERATIVE
+                            </span>
+
+                            <h4>
+                                ${escapeDriverHtml(
+                                    serviceInformation.title
+                                )}
+                            </h4>
+
+                        </div>
+
+                    </div>
+
+                    <span class="
+                        driver-specialist-status
+                        ${escapeDriverHtml(
+                            status.className
+                        )}
+                    ">
+                        ${escapeDriverHtml(
+                            status.label
+                        )}
+                    </span>
+
+                </div>
+
+                <p class="driver-specialist-empty-message">
+                    Dispeceratul nu a transmis încă
+                    informații suplimentare pentru acest serviciu.
+                </p>
+
+            </section>
+        `;
+
+    }
+
+
+    const answersHtml =
+        visibleQuestions
+            .map(
+                function (
+                    question
+                ) {
+
+                    const value =
+                        answers[
+                            question.code
+                        ];
+
+                    return `
+                        <div class="driver-specialist-item">
+
+                            <span>
+                                ${escapeDriverHtml(
+                                    question.label
+                                )}
+                            </span>
+
+                            <strong>
+                                ${escapeDriverHtml(
+                                    getDriverSpecialistAnswerValue(
+                                        value
+                                    )
+                                )}
+                            </strong>
+
+                        </div>
+                    `;
+
+                }
+            )
+            .join("");
+
+
+    const updatedAt =
+        driverSpecialistDetails.updated_at
+            ?
+            formatDriverDate(
+                driverSpecialistDetails.updated_at
+            )
+            :
+            "-";
+
+
+    return `
+        <section class="driver-specialist-details">
+
+            <div class="driver-specialist-header">
+
+                <div class="driver-specialist-heading">
+
+                    <span class="driver-specialist-icon">
+                        ${serviceInformation.icon}
+                    </span>
+
+                    <div>
+
+                        <span class="driver-specialist-kicker">
+                            INFORMAȚII OPERATIVE
+                        </span>
+
+                        <h4>
+                            ${escapeDriverHtml(
+                                serviceInformation.title
+                            )}
+                        </h4>
+
+                    </div>
+
+                </div>
+
+                <span class="
+                    driver-specialist-status
+                    ${escapeDriverHtml(
+                        status.className
+                    )}
+                ">
+                    ${escapeDriverHtml(
+                        status.label
+                    )}
+                </span>
+
+            </div>
+
+
+            <div class="driver-specialist-grid">
+
+                ${answersHtml}
+
+            </div>
+
+
+            <div class="driver-specialist-footer">
+
+                <span>
+                    Actualizat de dispecerat
+                </span>
+
+                <strong>
+                    ${escapeDriverHtml(
+                        updatedAt
+                    )}
+                </strong>
+
+            </div>
+
+        </section>
+    `;
+
+}
+
+
+/* =====================================
+   ÎNTREBĂRI SPECIALIZATE
+===================================== */
+
+function getDriverSpecialistQuestions(
+    serviceType
+) {
+
+    const questions = {
+
+        police: [
+
+            {
+                code:
+                    "traffic_affected",
+
+                label:
+                    "Trafic afectat"
+            },
+
+            {
+                code:
+                    "road_block_required",
+
+                label:
+                    "Este necesară blocarea drumului?"
+            },
+
+            {
+                code:
+                    "aggressive_persons",
+
+                label:
+                    "Există persoane agresive?"
+            },
+
+            {
+                code:
+                    "weapons_suspected",
+
+                label:
+                    "Există arme observate sau suspectate?"
+            },
+
+            {
+                code:
+                    "persons_involved",
+
+                label:
+                    "Număr aproximativ de persoane implicate"
+            },
+
+            {
+                code:
+                    "perimeter_required",
+
+                label:
+                    "Perimetrul trebuie securizat?"
+            },
+
+            {
+                code:
+                    "suspects_left_area",
+
+                label:
+                    "Există suspecți care au părăsit zona?"
+            },
+
+            {
+                code:
+                    "police_notes",
+
+                label:
+                    "Observații operative"
+            }
+
+        ],
+
+
+        ambulance: [
+
+            {
+                code:
+                    "estimated_victims",
+
+                label:
+                    "Număr estimat de victime"
+            },
+
+            {
+                code:
+                    "conscious_victims",
+
+                label:
+                    "Victime conștiente"
+            },
+
+            {
+                code:
+                    "unconscious_victims",
+
+                label:
+                    "Victime inconștiente"
+            },
+
+            {
+                code:
+                    "trapped_victims",
+
+                label:
+                    "Victime blocate / încarcerate"
+            },
+
+            {
+                code:
+                    "pediatric_victims",
+
+                label:
+                    "Există victime pediatrice?"
+            },
+
+            {
+                code:
+                    "severe_bleeding",
+
+                label:
+                    "Există hemoragii severe raportate?"
+            },
+
+            {
+                code:
+                    "extrication_required",
+
+                label:
+                    "Este necesară descarcerarea?"
+            },
+
+            {
+                code:
+                    "crew_risk",
+
+                label:
+                    "Există risc suplimentar pentru echipaj?"
+            },
+
+            {
+                code:
+                    "medical_notes",
+
+                label:
+                    "Observații medicale"
+            }
+
+        ],
+
+
+        firefighters: [
+
+            {
+                code:
+                    "main_situation",
+
+                label:
+                    "Situație principală"
+            },
+
+            {
+                code:
+                    "active_flame",
+
+                label:
+                    "Flacără activă?"
+            },
+
+            {
+                code:
+                    "dense_smoke",
+
+                label:
+                    "Fum dens?"
+            },
+
+            {
+                code:
+                    "explosion_risk",
+
+                label:
+                    "Risc de explozie"
+            },
+
+            {
+                code:
+                    "hazardous_materials",
+
+                label:
+                    "Sunt implicate substanțe periculoase?"
+            },
+
+            {
+                code:
+                    "fuel_or_gas",
+
+                label:
+                    "Este implicat combustibil sau gaz?"
+            },
+
+            {
+                code:
+                    "trapped_persons",
+
+                label:
+                    "Există persoane blocate?"
+            },
+
+            {
+                code:
+                    "evacuation_required",
+
+                label:
+                    "Este necesară evacuarea zonei?"
+            },
+
+            {
+                code:
+                    "firefighter_notes",
+
+                label:
+                    "Observații operative"
+            }
+
+        ]
+
+    };
+
+
+    return (
+        questions[
+            serviceType
+        ]
+        ||
+        []
+    );
+
+}
+
+
+/* =====================================
+   INFORMAȚII SERVICIU
+===================================== */
+
+function getDriverSpecialistServiceInformation(
+    serviceType
+) {
+
+    const services = {
+
+        police: {
+            title:
+                "Informații pentru Poliție",
+
+            icon:
+                "🚓"
+        },
+
+        ambulance: {
+            title:
+                "Informații medicale",
+
+            icon:
+                "🚑"
+        },
+
+        firefighters: {
+            title:
+                "Informații pentru Pompieri",
+
+            icon:
+                "🚒"
+        }
+
+    };
+
+
+    return (
+        services[
+            serviceType
+        ]
+        ||
+        {
+            title:
+                "Informații operative",
+
+            icon:
+                "ℹ️"
+        }
+    );
+
+}
+
+
+/* =====================================
+   STATUS CHESTIONAR
+===================================== */
+
+function getDriverSpecialistStatus(
+    status
+) {
+
+    const normalizedStatus =
+        String(
+            status
+            ||
+            ""
+        )
+            .trim()
+            .toLowerCase();
+
+
+    const statuses = {
+
+        pending: {
+            label:
+                "În așteptare",
+
+            className:
+                "pending"
+        },
+
+        in_progress: {
+            label:
+                "Actualizare în curs",
+
+            className:
+                "in-progress"
+        },
+
+        confirmed: {
+            label:
+                "Confirmat",
+
+            className:
+                "confirmed"
+        }
+
+    };
+
+
+    return (
+        statuses[
+            normalizedStatus
+        ]
+        ||
+        {
+            label:
+                "Informații operative",
+
+            className:
+                "neutral"
+        }
+    );
+
+}
+
+
+/* =====================================
+   VALOARE RĂSPUNS
+===================================== */
+
+function getDriverSpecialistAnswerValue(
+    value
+) {
+
+    if (
+        value === null
+        ||
+        value === undefined
+    ) {
+
+        return "-";
+
+    }
+
+
+    const normalized =
+        String(
+            value
+        ).trim();
+
+
+    if (!normalized) {
+
+        return "-";
+
+    }
+
+
+    return normalized;
+
+}
 
 /* =====================================
    RUTĂ MISIUNE

@@ -1955,3 +1955,522 @@
     }
 
 }
+
+/* =====================================
+   INFORMAȚII SPECIALIZATE MISIUNE
+===================================== */
+
+.driver-specialist-details {
+
+    margin-top:
+        20px;
+
+    padding:
+        18px;
+
+    border:
+        1px solid #dbe3ec;
+
+    border-radius:
+        10px;
+
+    background:
+        #f8fafc;
+
+}
+
+
+/* =====================================
+   HEADER
+===================================== */
+
+.driver-specialist-header {
+
+    display:
+        flex;
+
+    align-items:
+        flex-start;
+
+    justify-content:
+        space-between;
+
+    gap:
+        16px;
+
+    margin-bottom:
+        16px;
+
+    padding-bottom:
+        14px;
+
+    border-bottom:
+        1px solid #e2e8f0;
+
+}
+
+
+.driver-specialist-heading {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        12px;
+
+}
+
+
+.driver-specialist-icon {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    width:
+        42px;
+
+    height:
+        42px;
+
+    flex:
+        0 0 42px;
+
+    border-radius:
+        10px;
+
+    background:
+        #ffffff;
+
+    border:
+        1px solid #e2e8f0;
+
+    font-size:
+        22px;
+
+}
+
+
+.driver-specialist-kicker {
+
+    display:
+        block;
+
+    margin-bottom:
+        3px;
+
+    font-size:
+        10px;
+
+    font-weight:
+        700;
+
+    letter-spacing:
+        0.08em;
+
+    color:
+        #64748b;
+
+}
+
+
+.driver-specialist-heading h4 {
+
+    margin:
+        0;
+
+    font-size:
+        17px;
+
+    font-weight:
+        700;
+
+    color:
+        #0f172a;
+
+}
+
+
+/* =====================================
+   STATUS
+===================================== */
+
+.driver-specialist-status {
+
+    display:
+        inline-flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    min-height:
+        27px;
+
+    padding:
+        4px 10px;
+
+    border-radius:
+        999px;
+
+    font-size:
+        11px;
+
+    font-weight:
+        700;
+
+    white-space:
+        nowrap;
+
+}
+
+
+.driver-specialist-status.pending {
+
+    color:
+        #92400e;
+
+    background:
+        #fffbeb;
+
+    border:
+        1px solid #fde68a;
+
+}
+
+
+.driver-specialist-status.in-progress {
+
+    color:
+        #1d4ed8;
+
+    background:
+        #eff6ff;
+
+    border:
+        1px solid #bfdbfe;
+
+}
+
+
+.driver-specialist-status.confirmed {
+
+    color:
+        #15803d;
+
+    background:
+        #f0fdf4;
+
+    border:
+        1px solid #bbf7d0;
+
+}
+
+
+.driver-specialist-status.neutral {
+
+    color:
+        #475569;
+
+    background:
+        #f8fafc;
+
+    border:
+        1px solid #cbd5e1;
+
+}
+
+
+/* =====================================
+   GRID INFORMAȚII
+===================================== */
+
+.driver-specialist-grid {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(
+                0,
+                1fr
+            )
+        );
+
+    gap:
+        12px;
+
+}
+
+
+/* =====================================
+   ITEM
+===================================== */
+
+.driver-specialist-item {
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    gap:
+        5px;
+
+    min-width:
+        0;
+
+    padding:
+        12px;
+
+    border:
+        1px solid #e2e8f0;
+
+    border-radius:
+        8px;
+
+    background:
+        #ffffff;
+
+}
+
+
+.driver-specialist-item span {
+
+    font-size:
+        11px;
+
+    line-height:
+        1.35;
+
+    color:
+        #64748b;
+
+}
+
+
+.driver-specialist-item strong {
+
+    font-size:
+        13px;
+
+    line-height:
+        1.45;
+
+    color:
+        #0f172a;
+
+    overflow-wrap:
+        anywhere;
+
+}
+
+
+/* =====================================
+   FOOTER
+===================================== */
+
+.driver-specialist-footer {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        space-between;
+
+    gap:
+        12px;
+
+    margin-top:
+        14px;
+
+    padding-top:
+        12px;
+
+    border-top:
+        1px solid #e2e8f0;
+
+    font-size:
+        11px;
+
+    color:
+        #64748b;
+
+}
+
+
+.driver-specialist-footer strong {
+
+    color:
+        #334155;
+
+}
+
+
+/* =====================================
+   FĂRĂ DATE
+===================================== */
+
+.driver-specialist-details-empty {
+
+    background:
+        #f8fafc;
+
+}
+
+
+.driver-specialist-empty-message {
+
+    margin:
+        0;
+
+    padding:
+        12px;
+
+    border:
+        1px dashed #cbd5e1;
+
+    border-radius:
+        8px;
+
+    background:
+        #ffffff;
+
+    font-size:
+        12px;
+
+    line-height:
+        1.5;
+
+    color:
+        #64748b;
+
+}
+
+
+/* =====================================
+   TEMĂ POLIȚIE
+===================================== */
+
+.theme-police
+.driver-specialist-details {
+
+    border-left:
+        4px solid #2563eb;
+
+}
+
+
+.theme-police
+.driver-specialist-icon {
+
+    background:
+        #eff6ff;
+
+}
+
+
+/* =====================================
+   TEMĂ AMBULANȚĂ
+===================================== */
+
+.theme-ambulance
+.driver-specialist-details {
+
+    border-left:
+        4px solid #dc2626;
+
+}
+
+
+.theme-ambulance
+.driver-specialist-icon {
+
+    background:
+        #fef2f2;
+
+}
+
+
+/* =====================================
+   TEMĂ POMPIERI
+===================================== */
+
+.theme-fire
+.driver-specialist-details {
+
+    border-left:
+        4px solid #ea580c;
+
+}
+
+
+.theme-fire
+.driver-specialist-icon {
+
+    background:
+        #fff7ed;
+
+}
+
+
+/* =====================================
+   RESPONSIVE
+===================================== */
+
+@media (
+    max-width:
+        760px
+) {
+
+    .driver-specialist-grid {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+
+    .driver-specialist-header {
+
+        flex-direction:
+            column;
+
+    }
+
+
+    .driver-specialist-status {
+
+        align-self:
+            flex-start;
+
+    }
+
+
+    .driver-specialist-footer {
+
+        flex-direction:
+            column;
+
+        align-items:
+            flex-start;
+
+    }
+
+}

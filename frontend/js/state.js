@@ -23,6 +23,14 @@ let incidentLocationSelectionActive = false;
 
 let incidentLocationSaving = false;
 
+/*
+ * =====================================
+ * DISPATCHER WORKSPACE STATE
+ * =====================================
+ */
+
+let dispatcherWorkspaceMode = "normal";
+
 /* =====================================
    STARE CERERI DE ÎNTĂRIRI
 ===================================== */

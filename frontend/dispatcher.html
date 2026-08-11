@@ -35,6 +35,11 @@
     >
     <link
         rel="stylesheet"
+        href="css/specialist-questionnaires.css?v=3"
+    >
+
+    <link
+        rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     >
 </head>
@@ -380,6 +385,46 @@
                 </p>
             </div>
         </section>
+                <!-- ===========================
+             INCIDENT DETAILS
+        ============================ -->
+        <section
+            id="incident-details-panel"
+            class="details-panel incident-details-panel"
+            hidden
+        >
+            <div class="incident-details-panel-header">
+
+                <div>
+                    <span class="incident-details-kicker">
+                        INCIDENT SELECTAT
+                    </span>
+
+                    <h2 id="selected-incident-title">
+                        Detalii incident
+                    </h2>
+                </div>
+
+                <span
+                    id="selected-incident-status"
+                    class="selected-incident-status"
+                >
+                    -
+                </span>
+
+            </div>
+
+            <div
+                id="selected-incident-details"
+                class="selected-incident-details"
+            >
+                <p class="empty-message">
+                    Selectează un incident pentru a vedea toate informațiile disponibile.
+                </p>
+            </div>
+
+        </section>
+        
         <!-- ===========================
              ANALIZĂ CERERE DE ÎNTĂRIRI
         ============================ -->
@@ -589,7 +634,10 @@
         <!-- ===========================
              INCIDENT FORM
         ============================ -->
-        <section class="incident-panel">
+        <section
+                id="incident-panel"
+                class="incident-panel"
+            >
             <div class="incident-header">
                 <div>
                     <h2>
@@ -968,6 +1016,39 @@
                 </div>
             </form>
         </section>
+
+        <!-- ===========================
+             SPECIALIST QUESTIONNAIRES
+        ============================ -->
+        <section
+            id="specialist-questionnaires-panel"
+            class="specialist-questionnaires-panel"
+            hidden
+        >
+            <div class="specialist-questionnaires-header">
+                <div>
+                    <div class="specialist-questionnaires-kicker">
+                        INFORMAȚII OPERATIVE
+                    </div>
+
+                    <h2>
+                        Chestionare specializate
+                    </h2>
+
+                    <p>
+                        Completează informațiile suplimentare pentru
+                        serviciile implicate în incident.
+                        Datele sunt salvate automat.
+                    </p>
+                </div>
+            </div>
+
+            <div
+                id="specialist-questionnaires-container"
+                class="specialist-questionnaires-container"
+            ></div>
+        </section>
+
         <!-- ===========================
              VEHICLE RECOMMENDATION
         ============================ -->
@@ -1020,17 +1101,18 @@
     <script
         src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     ></script>
-    <script src="js/auth.js?v=9"></script>
-    <script src="js/state.js?v=7"></script>
+    <script src="js/auth.js?v=10"></script>
+    <script src="js/state.js?v=8"></script>
     <script src="js/helpers.js?v=4"></script>
     <script src="js/api.js?v=17"></script>
-    <script src="js/map.js?v=22"></script>
+    <script src="js/map.js?v=25"></script>
     <script src="js/reinforcement-requests-ui.js?v=7"></script>
     <script src="js/vehicles-ui.js?v=5"></script>
     <script src="js/incidents-ui.js?v=5"></script>
-    <script src="js/incident-form.js?v=8"></script>
-    <script src="js/recommendation.js?v=4"></script>
-    <script src="js/ui-controller.js?v=10"></script>
+    <script src="js/incident-form.js?v=9"></script>
+    <script src="js/recommendation.js?v=6"></script>
+    <script src="js/ui-controller.js?v=14"></script>
+    <script src="js/specialist-questionnaires-ui.js?v=2"></script>
     <script src="js/bootstrap.js?v=7"></script>
 </body>
 </html>
