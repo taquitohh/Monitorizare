@@ -1,23 +1,68 @@
 # Frontend
 
-Acest folder conține interfața web a aplicației de monitorizare GPS.
+## 1. Rol
 
-## Rol
+## 2. Pagini
+index.html
+    Login
 
-- afișează vehiculele și incidentele pe interfață;
-- permite selectarea locațiilor incidentelor pe hartă;
-- comunică cu backend-ul prin API;
-- afișează informații în timp real despre starea sistemului.
+admin.html
+    Administrator
 
-## Structură
+dispatcher.html
+    Dispecerat
 
-- index.html – structura principală a paginii.
-- css/ – stiluri organizate pe componente și funcționalitate.
-- js/ – logica aplicației: hartă, API, incidente, recomandări și stare UI.
-- assets/images/ – imagini și resurse grafice.
+driver.html
+    Șofer / echipaj
 
-## Rulare
+## 3. CSS
+base.css
+layout.css
+components.css
+map.css
+style.css
+login.css
+admin.css
+driver.css
+specialist-questionnaires.css
 
-Frontend-ul este servit de Docker Compose împreună cu restul aplicației.
+## 4. JavaScript comun
+auth.js
+helpers.js
 
-Dacă vrei să îl rulezi separat pentru dezvoltare, poți deschide folderul în browser sau folosi un server static simplu.
+## 5. Dispatcher
+api.js
+state.js
+map.js
+app.js / bootstrap.js
+incident-form.js
+incidents-ui.js
+vehicles-ui.js
+recommendation.js
+reinforcement-requests-ui.js
+specialist-questionnaires-ui.js
+ui-controller.js
+
+## 6. Driver
+driver.js
+driver-api.js
+
+## 7. Administrator
+admin.js
+admin-api.js
+
+## 8. Autentificare
+sessionStorage
+Bearer token
+redirect pe rol
+
+## 9. Harta Leaflet
+
+## 10. Refresh și polling
+
+## 11. Cache busting
+?v=...
+
+## 12. Comunicarea cu backend-ul
+
+## 13. Rulare

@@ -1,24 +1,78 @@
 # Backend
 
-Acest folder conține serviciul API al aplicației, implementat în Flask.
+## 1. Rol
+Backend Flask pentru:
+- autentificare
+- vehicule
+- GPS
+- incidente
+- dispecerizare
+- șoferi
+- întăriri
+- chestionare
+- raportare
+- administrare
 
-## Rol
+## 2. Structură
 
-- expune endpoint-uri pentru vehicule și incidente;
-- procesează cererile frontend-ului;
-- se conectează la baza de date MariaDB;
-- gestionează logica de validare și recomandare.
+app.py
+routes/
+services/
+config/
+utils/
 
-## Fișiere importante
+## 3. app.py
+- inițializare Flask
+- conexiune DB
+- endpoint-uri principale
+- înregistrare blueprint-uri
 
-- app.py – punctul de intrare principal al aplicației Flask.
-- config/config.py – configurări pentru conexiunea la bază de date și mediul de execuție.
-- routes/ – module pentru rutare și endpoint-uri.
+## 4. routes/
+auth.py
+admin.py
+driver.py
+specialist.py
+vehicles.py
+positions.py
 
-## Rulare locală
+## 5. services/
+AuthService
+IncidentService
+RouteService
+SpecialistService
+IncidentEventService
+IncidentReportService
 
-```bash
-cd backend
-pip install -r requirements.txt
-python app.py
-```
+## 6. Autentificare
+Bearer token
+roluri
+verificarea endpoint-urilor
+
+## 7. Incidente
+validare
+tipuri multiple
+resurse multiple
+
+## 8. Rutare
+graful rutier
+distanță
+traseu
+
+## 9. Chestionare
+
+## 10. Raport PDF
+
+## 11. Configurare
+
+## 12. Dependencies
+requirements.txt
+
+## 13. Verificarea sintaxei
+python -m compileall .
+
+## 14. Rulare prin Docker
+
+## 15. Troubleshooting
+SyntaxError
+IndentationError
+web1/web2 restarting
