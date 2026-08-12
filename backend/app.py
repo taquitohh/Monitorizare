@@ -2994,13 +2994,20 @@ def get_incident_report(
     incident_id
 ):
 
-    connection = get_db_connection()
+    connection = (
+        get_db_connection()
+    )
 
     try:
 
         with connection.cursor() as cursor:
 
-            cursor.execute("""
+            # =====================================
+            # INCIDENT
+            # =====================================
+
+            cursor.execute(
+                """
                 SELECT
                     i.id,
                     i.incident_code,
@@ -3016,26 +3023,23 @@ def get_incident_report(
                     i.created_at,
                     i.updated_at,
                     i.dispatched_at,
-                    i.resolved_at,
-
-                    v.vehicle_code
-                        AS assigned_vehicle_code,
-
-                    v.vehicle_type
-                        AS assigned_vehicle_type
+                    i.resolved_at
 
                 FROM incidents i
 
-                LEFT JOIN vehicles v
-                    ON i.assigned_vehicle_id =
-                       v.id
-
                 WHERE i.id = %s
-            """, (
-                incident_id,
-            ))
 
-            incident = cursor.fetchone()
+                LIMIT 1
+                """,
+                (
+                    incident_id,
+                )
+            )
+
+            incident = (
+                cursor.fetchone()
+            )
+
 
             if not incident:
 
@@ -3044,8 +3048,13 @@ def get_incident_report(
                         "error",
 
                     "message":
-                        "Incident was not found."
+                        "Incidentul nu a fost găsit."
                 }), 404
+
+
+            # =====================================
+            # RAPORT DOAR PENTRU INCIDENT ARHIVAT
+            # =====================================
 
             if incident["status"] not in {
                 "resolved",
@@ -3057,201 +3066,1647 @@ def get_incident_report(
                         "error",
 
                     "message":
-                        "A report can only be generated "
-                        "for an archived incident."
+                        (
+                            "Raportul poate fi generat "
+                            "doar pentru un incident arhivat."
+                        )
                 }), 409
 
-            route_information = None
+
+            # =====================================
+            # COORDONATE INCIDENT
+            # =====================================
 
             if (
-                incident["assigned_vehicle_id"]
-                and
-                incident["dispatched_at"]
-                and
-                incident["resolved_at"]
+                incident["latitude"]
+                is not None
             ):
 
-                cursor.execute("""
-                    SELECT
-                        latitude,
-                        longitude,
-                        recorded_at
+                incident["latitude"] = float(
+                    incident["latitude"]
+                )
 
-                    FROM position_history
 
-                    WHERE
-                        vehicle_id = %s
+            if (
+                incident["longitude"]
+                is not None
+            ):
 
-                        AND recorded_at >= %s
+                incident["longitude"] = float(
+                    incident["longitude"]
+                )
 
-                        AND recorded_at <= %s
 
-                    ORDER BY recorded_at ASC
-                """, (
+            # =====================================
+            # TIPURILE INCIDENTULUI
+            # =====================================
+
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    category_code
+
+                FROM incident_categories
+
+                WHERE incident_id = %s
+
+                ORDER BY id ASC
+                """,
+                (
+                    incident_id,
+                )
+            )
+
+            incident_type_rows = (
+                cursor.fetchall()
+                or
+                []
+            )
+
+
+            incident_types = [
+                row["category_code"]
+                for row
+                in incident_type_rows
+            ]
+
+                        # Compatibilitate cu incidentele vechi,
+            # care pot să nu aibă încă rânduri în
+            # incident_categories.
+
+            if (
+                not incident_types
+                and
+                incident.get(
+                    "incident_type"
+                )
+            ):
+
+                incident_types = [
                     incident[
-                        "assigned_vehicle_id"
-                    ],
-                    incident[
-                        "dispatched_at"
-                    ],
-                    incident[
-                        "resolved_at"
+                        "incident_type"
                     ]
-                ))
+                ]
 
-                route_points = cursor.fetchall()
 
-                if route_points:
+            incident[
+                "incident_types"
+            ] = incident_types
 
-                    route_distance_km = 0.0
 
-                    previous_point = None
+            # =====================================
+            # RESURSE SOLICITATE INIȚIAL
+            # =====================================
 
-                    for point in route_points:
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    vehicle_type,
+                    quantity,
+                    created_at,
+                    updated_at
 
-                        if previous_point:
+                FROM incident_requirements
 
-                            route_distance_km += (
-                                calculate_haversine_distance(
-                                    float(
+                WHERE incident_id = %s
+
+                ORDER BY
+                    FIELD(
+                        vehicle_type,
+                        'police',
+                        'ambulance',
+                        'fire'
+                    ),
+                    id ASC
+                """,
+                (
+                    incident_id,
+                )
+            )
+
+            required_resources = (
+                cursor.fetchall()
+                or
+                []
+            )
+
+
+            for resource in required_resources:
+
+                resource["quantity"] = int(
+                    resource.get(
+                        "quantity"
+                    )
+                    or
+                    0
+                )
+
+
+                        # Compatibilitate cu incidentele
+            # create înainte de suportul pentru
+            # resurse multiple.
+            if (
+                not required_resources
+                and
+                incident.get(
+                    "required_vehicle_type"
+                )
+            ):
+
+                required_resources = [
+                    {
+                        "vehicle_type":
+                            incident[
+                                "required_vehicle_type"
+                            ],
+
+                        "quantity":
+                            1
+                    }
+                ]
+
+
+            incident[
+                "required_resources"
+            ] = required_resources
+
+
+            # =====================================
+            # TOATE VEHICULELE IMPLICATE
+            # =====================================
+
+            cursor.execute(
+                """
+                SELECT
+                    ia.id
+                        AS assignment_id,
+
+                    ia.incident_id,
+
+                    ia.vehicle_id,
+
+                    ia.assignment_type,
+
+                    ia.status
+                        AS assignment_status,
+
+                    ia.assigned_at,
+
+                    ia.arrived_at,
+
+                    ia.released_at,
+
+                    v.vehicle_code,
+
+                    v.name
+                        AS vehicle_name,
+
+                    v.vehicle_type,
+
+                    v.status
+                        AS vehicle_status
+
+                FROM incident_assignments ia
+
+                INNER JOIN vehicles v
+                    ON v.id = ia.vehicle_id
+
+                WHERE
+                    ia.incident_id = %s
+
+                ORDER BY
+                    FIELD(
+                        v.vehicle_type,
+                        'police',
+                        'ambulance',
+                        'fire'
+                    ),
+
+                    ia.assigned_at ASC,
+
+                    ia.id ASC
+                """,
+                (
+                    incident_id,
+                )
+            )
+
+            assignments = (
+                cursor.fetchall()
+                or
+                []
+            )
+
+
+            # =====================================
+            # TRASEUL FIECĂRUI VEHICUL
+            # =====================================
+
+            vehicle_routes = []
+
+
+            for assignment in assignments:
+
+                assigned_at = (
+                    assignment.get(
+                        "assigned_at"
+                    )
+                )
+
+
+                arrived_at = (
+                    assignment.get(
+                        "arrived_at"
+                    )
+                )
+
+
+                released_at = (
+                    assignment.get(
+                        "released_at"
+                    )
+                )
+
+
+                               # Ruta operațională reprezintă
+                # deplasarea către incident.
+                #
+                # Ideal:
+                # assigned_at -> arrived_at
+                #
+                # Dacă nu există arrived_at:
+                # assigned_at -> released_at
+                #
+                # iar pentru cazurile vechi:
+                # assigned_at -> resolved_at.
+
+                route_start_at = (
+                    assigned_at
+                    or
+                    incident.get(
+                        "dispatched_at"
+                    )
+                )
+
+
+                route_end_at = (
+                    arrived_at
+                    or
+                    released_at
+                    or
+                    incident.get(
+                        "resolved_at"
+                    )
+                )
+
+
+                route_information = {
+
+                    "assignment_id":
+                        assignment[
+                            "assignment_id"
+                        ],
+
+                    "vehicle_id":
+                        assignment[
+                            "vehicle_id"
+                        ],
+
+                    "vehicle_code":
+                        assignment[
+                            "vehicle_code"
+                        ],
+
+                    "vehicle_name":
+                        assignment.get(
+                            "vehicle_name"
+                        ),
+
+                    "vehicle_type":
+                        assignment[
+                            "vehicle_type"
+                        ],
+
+                    "assignment_type":
+                        assignment[
+                            "assignment_type"
+                        ],
+
+                    "assignment_status":
+                        assignment[
+                            "assignment_status"
+                        ],
+
+                    "assigned_at":
+                        assigned_at,
+
+                    "arrived_at":
+                        arrived_at,
+
+                    "released_at":
+                        released_at,
+
+                    "route_start_at":
+                        route_start_at,
+
+                    "route_end_at":
+                        route_end_at,
+
+                    "distance_km":
+                        None,
+
+                    "coordinate_count":
+                        0,
+
+                    "start_latitude":
+                        None,
+
+                    "start_longitude":
+                        None,
+
+                    "end_latitude":
+                        None,
+
+                    "end_longitude":
+                        None,
+
+                    "incident_latitude":
+                        incident.get(
+                            "latitude"
+                        ),
+
+                    "incident_longitude":
+                        incident.get(
+                            "longitude"
+                        ),
+
+                    "coordinates":
+                        []
+                }
+
+
+                if (
+                    route_start_at
+                    and
+                    route_end_at
+                ):
+
+                    cursor.execute(
+                        """
+                        SELECT
+                            latitude,
+                            longitude,
+                            speed,
+                            recorded_at
+
+                        FROM position_history
+
+                        WHERE
+                            vehicle_id = %s
+
+                            AND recorded_at >= %s
+
+                            AND recorded_at <= %s
+
+                        ORDER BY
+                            recorded_at ASC
+                        """,
+                        (
+                            assignment[
+                                "vehicle_id"
+                            ],
+                            route_start_at,
+                            route_end_at
+                        )
+                    )
+
+
+                    route_points = (
+                        cursor.fetchall()
+                        or
+                        []
+                    )
+
+
+                    if route_points:
+
+                        route_distance_km = (
+                            0.0
+                        )
+
+
+                        previous_point = None
+
+
+                        route_coordinates = []
+
+
+                        for point in route_points:
+
+                            try:
+
+                                point_latitude = float(
+                                    point[
+                                        "latitude"
+                                    ]
+                                )
+
+                                point_longitude = float(
+                                    point[
+                                        "longitude"
+                                    ]
+                                )
+
+                            except (
+                                TypeError,
+                                ValueError
+                            ):
+
+                                continue
+
+
+                            if previous_point:
+
+                                route_distance_km += (
+                                    calculate_haversine_distance(
                                         previous_point[
                                             "latitude"
-                                        ]
-                                    ),
-                                    float(
+                                        ],
                                         previous_point[
                                             "longitude"
-                                        ]
-                                    ),
-                                    float(
-                                        point[
-                                            "latitude"
-                                        ]
-                                    ),
-                                    float(
-                                        point[
-                                            "longitude"
-                                        ]
+                                        ],
+                                        point_latitude,
+                                        point_longitude
                                     )
                                 )
+
+
+                            route_coordinates.append({
+                                "latitude":
+                                    point_latitude,
+
+                                "longitude":
+                                    point_longitude,
+
+                                "speed":
+                                    (
+                                        float(
+                                            point["speed"]
+                                        )
+                                        if point.get(
+                                            "speed"
+                                        )
+                                        is not None
+                                        else None
+                                    ),
+
+                                "recorded_at":
+                                    point.get(
+                                        "recorded_at"
+                                    )
+                            })
+
+
+                            previous_point = {
+                                "latitude":
+                                    point_latitude,
+
+                                "longitude":
+                                    point_longitude
+                            }
+
+
+                        if route_coordinates:
+
+                            first_point = (
+                                route_coordinates[0]
                             )
 
-                        previous_point = point
+                            last_point = (
+                                route_coordinates[-1]
+                            )
 
-                    first_point = route_points[0]
 
-                    route_coordinates = []
-
-                    for point in route_points:
-
-                        route_coordinates.append({
-                            "latitude":
-                                float(
-                                    point[
-                                        "latitude"
-                                    ]
-                                ),
-
-                            "longitude":
-                                float(
-                                    point[
-                                        "longitude"
-                                    ]
-                                ),
-
-                            "recorded_at":
-                                (
-                                    point[
-                                        "recorded_at"
-                                    ].isoformat()
-                                    if point.get(
-                                        "recorded_at"
-                                    )
-                                    else None
-                                )
-                        })
-
-                    route_information = {
-                        "distance_km":
-                            round(
+                            route_information[
+                                "distance_km"
+                            ] = round(
                                 route_distance_km,
                                 3
-                            ),
+                            )
 
-                        "coordinate_count":
-                            len(
-                                route_points
-                            ),
 
-                        "start_latitude":
-                            float(
-                                first_point[
-                                    "latitude"
-                                ]
-                            ),
+                            route_information[
+                                "coordinate_count"
+                            ] = len(
+                                route_coordinates
+                            )
 
-                        "start_longitude":
-                            float(
-                                first_point[
-                                    "longitude"
-                                ]
-                            ),
 
-                        "end_latitude":
-                            float(
-                                route_points[-1][
-                                    "latitude"
-                                ]
-                            ),
+                            route_information[
+                                "start_latitude"
+                            ] = first_point[
+                                "latitude"
+                            ]
 
-                        "end_longitude":
-                            float(
-                                route_points[-1][
-                                    "longitude"
-                                ]
-                            ),
 
-                        "incident_latitude":
-                            (
-                                float(
-                                    incident[
-                                        "latitude"
-                                    ]
-                                )
-                                if incident[
-                                    "latitude"
-                                ] is not None
-                                else None
-                            ),
+                            route_information[
+                                "start_longitude"
+                            ] = first_point[
+                                "longitude"
+                            ]
 
-                        "incident_longitude":
-                            (
-                                float(
-                                    incident[
-                                        "longitude"
-                                    ]
-                                )
-                                if incident[
-                                    "longitude"
-                                ] is not None
-                                else None
-                            ),
 
-                        "coordinates":
-                            route_coordinates
-                    }
+                            route_information[
+                                "end_latitude"
+                            ] = last_point[
+                                "latitude"
+                            ]
+
+
+                            route_information[
+                                "end_longitude"
+                            ] = last_point[
+                                "longitude"
+                            ]
+
+
+                            route_information[
+                                "coordinates"
+                            ] = route_coordinates
+
+
+                vehicle_routes.append(
+                    route_information
+                )
+
+
+            # =====================================
+            # LEAGĂ TRASEUL DE ASIGNARE
+            # =====================================
+
+            routes_by_assignment = {
+                route[
+                    "assignment_id"
+                ]:
+                    route
+
+                for route
+                in vehicle_routes
+            }
+
+
+            for assignment in assignments:
+
+                assignment_route = (
+                    routes_by_assignment.get(
+                        assignment[
+                            "assignment_id"
+                        ]
+                    )
+                )
+
+
+                assignment[
+                    "route"
+                ] = assignment_route
+
+
+                if assignment_route:
+
+                    assignment[
+                        "distance_km"
+                    ] = (
+                        assignment_route.get(
+                            "distance_km"
+                        )
+                    )
+
+                    assignment[
+                        "route_coordinate_count"
+                    ] = (
+                        assignment_route.get(
+                            "coordinate_count"
+                        )
+                    )
+
+                else:
+
+                    assignment[
+                        "distance_km"
+                    ] = None
+
+                    assignment[
+                        "route_coordinate_count"
+                    ] = 0
+
+
+            incident[
+                "assigned_vehicles"
+            ] = assignments
+
+
+            incident[
+                "assigned_vehicle_count"
+            ] = len(
+                assignments
+            )
+
+
+            # =====================================
+            # SUMAR VEHICULE PE SERVICIU
+            # =====================================
+
+            vehicle_summary = {
+
+                "police": {
+                    "total":
+                        0,
+
+                    "primary":
+                        0,
+
+                    "reinforcement":
+                        0
+                },
+
+                "ambulance": {
+                    "total":
+                        0,
+
+                    "primary":
+                        0,
+
+                    "reinforcement":
+                        0
+                },
+
+                "fire": {
+                    "total":
+                        0,
+
+                    "primary":
+                        0,
+
+                    "reinforcement":
+                        0
+                }
+
+            }
+
+
+            for assignment in assignments:
+
+                vehicle_type = str(
+                    assignment.get(
+                        "vehicle_type"
+                    )
+                    or
+                    ""
+                ).lower()
+
+
+                if (
+                    vehicle_type
+                    not in vehicle_summary
+                ):
+
+                    continue
+
+
+                vehicle_summary[
+                    vehicle_type
+                ]["total"] += 1
+
+
+                assignment_type = str(
+                    assignment.get(
+                        "assignment_type"
+                    )
+                    or
+                    ""
+                ).lower()
+
+
+                if assignment_type in {
+                    "primary",
+                    "reinforcement"
+                }:
+
+                    vehicle_summary[
+                        vehicle_type
+                    ][
+                        assignment_type
+                    ] += 1
+
+
+            # =====================================
+            # STATISTICI DE RĂSPUNS
+            # =====================================
+
+            assignment_times = [
+                assignment[
+                    "assigned_at"
+                ]
+
+                for assignment
+                in assignments
+
+                if assignment.get(
+                    "assigned_at"
+                )
+            ]
+
+
+            arrival_times = [
+                assignment[
+                    "arrived_at"
+                ]
+
+                for assignment
+                in assignments
+
+                if assignment.get(
+                    "arrived_at"
+                )
+            ]
+
+
+            release_times = [
+                assignment[
+                    "released_at"
+                ]
+
+                for assignment
+                in assignments
+
+                if assignment.get(
+                    "released_at"
+                )
+            ]
+
+
+            first_assignment_at = (
+                min(
+                    assignment_times
+                )
+                if assignment_times
+                else None
+            )
+
+
+            first_arrival_at = (
+                min(
+                    arrival_times
+                )
+                if arrival_times
+                else None
+            )
+
+
+            last_arrival_at = (
+                max(
+                    arrival_times
+                )
+                if arrival_times
+                else None
+            )
+
+
+            last_release_at = (
+                max(
+                    release_times
+                )
+                if release_times
+                else None
+            )
+
+
+            dispatch_delay_seconds = None
+
+            first_response_seconds = None
+
+            total_incident_seconds = None
+
+
+            if (
+                incident.get(
+                    "created_at"
+                )
+                and
+                incident.get(
+                    "dispatched_at"
+                )
+            ):
+
+                dispatch_delay_seconds = max(
+                    0,
+                    int(
+                        (
+                            incident[
+                                "dispatched_at"
+                            ]
+                            -
+                            incident[
+                                "created_at"
+                            ]
+                        ).total_seconds()
+                    )
+                )
+
+
+            if (
+                incident.get(
+                    "dispatched_at"
+                )
+                and
+                first_arrival_at
+            ):
+
+                first_response_seconds = max(
+                    0,
+                    int(
+                        (
+                            first_arrival_at
+                            -
+                            incident[
+                                "dispatched_at"
+                            ]
+                        ).total_seconds()
+                    )
+                )
+
+
+            if (
+                incident.get(
+                    "created_at"
+                )
+                and
+                incident.get(
+                    "resolved_at"
+                )
+            ):
+
+                total_incident_seconds = max(
+                    0,
+                    int(
+                        (
+                            incident[
+                                "resolved_at"
+                            ]
+                            -
+                            incident[
+                                "created_at"
+                            ]
+                        ).total_seconds()
+                    )
+                )
+
+
+            operational_times = {
+
+                "created_at":
+                    incident.get(
+                        "created_at"
+                    ),
+
+                "dispatched_at":
+                    incident.get(
+                        "dispatched_at"
+                    ),
+
+                "first_assignment_at":
+                    first_assignment_at,
+
+                "first_arrival_at":
+                    first_arrival_at,
+
+                "last_arrival_at":
+                    last_arrival_at,
+
+                "last_release_at":
+                    last_release_at,
+
+                "resolved_at":
+                    incident.get(
+                        "resolved_at"
+                    ),
+
+                "dispatch_delay_seconds":
+                    dispatch_delay_seconds,
+
+                "first_response_seconds":
+                    first_response_seconds,
+
+                "total_incident_seconds":
+                    total_incident_seconds
+
+            }
+
+
+            # =====================================
+            # DISTANȚĂ TOTALĂ ÎNREGISTRATĂ
+            # =====================================
+
+            total_recorded_distance_km = round(
+                sum(
+                    float(
+                        route.get(
+                            "distance_km"
+                        )
+                        or
+                        0
+                    )
+
+                    for route
+                    in vehicle_routes
+                ),
+                3
+            )
+
+
+            # =====================================
+            # CERERI DE ÎNTĂRIRI
+            # =====================================
+
+            cursor.execute(
+                """
+                SELECT
+                    rr.id,
+
+                    rr.incident_id,
+
+                    rr.requested_by_vehicle_id,
+
+                    rr.requested_vehicle_type,
+
+                    rr.requested_quantity,
+
+                    rr.requested_message,
+
+                    rr.assigned_quantity,
+
+                    rr.status,
+
+                    rr.failure_message,
+
+                    rr.dispatcher_message,
+
+                    rr.reviewed_by_user_id,
+
+                    rr.reviewed_at,
+
+                    rr.created_at,
+
+                    rr.updated_at,
+
+                    rr.completed_at,
+
+                    requester.vehicle_code
+                        AS requested_by_vehicle_code,
+
+                    requester.name
+                        AS requested_by_vehicle_name,
+
+                    requester.vehicle_type
+                        AS requested_by_vehicle_type_code,
+
+                    reviewer.display_name
+                        AS reviewed_by_display_name,
+
+                    reviewer.role
+                        AS reviewed_by_role
+
+                FROM reinforcement_requests rr
+
+                LEFT JOIN vehicles requester
+                    ON requester.id =
+                        rr.requested_by_vehicle_id
+
+                LEFT JOIN users reviewer
+                    ON reviewer.id =
+                        rr.reviewed_by_user_id
+
+                WHERE
+                    rr.incident_id = %s
+
+                ORDER BY
+                    rr.created_at ASC,
+                    rr.id ASC
+                """,
+                (
+                    incident_id,
+                )
+            )
+
+
+            reinforcement_requests = (
+                cursor.fetchall()
+                or
+                []
+            )
+
+
+            # =====================================
+            # RESURSELE CERERILOR DE ÎNTĂRIRI
+            # =====================================
+
+            for reinforcement_request in (
+                reinforcement_requests
+            ):
+
+                cursor.execute(
+                    """
+                    SELECT
+                        id,
+
+                        reinforcement_request_id,
+
+                        vehicle_type,
+
+                        requested_quantity,
+
+                        approved_quantity,
+
+                        assigned_quantity,
+
+                        created_at,
+
+                        updated_at
+
+                    FROM
+                        reinforcement_request_resources
+
+                    WHERE
+                        reinforcement_request_id = %s
+
+                    ORDER BY
+                        FIELD(
+                            vehicle_type,
+                            'police',
+                            'ambulance',
+                            'fire'
+                        ),
+                        id ASC
+                    """,
+                    (
+                        reinforcement_request[
+                            "id"
+                        ],
+                    )
+                )
+
+
+                resources = (
+                    cursor.fetchall()
+                    or
+                    []
+                )
+
+
+                for resource in resources:
+
+                    resource[
+                        "requested_quantity"
+                    ] = int(
+                        resource.get(
+                            "requested_quantity"
+                        )
+                        or
+                        0
+                    )
+
+                    resource[
+                        "approved_quantity"
+                    ] = int(
+                        resource.get(
+                            "approved_quantity"
+                        )
+                        or
+                        0
+                    )
+
+                    resource[
+                        "assigned_quantity"
+                    ] = int(
+                        resource.get(
+                            "assigned_quantity"
+                        )
+                        or
+                        0
+                    )
+
+
+                reinforcement_request[
+                    "resources"
+                ] = resources
+
+
+                reinforcement_request[
+                    "requested_quantity"
+                ] = int(
+                    reinforcement_request.get(
+                        "requested_quantity"
+                    )
+                    or
+                    0
+                )
+
+
+                reinforcement_request[
+                    "assigned_quantity"
+                ] = int(
+                    reinforcement_request.get(
+                        "assigned_quantity"
+                    )
+                    or
+                    0
+                )
+
+
+            # =====================================
+            # CHESTIONARE SPECIALIZATE
+            # =====================================
+
+            specialist_reports = (
+                SpecialistService
+                .get_reports(
+                    cursor,
+                    incident_id
+                )
+            )
+
+
+            specialist_progress = (
+                SpecialistService
+                .all_reports_confirmed(
+                    cursor,
+                    incident_id
+                )
+            )
+
+
+            # =====================================
+            # ISTORIC RĂSPUNSURI CHESTIONARE
+            # =====================================
+
+            cursor.execute(
+                """
+                SELECT
+                    h.id,
+
+                    h.report_id,
+
+                    h.question_code,
+
+                    h.answer_value,
+
+                    h.changed_by_user_id,
+
+                    h.changed_at,
+
+                    u.display_name
+                        AS changed_by_display_name,
+
+                    u.role
+                        AS changed_by_role,
+
+                    r.service_type
+
+                FROM
+                    incident_specialist_answer_history h
+
+                INNER JOIN
+                    incident_specialist_reports r
+
+                    ON r.id =
+                        h.report_id
+
+                LEFT JOIN users u
+                    ON u.id =
+                        h.changed_by_user_id
+
+                WHERE
+                    r.incident_id = %s
+
+                ORDER BY
+                    h.changed_at ASC,
+                    h.id ASC
+                """,
+                (
+                    incident_id,
+                )
+            )
+
+
+            specialist_answer_history = (
+                cursor.fetchall()
+                or
+                []
+            )
+
+
+            # =====================================
+            # CRONOLOGIA INCIDENTULUI
+            # =====================================
+
+            cursor.execute(
+                """
+                SELECT
+                    ie.id,
+
+                    ie.incident_id,
+
+                    ie.event_type,
+
+                    ie.source_type,
+
+                    ie.source_id,
+
+                    ie.service_type,
+
+                    ie.message,
+
+                    ie.metadata_json,
+
+                    ie.created_by_user_id,
+
+                    ie.created_at,
+
+                    u.display_name
+                        AS created_by_display_name,
+
+                    u.role
+                        AS created_by_role
+
+                FROM incident_events ie
+
+                LEFT JOIN users u
+                    ON u.id =
+                        ie.created_by_user_id
+
+                WHERE
+                    ie.incident_id = %s
+
+                ORDER BY
+                    ie.created_at ASC,
+                    ie.id ASC
+                """,
+                (
+                    incident_id,
+                )
+            )
+
+
+            events = (
+                cursor.fetchall()
+                or
+                []
+            )
+
+
+            # =====================================
+            # SUMAR CERERI DE ÎNTĂRIRI
+            # =====================================
+
+            reinforcement_summary = {
+
+                "total_requests":
+                    len(
+                        reinforcement_requests
+                    ),
+
+                "accepted":
+                    0,
+
+                "rejected":
+                    0,
+
+                "completed":
+                    0,
+
+                "failed":
+                    0,
+
+                "cancelled":
+                    0,
+
+                "pending":
+                    0,
+
+                "partially_assigned":
+                    0,
+
+                "requested_vehicles":
+                    0,
+
+                "approved_vehicles":
+                    0,
+
+                "assigned_vehicles":
+                    0
+
+            }
+
+
+            for reinforcement_request in (
+                reinforcement_requests
+            ):
+
+                request_status = str(
+                    reinforcement_request.get(
+                        "status"
+                    )
+                    or
+                    ""
+                ).lower()
+
+
+                if (
+                    request_status
+                    in reinforcement_summary
+                ):
+
+                    reinforcement_summary[
+                        request_status
+                    ] += 1
+
+
+                resources = (
+                    reinforcement_request.get(
+                        "resources"
+                    )
+                    or
+                    []
+                )
+
+
+                if resources:
+
+                    reinforcement_summary[
+                        "requested_vehicles"
+                    ] += sum(
+                        int(
+                            resource.get(
+                                "requested_quantity"
+                            )
+                            or
+                            0
+                        )
+
+                        for resource
+                        in resources
+                    )
+
+
+                    reinforcement_summary[
+                        "approved_vehicles"
+                    ] += sum(
+                        int(
+                            resource.get(
+                                "approved_quantity"
+                            )
+                            or
+                            0
+                        )
+
+                        for resource
+                        in resources
+                    )
+
+
+                    reinforcement_summary[
+                        "assigned_vehicles"
+                    ] += sum(
+                        int(
+                            resource.get(
+                                "assigned_quantity"
+                            )
+                            or
+                            0
+                        )
+
+                        for resource
+                        in resources
+                    )
+
+                else:
+
+                    reinforcement_summary[
+                        "requested_vehicles"
+                    ] += int(
+                        reinforcement_request.get(
+                            "requested_quantity"
+                        )
+                        or
+                        0
+                    )
+
+
+                    reinforcement_summary[
+                        "assigned_vehicles"
+                    ] += int(
+                        reinforcement_request.get(
+                            "assigned_quantity"
+                        )
+                        or
+                        0
+                    )
+
+
+            # =====================================
+            # STATISTICI GENERALE
+            # =====================================
+
+            primary_vehicle_count = sum(
+                1
+
+                for assignment
+                in assignments
+
+                if str(
+                    assignment.get(
+                        "assignment_type"
+                    )
+                    or
+                    ""
+                ).lower()
+                ==
+                "primary"
+            )
+
+
+            reinforcement_vehicle_count = sum(
+                1
+
+                for assignment
+                in assignments
+
+                if str(
+                    assignment.get(
+                        "assignment_type"
+                    )
+                    or
+                    ""
+                ).lower()
+                ==
+                "reinforcement"
+            )
+
+
+            arrived_vehicle_count = sum(
+                1
+
+                for assignment
+                in assignments
+
+                if assignment.get(
+                    "arrived_at"
+                )
+            )
+
+
+            released_vehicle_count = sum(
+                1
+
+                for assignment
+                in assignments
+
+                if assignment.get(
+                    "released_at"
+                )
+            )
+
+
+            report_summary = {
+
+                "vehicle_count":
+                    len(
+                        assignments
+                    ),
+
+                "primary_vehicle_count":
+                    primary_vehicle_count,
+
+                "reinforcement_vehicle_count":
+                    reinforcement_vehicle_count,
+
+                "arrived_vehicle_count":
+                    arrived_vehicle_count,
+
+                "released_vehicle_count":
+                    released_vehicle_count,
+
+                "route_count":
+                    len(
+                        [
+                            route
+                            for route
+                            in vehicle_routes
+                            if route.get(
+                                "coordinate_count"
+                            )
+                        ]
+                    ),
+
+                "total_recorded_distance_km":
+                    total_recorded_distance_km,
+
+                "reinforcement_request_count":
+                    len(
+                        reinforcement_requests
+                    ),
+
+                "specialist_report_count":
+                    len(
+                        specialist_reports
+                    ),
+
+                "event_count":
+                    len(
+                        events
+                    )
+
+            }
+
+
+            # =====================================
+            # PACHET COMPLET PENTRU PDF
+            # =====================================
+
+            report_data = {
+
+                "incident":
+                    incident,
+
+                "incident_types":
+                    incident_types,
+
+                "required_resources":
+                    required_resources,
+
+                "assignments":
+                    assignments,
+
+                "vehicle_summary":
+                    vehicle_summary,
+
+                "vehicle_routes":
+                    vehicle_routes,
+
+                "operational_times":
+                    operational_times,
+
+                "reinforcement_requests":
+                    reinforcement_requests,
+
+                "reinforcement_summary":
+                    reinforcement_summary,
+
+                "specialist_reports":
+                    specialist_reports,
+
+                "specialist_progress":
+                    specialist_progress,
+
+                "specialist_answer_history":
+                    specialist_answer_history,
+
+                "events":
+                    events,
+
+                "summary":
+                    report_summary
+
+            }
+
+
+        # =====================================
+        # GENERARE PDF
+        # =====================================
 
         pdf_bytes = (
-            report_service.generate_report(
-                incident,
-                route_information
+            report_service
+            .generate_report(
+                report_data
             )
         )
 
+
+        # =====================================
+        # NUME FIȘIER
+        # =====================================
+
         filename = (
             f"{incident['incident_code']}"
-            f"-report.pdf"
+            "-raport-final.pdf"
         )
+
+
+        # =====================================
+        # RESPONSE PDF
+        # =====================================
 
         return Response(
             pdf_bytes,
@@ -3259,15 +4714,23 @@ def get_incident_report(
             mimetype="application/pdf",
             headers={
                 "Content-Disposition":
-                    f'inline; filename="{filename}"'
+                    (
+                        f'inline; '
+                        f'filename="{filename}"'
+                    )
             }
         )
+
 
     except Exception as error:
 
         app.logger.exception(
-            "Incident report could not be generated"
+            (
+                "Raportul incidentului "
+                "nu a putut fi generat"
+            )
         )
+
 
         return jsonify({
             "status":
@@ -3277,10 +4740,10 @@ def get_incident_report(
                 str(error)
         }), 500
 
+
     finally:
 
         connection.close()
-
 # =====================================
 # LISTĂ CERERI DE ÎNTĂRIRI
 # =====================================

@@ -4,19 +4,31 @@
 
 async function loadIncidents() {
 
+    if (
+        sidebarMode !== "routes"
+    ) {
+
+        hideSelectedIncidentDetailsPanel();
+
+    }
+
+
     if (activeRoutesLoading) {
 
         return;
 
     }
 
+
     activeRoutesLoading =
         true;
+
 
     try {
 
         const incidents =
             await window.getIncidents();
+
 
         if (!Array.isArray(incidents)) {
 
@@ -26,12 +38,16 @@ async function loadIncidents() {
 
         }
 
+
         allIncidents =
             incidents;
 
+
         activeRoutes =
             allIncidents.filter(
-                function (incident) {
+                function (
+                    incident
+                ) {
 
                     return isIncidentActive(
                         incident
@@ -40,13 +56,17 @@ async function loadIncidents() {
                 }
             );
 
+
         filteredIncidents =
             applyIncidentFilters();
 
+
         displayIncidents();
 
+
         if (
-            sidebarMode === "routes"
+            sidebarMode ===
+            "routes"
         ) {
 
             updateSidebarCount(
@@ -55,21 +75,31 @@ async function loadIncidents() {
 
         }
 
+
         if (
-            activeRouteId !== null
+            activeRouteId !==
+            null
         ) {
 
             const routeStillActive =
                 activeRoutes.some(
-                    function (incident) {
+                    function (
+                        incident
+                    ) {
 
                         return (
-                            Number(incident.id) ===
-                            Number(activeRouteId)
+                            Number(
+                                incident.id
+                            )
+                            ===
+                            Number(
+                                activeRouteId
+                            )
                         );
 
                     }
                 );
+
 
             if (!routeStillActive) {
 
@@ -111,15 +141,18 @@ function initializeIncidentFilters() {
             "incident-status-filter"
         );
 
+
     const typeFilter =
         document.getElementById(
             "incident-type-filter"
         );
 
+
     const priorityFilter =
         document.getElementById(
             "incident-priority-filter"
         );
+
 
     if (statusFilter) {
 
@@ -137,6 +170,7 @@ function initializeIncidentFilters() {
 
     }
 
+
     if (typeFilter) {
 
         typeFilter.addEventListener(
@@ -152,6 +186,7 @@ function initializeIncidentFilters() {
         );
 
     }
+
 
     if (priorityFilter) {
 
@@ -181,26 +216,32 @@ function resetIncidentFilters() {
     incidentFilters.status =
         "all";
 
+
     incidentFilters.type =
         "all";
 
+
     incidentFilters.priority =
         "all";
+
 
     const statusFilter =
         document.getElementById(
             "incident-status-filter"
         );
 
+
     const typeFilter =
         document.getElementById(
             "incident-type-filter"
         );
 
+
     const priorityFilter =
         document.getElementById(
             "incident-priority-filter"
         );
+
 
     if (statusFilter) {
 
@@ -209,12 +250,14 @@ function resetIncidentFilters() {
 
     }
 
+
     if (typeFilter) {
 
         typeFilter.value =
             "all";
 
     }
+
 
     if (priorityFilter) {
 
@@ -233,12 +276,15 @@ function resetIncidentFilters() {
 function applyIncidentFilters() {
 
     return allIncidents.filter(
-        function (incident) {
+        function (
+            incident
+        ) {
 
             const category =
                 getIncidentCategory(
                     incident
                 );
+
 
             const vehicleType =
                 String(
@@ -247,6 +293,7 @@ function applyIncidentFilters() {
                     ""
                 ).toLowerCase();
 
+
             const priority =
                 String(
                     incident.priority
@@ -254,8 +301,10 @@ function applyIncidentFilters() {
                     ""
                 ).toLowerCase();
 
+
             let statusMatches =
                 true;
+
 
             if (
                 incidentFilters.status ===
@@ -263,7 +312,8 @@ function applyIncidentFilters() {
             ) {
 
                 statusMatches =
-                    category === "active";
+                    category ===
+                    "active";
 
             }
 
@@ -273,9 +323,11 @@ function applyIncidentFilters() {
             ) {
 
                 statusMatches =
-                    category === "archived";
+                    category ===
+                    "archived";
 
             }
+
 
             const typeMatches =
                 incidentFilters.type ===
@@ -284,6 +336,7 @@ function applyIncidentFilters() {
                 vehicleType ===
                     incidentFilters.type;
 
+
             const priorityMatches =
                 incidentFilters.priority ===
                     "all"
@@ -291,9 +344,12 @@ function applyIncidentFilters() {
                 priority ===
                     incidentFilters.priority;
 
+
             return (
-                statusMatches &&
-                typeMatches &&
+                statusMatches
+                &&
+                typeMatches
+                &&
                 priorityMatches
             );
 
@@ -312,10 +368,13 @@ function refreshIncidentView() {
     filteredIncidents =
         applyIncidentFilters();
 
+
     displayIncidents();
 
+
     if (
-        sidebarMode === "routes"
+        sidebarMode ===
+        "routes"
     ) {
 
         updateSidebarCount(
@@ -324,21 +383,31 @@ function refreshIncidentView() {
 
     }
 
+
     if (
-        activeRouteId !== null
+        activeRouteId !==
+        null
     ) {
 
         const selectedStillVisible =
             filteredIncidents.some(
-                function (incident) {
+                function (
+                    incident
+                ) {
 
                     return (
-                        Number(incident.id) ===
-                        Number(activeRouteId)
+                        Number(
+                            incident.id
+                        )
+                        ===
+                        Number(
+                            activeRouteId
+                        )
                     );
 
                 }
             );
+
 
         if (!selectedStillVisible) {
 
@@ -362,17 +431,21 @@ function displayIncidents() {
             "routes-list"
         );
 
+
     if (!list) {
 
         return;
 
     }
 
+
     list.innerHTML =
         "";
 
+
     if (
-        filteredIncidents.length === 0
+        filteredIncidents.length ===
+        0
     ) {
 
         list.innerHTML = `
@@ -385,8 +458,11 @@ function displayIncidents() {
 
     }
 
+
     filteredIncidents.forEach(
-        function (incident) {
+        function (
+            incident
+        ) {
 
             list.appendChild(
                 createIncidentCard(
@@ -413,17 +489,32 @@ function createIncidentCard(
             "div"
         );
 
+
     const category =
         getIncidentCategory(
             incident
         );
 
+
     card.className =
         `route-card incident-${category}`;
 
+
+    /*
+     * Folosim activeIncidentId,
+     * nu activeRouteId.
+     *
+     * Astfel și incidentele arhivate
+     * rămân marcate ca selectate.
+     */
     if (
-        Number(incident.id) ===
-        Number(activeRouteId)
+        Number(
+            incident.id
+        )
+        ===
+        Number(
+            activeIncidentId
+        )
     ) {
 
         card.classList.add(
@@ -432,74 +523,81 @@ function createIncidentCard(
 
     }
 
+
     /* =====================================
-   TOATE VEHICULELE ASIGNATE
-===================================== */
+       TOATE VEHICULELE ASIGNATE
+    ===================================== */
 
-const assignedVehicles =
-    Array.isArray(
-        incident.assigned_vehicles
-    )
-        ?
-        incident.assigned_vehicles
-        :
-        [];
-
-
-/*
- * Fallback pentru incidentele vechi sau
- * pentru cazul în care API-ul nu trimite
- * încă assigned_vehicles.
- */
-if (
-    assignedVehicles.length === 0
-    &&
-    incident.assigned_vehicle_code
-) {
-
-    assignedVehicles.push({
-        vehicle_id:
-            incident.assigned_vehicle_id,
-
-        vehicle_code:
-            incident.assigned_vehicle_code,
-
-        vehicle_type:
-            incident.assigned_vehicle_type
-            ||
-            incident.required_vehicle_type,
-
-        assignment_type:
-            "primary"
-    });
-
-}
+    const assignedVehicles =
+        Array.isArray(
+            incident.assigned_vehicles
+        )
+            ?
+            incident.assigned_vehicles
+            :
+            [];
 
 
-const assignedVehiclesHtml =
-    createIncidentAssignedVehiclesHtml(
-        assignedVehicles
-    );
+    /*
+     * Fallback pentru incidentele vechi.
+     */
+    if (
+        assignedVehicles.length ===
+            0
+        &&
+        incident.assigned_vehicle_code
+    ) {
+
+        assignedVehicles.push({
+
+            vehicle_id:
+                incident.assigned_vehicle_id,
+
+            vehicle_code:
+                incident.assigned_vehicle_code,
+
+            vehicle_type:
+                incident.assigned_vehicle_type
+                ||
+                incident.required_vehicle_type,
+
+            assignment_type:
+                "primary"
+
+        });
+
+    }
+
+
+    const assignedVehiclesHtml =
+        createIncidentAssignedVehiclesHtml(
+            assignedVehicles
+        );
+
 
     const createdAt =
         formatIncidentDate(
             incident.created_at
         );
 
+
     const dispatchedAt =
         formatIncidentDate(
             incident.dispatched_at
         );
+
 
     const resolvedAt =
         formatIncidentDate(
             incident.resolved_at
         );
 
+
     const reportAvailable =
         isIncidentArchived(
             incident
         );
+
 
     card.innerHTML = `
         <div class="route-card-header">
@@ -525,16 +623,23 @@ const assignedVehiclesHtml =
 
         </div>
 
+
         <div class="route-card-title">
             ${escapeHtml(
-                incident.title || "-"
+                incident.title
+                ||
+                "-"
             )}
         </div>
+
 
         <div class="route-card-info">
 
             <div>
-                <strong>Stare în baza de date:</strong>
+                <strong>
+                    Stare în baza de date:
+                </strong>
+
                 ${escapeHtml(
                     getReadableStatus(
                         incident.status
@@ -542,8 +647,12 @@ const assignedVehiclesHtml =
                 )}
             </div>
 
+
             <div>
-                <strong>Tip incident:</strong>
+                <strong>
+                    Tip incident:
+                </strong>
+
                 ${escapeHtml(
                     getReadableStatus(
                         incident.incident_type
@@ -551,8 +660,12 @@ const assignedVehiclesHtml =
                 )}
             </div>
 
+
             <div>
-                <strong>Vehicul necesar:</strong>
+                <strong>
+                    Vehicul necesar:
+                </strong>
+
                 ${escapeHtml(
                     getReadableStatus(
                         incident.required_vehicle_type
@@ -560,8 +673,12 @@ const assignedVehiclesHtml =
                 )}
             </div>
 
+
             <div>
-                <strong>Prioritate:</strong>
+                <strong>
+                    Prioritate:
+                </strong>
+
                 ${escapeHtml(
                     getReadableStatus(
                         incident.priority
@@ -569,30 +686,39 @@ const assignedVehiclesHtml =
                 )}
             </div>
 
+
             <div class="incident-assigned-vehicles">
 
-    <strong>
-        Vehicule asignate:
-        ${assignedVehicles.length}
-    </strong>
+                <strong>
+                    Vehicule asignate:
+                    ${assignedVehicles.length}
+                </strong>
 
-    ${assignedVehiclesHtml}
+                ${assignedVehiclesHtml}
 
-</div>
+            </div>
+
 
             <div>
-                <strong>Creat:</strong>
+                <strong>
+                    Creat:
+                </strong>
+
                 ${escapeHtml(
                     createdAt
                 )}
             </div>
+
 
             ${
                 incident.dispatched_at
                     ?
                     `
                         <div>
-                            <strong>Dispecat:</strong>
+                            <strong>
+                                Dispecat:
+                            </strong>
+
                             ${escapeHtml(
                                 dispatchedAt
                             )}
@@ -602,12 +728,16 @@ const assignedVehiclesHtml =
                     ""
             }
 
+
             ${
                 incident.resolved_at
                     ?
                     `
                         <div>
-                            <strong>Rezolvat:</strong>
+                            <strong>
+                                Rezolvat:
+                            </strong>
+
                             ${escapeHtml(
                                 resolvedAt
                             )}
@@ -618,6 +748,7 @@ const assignedVehiclesHtml =
             }
 
         </div>
+
 
         <div class="route-card-actions">
 
@@ -637,6 +768,7 @@ const assignedVehiclesHtml =
                     :
                     ""
             }
+
 
             <button
                 type="button"
@@ -662,49 +794,72 @@ const assignedVehiclesHtml =
         </div>
     `;
 
-  /*
- * Click pe card:
- * pentru incidentul activ afișează toate rutele;
- * pentru incidentul arhivat afișează doar locația.
- */
 
-card.addEventListener(
-    "click",
-    async function () {
+    /* =====================================
+       CLICK PE INCIDENT
+    ===================================== */
 
-        if (
-            isIncidentActive(
-                incident
-            )
-        ) {
+    card.addEventListener(
+        "click",
+        async function () {
 
-            await openActiveRoute(
+            /*
+             * Mai întâi afișăm boxul
+             * Incident selectat.
+             */
+            await openSelectedIncidentDetails(
                 incident
             );
 
-            return;
+
+            /*
+             * Păstrăm comportamentul vechi
+             * al hărții.
+             */
+            if (
+                isIncidentActive(
+                    incident
+                )
+            ) {
+
+                await openActiveRoute(
+                    incident
+                );
+
+                return;
+
+            }
+
+
+            showIncidentOnMap(
+                incident
+            );
 
         }
+    );
 
-        showIncidentOnMap(
-            incident
-        );
-
-    }
-);
 
     const routeButton =
         card.querySelector(
             ".route-view-button"
         );
 
+
     if (routeButton) {
 
         routeButton.addEventListener(
             "click",
-            async function (event) {
+            async function (
+                event
+            ) {
 
                 event.stopPropagation();
+
+
+                await openSelectedIncidentDetails(
+                    incident
+                );
+
 
                 await openActiveRoute(
                     incident
@@ -715,24 +870,30 @@ card.addEventListener(
 
     }
 
+
     const reportButton =
         card.querySelector(
             ".incident-report-button"
         );
 
+
     if (reportButton) {
 
         reportButton.addEventListener(
             "click",
-            function (event) {
+            function (
+                event
+            ) {
 
                 event.stopPropagation();
+
 
                 if (!reportAvailable) {
 
                     return;
 
                 }
+
 
                 openIncidentReport(
                     incident
@@ -742,6 +903,7 @@ card.addEventListener(
         );
 
     }
+
 
     return card;
 
@@ -757,9 +919,12 @@ function createIncidentAssignedVehiclesHtml(
 ) {
 
     if (
-        !Array.isArray(vehicles)
+        !Array.isArray(
+            vehicles
+        )
         ||
-        vehicles.length === 0
+        vehicles.length ===
+            0
     ) {
 
         return `
@@ -771,11 +936,14 @@ function createIncidentAssignedVehiclesHtml(
     }
 
 
-    const groupedVehicles = {};
+    const groupedVehicles =
+        {};
 
 
     vehicles.forEach(
-        function (vehicle) {
+        function (
+            vehicle
+        ) {
 
             const vehicleType =
                 String(
@@ -785,23 +953,26 @@ function createIncidentAssignedVehiclesHtml(
                 ).toLowerCase();
 
 
-            if (!groupedVehicles[vehicleType]) {
+            if (
+                !groupedVehicles[
+                    vehicleType
+                ]
+            ) {
 
-                groupedVehicles[vehicleType] =
-                    [];
+                groupedVehicles[
+                    vehicleType
+                ] = [];
 
             }
 
 
-            /*
-             * Evităm afișarea accidentală
-             * de două ori a aceleiași mașini.
-             */
             const alreadyExists =
                 groupedVehicles[
                     vehicleType
                 ].some(
-                    function (existingVehicle) {
+                    function (
+                        existingVehicle
+                    ) {
 
                         return (
                             Number(
@@ -858,14 +1029,17 @@ function createIncidentAssignedVehiclesHtml(
                 const vehicleCodes =
                     typeVehicles
                         .map(
-                            function (vehicle) {
+                            function (
+                                vehicle
+                            ) {
 
                                 const code =
                                     vehicle.vehicle_code
                                     ||
                                     (
                                         "ID "
-                                        + vehicle.vehicle_id
+                                        +
+                                        vehicle.vehicle_id
                                     );
 
 
@@ -947,6 +1121,9 @@ function getIncidentVehicleTypeName(
             "Ambulanță",
 
         fire:
+            "Pompieri",
+
+        firefighters:
             "Pompieri"
 
     };
@@ -984,6 +1161,9 @@ function getIncidentVehicleTypeIcon(
             "🚑",
 
         fire:
+            "🚒",
+
+        firefighters:
             "🚒"
 
     };
@@ -1003,6 +1183,1868 @@ function getIncidentVehicleTypeIcon(
 
 }
 
+
+/* =====================================
+   INCIDENT SELECTAT - ÎNCĂRCARE
+===================================== */
+
+async function openSelectedIncidentDetails(
+    incident
+) {
+
+    if (
+        sidebarMode !==
+            "routes"
+        ||
+        !incident
+        ||
+        !incident.id
+    ) {
+
+        return;
+
+    }
+
+
+    activeIncidentId =
+        incident.id;
+
+
+    activeIncidentCode =
+        incident.incident_code
+        ||
+        null;
+
+
+    displayIncidents();
+
+
+    displaySelectedIncidentLoading(
+        incident
+    );
+
+
+    try {
+
+        const details =
+            await window.getIncidentDetails(
+                incident.id
+            );
+
+
+        /*
+         * Dacă utilizatorul a selectat
+         * alt incident între timp,
+         * ignorăm răspunsul vechi.
+         */
+        if (
+            sidebarMode !==
+                "routes"
+            ||
+            Number(
+                activeIncidentId
+            )
+            !==
+            Number(
+                incident.id
+            )
+        ) {
+
+            return;
+
+        }
+
+
+        displaySelectedIncidentDetails(
+            details
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Detaliile incidentului nu au putut fi încărcate:",
+            error
+        );
+
+
+        displaySelectedIncidentError(
+            incident,
+            error
+        );
+
+    }
+
+}
+
+
+/* =====================================
+   INCIDENT SELECTAT - LOADING
+===================================== */
+
+function displaySelectedIncidentLoading(
+    incident
+) {
+
+    const panel =
+        document.getElementById(
+            "incident-details-panel"
+        );
+
+
+    const title =
+        document.getElementById(
+            "selected-incident-title"
+        );
+
+
+    const status =
+        document.getElementById(
+            "selected-incident-status"
+        );
+
+
+    const container =
+        document.getElementById(
+            "selected-incident-details"
+        );
+
+
+    if (
+        !panel
+        ||
+        !container
+    ) {
+
+        return;
+
+    }
+
+
+    panel.hidden =
+        false;
+
+
+    if (title) {
+
+        title.textContent =
+            incident.incident_code
+            ||
+            "Detalii incident";
+
+    }
+
+
+    if (status) {
+
+        status.textContent =
+            "Se încarcă...";
+
+        status.className =
+            "selected-incident-status";
+
+    }
+
+
+    container.innerHTML = `
+        <p class="empty-message">
+            Se încarcă detaliile incidentului...
+        </p>
+    `;
+
+}
+
+
+/* =====================================
+   INCIDENT SELECTAT - DISPLAY
+===================================== */
+
+function displaySelectedIncidentDetails(
+    details
+) {
+
+    const panel =
+        document.getElementById(
+            "incident-details-panel"
+        );
+
+
+    const title =
+        document.getElementById(
+            "selected-incident-title"
+        );
+
+
+    const status =
+        document.getElementById(
+            "selected-incident-status"
+        );
+
+
+    const container =
+        document.getElementById(
+            "selected-incident-details"
+        );
+
+
+    if (
+        !panel
+        ||
+        !container
+    ) {
+
+        return;
+
+    }
+
+
+    const incident =
+        details?.incident
+        ||
+        {};
+
+
+    const incidentTypes =
+        Array.isArray(
+            details?.incident_types
+        )
+            ?
+            details.incident_types
+            :
+            (
+                Array.isArray(
+                    incident.incident_types
+                )
+                    ?
+                    incident.incident_types
+                    :
+                    (
+                        incident.incident_type
+                            ?
+                            [
+                                incident.incident_type
+                            ]
+                            :
+                            []
+                    )
+            );
+
+
+    const requiredResources =
+        Array.isArray(
+            details?.required_resources
+        )
+            ?
+            details.required_resources
+            :
+            (
+                Array.isArray(
+                    incident.required_resources
+                )
+                    ?
+                    incident.required_resources
+                    :
+                    []
+            );
+
+
+    const assignments =
+        Array.isArray(
+            details?.assignments
+        )
+            ?
+            details.assignments
+            :
+            (
+                Array.isArray(
+                    incident.assigned_vehicles
+                )
+                    ?
+                    incident.assigned_vehicles
+                    :
+                    []
+            );
+
+
+    const reinforcementRequests =
+        Array.isArray(
+            details?.reinforcement_requests
+        )
+            ?
+            details.reinforcement_requests
+            :
+            [];
+
+
+    const operationalTimes =
+        details?.operational_times
+        ||
+        {};
+
+
+    const specialistProgress =
+        details?.specialist_progress
+        ||
+        null;
+
+
+    panel.hidden =
+        false;
+
+
+    if (title) {
+
+        title.textContent =
+            incident.incident_code
+            ||
+            "Detalii incident";
+
+    }
+
+
+    if (status) {
+
+        const normalizedStatus =
+            String(
+                incident.status
+                ||
+                ""
+            ).toLowerCase();
+
+
+        status.textContent =
+            getReadableStatus(
+                incident.status
+                ||
+                "-"
+            );
+
+
+        status.className =
+            (
+                "selected-incident-status "
+                +
+                `selected-incident-status-${normalizedStatus}`
+            );
+
+    }
+
+
+    const incidentTypesHtml =
+        incidentTypes.length >
+            0
+            ?
+            incidentTypes
+                .map(
+                    function (
+                        incidentType
+                    ) {
+
+                        return `
+                            <span class="selected-incident-chip">
+                                ${escapeHtml(
+                                    getReadableStatus(
+                                        incidentType
+                                    )
+                                )}
+                            </span>
+                        `;
+
+                    }
+                )
+                .join("")
+            :
+            `
+                <span class="selected-incident-muted">
+                    Nedefinit
+                </span>
+            `;
+
+
+    const requiredResourcesHtml =
+        buildSelectedIncidentResourcesHtml(
+            requiredResources
+        );
+
+
+    const assignmentsHtml =
+        buildSelectedIncidentAssignmentsHtml(
+            assignments
+        );
+
+
+    const reinforcementHtml =
+        buildSelectedIncidentReinforcementHtml(
+            reinforcementRequests
+        );
+
+
+    const specialistProgressHtml =
+        buildSelectedIncidentSpecialistProgressHtml(
+            specialistProgress
+        );
+
+
+    const createdAt =
+        formatIncidentDate(
+            incident.created_at
+        );
+
+
+    const dispatchedAt =
+        formatIncidentDate(
+            operationalTimes.dispatched_at
+            ||
+            incident.dispatched_at
+        );
+
+
+    /*
+     * Dacă backendul complet nu este
+     * încă disponibil, putem calcula
+     * prima sosire direct din assignments.
+     */
+    const assignmentArrivalTimes =
+        assignments
+            .map(
+                function (
+                    assignment
+                ) {
+
+                    return assignment.arrived_at;
+
+                }
+            )
+            .filter(
+                Boolean
+            );
+
+
+    const fallbackFirstArrival =
+        getEarliestIncidentDateValue(
+            assignmentArrivalTimes
+        );
+
+
+    const firstArrivalAt =
+        formatIncidentDate(
+            operationalTimes.first_arrival_at
+            ||
+            fallbackFirstArrival
+        );
+
+
+    const resolvedAt =
+        formatIncidentDate(
+            operationalTimes.resolved_at
+            ||
+            incident.resolved_at
+        );
+
+
+    let firstArrivalDuration =
+        formatIncidentDurationSeconds(
+            operationalTimes.first_arrival_seconds
+        );
+
+
+    if (
+        firstArrivalDuration ===
+            "-"
+        &&
+        (
+            operationalTimes.dispatched_at
+            ||
+            incident.dispatched_at
+        )
+        &&
+        fallbackFirstArrival
+    ) {
+
+        firstArrivalDuration =
+            calculateIncidentDateDuration(
+                operationalTimes.dispatched_at
+                ||
+                incident.dispatched_at,
+
+                fallbackFirstArrival
+            );
+
+    }
+
+
+    let totalIncidentDuration =
+        formatIncidentDurationSeconds(
+            operationalTimes.total_incident_seconds
+        );
+
+
+    if (
+        totalIncidentDuration ===
+            "-"
+        &&
+        incident.created_at
+        &&
+        incident.resolved_at
+    ) {
+
+        totalIncidentDuration =
+            calculateIncidentDateDuration(
+                incident.created_at,
+                incident.resolved_at
+            );
+
+    }
+
+
+    const locationText =
+        buildSelectedIncidentLocationText(
+            incident
+        );
+
+
+    container.innerHTML = `
+        <div class="selected-incident-summary">
+
+            <div class="selected-incident-summary-main">
+
+                <span class="selected-incident-summary-label">
+                    Eveniment
+                </span>
+
+                <strong class="selected-incident-summary-title">
+                    ${escapeHtml(
+                        incident.title
+                        ||
+                        "Incident fără titlu"
+                    )}
+                </strong>
+
+                <span class="selected-incident-summary-code">
+                    ID incident:
+                    ${escapeHtml(
+                        incident.id
+                        ??
+                        "-"
+                    )}
+                </span>
+
+            </div>
+
+
+            <div class="selected-incident-priority">
+
+                <span>
+                    Prioritate
+                </span>
+
+                <strong>
+                    ${escapeHtml(
+                        getReadableStatus(
+                            incident.priority
+                            ||
+                            "-"
+                        )
+                    )}
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="selected-incident-info-grid">
+
+            <div class="selected-incident-info-item">
+                <span>
+                    Creat
+                </span>
+
+                <strong>
+                    ${escapeHtml(
+                        createdAt
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="selected-incident-info-item">
+                <span>
+                    Dispecat
+                </span>
+
+                <strong>
+                    ${escapeHtml(
+                        dispatchedAt
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="selected-incident-info-item">
+                <span>
+                    Prima sosire
+                </span>
+
+                <strong>
+                    ${escapeHtml(
+                        firstArrivalAt
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="selected-incident-info-item">
+                <span>
+                    Timp până la prima sosire
+                </span>
+
+                <strong>
+                    ${escapeHtml(
+                        firstArrivalDuration
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="selected-incident-info-item">
+                <span>
+                    Rezolvat
+                </span>
+
+                <strong>
+                    ${escapeHtml(
+                        resolvedAt
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="selected-incident-info-item">
+                <span>
+                    Durată totală
+                </span>
+
+                <strong>
+                    ${escapeHtml(
+                        totalIncidentDuration
+                    )}
+                </strong>
+            </div>
+
+        </div>
+
+
+        <div class="selected-incident-section">
+
+            <h3>
+                Tipuri incident
+            </h3>
+
+            <div class="selected-incident-chip-list">
+                ${incidentTypesHtml}
+            </div>
+
+        </div>
+
+
+        <div class="selected-incident-section">
+
+            <h3>
+                Locație
+            </h3>
+
+            <div class="selected-incident-location">
+                ${escapeHtml(
+                    locationText
+                )}
+            </div>
+
+        </div>
+
+
+        <div class="selected-incident-section">
+
+            <h3>
+                Detalii inițiale
+            </h3>
+
+            <p class="selected-incident-description">
+                ${escapeHtml(
+                    incident.details
+                    ||
+                    "Nu au fost introduse detalii suplimentare."
+                )}
+            </p>
+
+        </div>
+
+
+        <div class="selected-incident-section">
+
+            <h3>
+                Resurse solicitate inițial
+            </h3>
+
+            ${requiredResourcesHtml}
+
+        </div>
+
+
+        <div class="selected-incident-section">
+
+            <div class="selected-incident-section-heading">
+
+                <h3>
+                    Vehicule implicate
+                </h3>
+
+                <span>
+                    ${assignments.length}
+                </span>
+
+            </div>
+
+            ${assignmentsHtml}
+
+        </div>
+
+
+        ${reinforcementHtml}
+
+
+        ${specialistProgressHtml}
+    `;
+
+}
+
+
+/* =====================================
+   RESURSE INCIDENT SELECTAT
+===================================== */
+
+function buildSelectedIncidentResourcesHtml(
+    resources
+) {
+
+    if (
+        !Array.isArray(
+            resources
+        )
+        ||
+        resources.length ===
+            0
+    ) {
+
+        return `
+            <p class="selected-incident-muted">
+                Nu există resurse inițiale înregistrate.
+            </p>
+        `;
+
+    }
+
+
+    return `
+        <div class="selected-incident-resource-list">
+
+            ${
+                resources
+                    .map(
+                        function (
+                            resource
+                        ) {
+
+                            const vehicleType =
+                                String(
+                                    resource.vehicle_type
+                                    ||
+                                    ""
+                                ).toLowerCase();
+
+
+                            const quantity =
+                                Number(
+                                    resource.quantity
+                                    ??
+                                    resource.requested_quantity
+                                    ??
+                                    0
+                                );
+
+
+                            return `
+                                <div class="selected-incident-resource-item">
+
+                                    <span class="selected-incident-resource-icon">
+                                        ${getIncidentVehicleTypeIcon(
+                                            vehicleType
+                                        )}
+                                    </span>
+
+                                    <div>
+
+                                        <strong>
+                                            ${escapeHtml(
+                                                getIncidentVehicleTypeName(
+                                                    vehicleType
+                                                )
+                                            )}
+                                        </strong>
+
+                                        <span>
+                                            ${escapeHtml(
+                                                quantity
+                                            )}
+                                            vehicul(e) solicitat(e)
+                                        </span>
+
+                                    </div>
+
+                                </div>
+                            `;
+
+                        }
+                    )
+                    .join("")
+            }
+
+        </div>
+    `;
+
+}
+
+
+/* =====================================
+   VEHICULE INCIDENT SELECTAT
+===================================== */
+
+function buildSelectedIncidentAssignmentsHtml(
+    assignments
+) {
+
+    if (
+        !Array.isArray(
+            assignments
+        )
+        ||
+        assignments.length ===
+            0
+    ) {
+
+        return `
+            <p class="selected-incident-muted">
+                Nu există vehicule înregistrate pentru acest incident.
+            </p>
+        `;
+
+    }
+
+
+    return `
+        <div class="selected-incident-assignment-list">
+
+            ${
+                assignments
+                    .map(
+                        function (
+                            assignment
+                        ) {
+
+                            const vehicleType =
+                                String(
+                                    assignment.vehicle_type
+                                    ||
+                                    ""
+                                ).toLowerCase();
+
+
+                            const assignmentType =
+                                getSelectedIncidentAssignmentTypeName(
+                                    assignment.assignment_type
+                                );
+
+
+                            const assignmentStatus =
+                                getSelectedIncidentAssignmentStatusName(
+                                    assignment.assignment_status
+                                    ||
+                                    assignment.status
+                                );
+
+
+                            const assignedAt =
+                                formatIncidentDate(
+                                    assignment.assigned_at
+                                );
+
+
+                            const arrivedAt =
+                                formatIncidentDate(
+                                    assignment.arrived_at
+                                );
+
+
+                            const releasedAt =
+                                formatIncidentDate(
+                                    assignment.released_at
+                                );
+
+
+                            const travelDuration =
+                                calculateIncidentDateDuration(
+                                    assignment.assigned_at,
+                                    assignment.arrived_at
+                                );
+
+
+                            const missionDuration =
+                                calculateIncidentDateDuration(
+                                    assignment.assigned_at,
+                                    assignment.released_at
+                                    ||
+                                    assignment.arrived_at
+                                );
+
+
+                            const vehicleCode =
+                                assignment.vehicle_code
+                                ||
+                                (
+                                    "Vehicul "
+                                    +
+                                    (
+                                        assignment.vehicle_id
+                                        ||
+                                        "-"
+                                    )
+                                );
+
+
+                            return `
+                                <div class="selected-incident-assignment-card">
+
+                                    <div class="selected-incident-assignment-header">
+
+                                        <div class="selected-incident-assignment-vehicle">
+
+                                            <span>
+                                                ${getIncidentVehicleTypeIcon(
+                                                    vehicleType
+                                                )}
+                                            </span>
+
+                                            <div>
+
+                                                <strong>
+                                                    ${escapeHtml(
+                                                        vehicleCode
+                                                    )}
+                                                </strong>
+
+                                                <small>
+                                                    ${escapeHtml(
+                                                        getIncidentVehicleTypeName(
+                                                            vehicleType
+                                                        )
+                                                    )}
+                                                    ·
+                                                    ${escapeHtml(
+                                                        assignmentType
+                                                    )}
+                                                </small>
+
+                                            </div>
+
+                                        </div>
+
+
+                                        <span class="selected-incident-assignment-status">
+                                            ${escapeHtml(
+                                                assignmentStatus
+                                            )}
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="selected-incident-assignment-times">
+
+                                        <div>
+                                            <span>
+                                                Asignat
+                                            </span>
+
+                                            <strong>
+                                                ${escapeHtml(
+                                                    assignedAt
+                                                )}
+                                            </strong>
+                                        </div>
+
+
+                                        <div>
+                                            <span>
+                                                Ajuns
+                                            </span>
+
+                                            <strong>
+                                                ${escapeHtml(
+                                                    arrivedAt
+                                                )}
+                                            </strong>
+                                        </div>
+
+
+                                        <div>
+                                            <span>
+                                                Eliberat
+                                            </span>
+
+                                            <strong>
+                                                ${escapeHtml(
+                                                    releasedAt
+                                                )}
+                                            </strong>
+                                        </div>
+
+
+                                        <div>
+                                            <span>
+                                                Deplasare
+                                            </span>
+
+                                            <strong>
+                                                ${escapeHtml(
+                                                    travelDuration
+                                                )}
+                                            </strong>
+                                        </div>
+
+
+                                        <div>
+                                            <span>
+                                                Timp alocat
+                                            </span>
+
+                                            <strong>
+                                                ${escapeHtml(
+                                                    missionDuration
+                                                )}
+                                            </strong>
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                            `;
+
+                        }
+                    )
+                    .join("")
+            }
+
+        </div>
+    `;
+
+}
+
+
+/* =====================================
+   ÎNTĂRIRI INCIDENT SELECTAT
+===================================== */
+
+function buildSelectedIncidentReinforcementHtml(
+    requests
+) {
+
+    if (
+        !Array.isArray(
+            requests
+        )
+        ||
+        requests.length ===
+            0
+    ) {
+
+        return "";
+
+    }
+
+
+    const activeCount =
+        requests.filter(
+            function (
+                request
+            ) {
+
+                return [
+                    "pending",
+                    "partially_assigned"
+                ].includes(
+                    String(
+                        request.status
+                        ||
+                        ""
+                    ).toLowerCase()
+                );
+
+            }
+        ).length;
+
+
+    const completedCount =
+        requests.filter(
+            function (
+                request
+            ) {
+
+                return [
+                    "accepted",
+                    "completed"
+                ].includes(
+                    String(
+                        request.status
+                        ||
+                        ""
+                    ).toLowerCase()
+                );
+
+            }
+        ).length;
+
+
+    return `
+        <div class="selected-incident-section">
+
+            <div class="selected-incident-section-heading">
+
+                <h3>
+                    Cereri de întăriri
+                </h3>
+
+                <span>
+                    ${requests.length}
+                </span>
+
+            </div>
+
+
+            <div class="selected-incident-info-grid">
+
+                <div class="selected-incident-info-item">
+
+                    <span>
+                        Total cereri
+                    </span>
+
+                    <strong>
+                        ${requests.length}
+                    </strong>
+
+                </div>
+
+
+                <div class="selected-incident-info-item">
+
+                    <span>
+                        Active
+                    </span>
+
+                    <strong>
+                        ${activeCount}
+                    </strong>
+
+                </div>
+
+
+                <div class="selected-incident-info-item">
+
+                    <span>
+                        Aprobate / finalizate
+                    </span>
+
+                    <strong>
+                        ${completedCount}
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+    `;
+
+}
+
+
+/* =====================================
+   PROGRES CHESTIONARE
+===================================== */
+
+function buildSelectedIncidentSpecialistProgressHtml(
+    progress
+) {
+
+    if (
+        !progress
+        ||
+        Number(
+            progress.total
+            ||
+            0
+        ) ===
+        0
+    ) {
+
+        return "";
+
+    }
+
+
+    const total =
+        Number(
+            progress.total
+            ||
+            0
+        );
+
+
+    const confirmed =
+        Number(
+            progress.confirmed
+            ||
+            0
+        );
+
+
+    const pending =
+        Number(
+            progress.pending
+            ??
+            Math.max(
+                total - confirmed,
+                0
+            )
+        );
+
+
+    return `
+        <div class="selected-incident-section">
+
+            <h3>
+                Informații operative
+            </h3>
+
+
+            <div class="selected-incident-info-grid">
+
+                <div class="selected-incident-info-item">
+
+                    <span>
+                        Chestionare necesare
+                    </span>
+
+                    <strong>
+                        ${total}
+                    </strong>
+
+                </div>
+
+
+                <div class="selected-incident-info-item">
+
+                    <span>
+                        Confirmate
+                    </span>
+
+                    <strong>
+                        ${confirmed}
+                    </strong>
+
+                </div>
+
+
+                <div class="selected-incident-info-item">
+
+                    <span>
+                        Rămase
+                    </span>
+
+                    <strong>
+                        ${pending}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <p class="selected-incident-muted">
+                Conținutul complet al chestionarelor va fi inclus în raportul incidentului.
+            </p>
+
+        </div>
+    `;
+
+}
+
+
+/* =====================================
+   INCIDENT SELECTAT - HELPERS
+===================================== */
+
+function getSelectedIncidentAssignmentTypeName(
+    assignmentType
+) {
+
+    const names = {
+
+        primary:
+            "Principal",
+
+        reinforcement:
+            "Întărire"
+
+    };
+
+
+    const normalized =
+        String(
+            assignmentType
+            ||
+            ""
+        ).toLowerCase();
+
+
+    return (
+        names[
+            normalized
+        ]
+        ||
+        getReadableStatus(
+            normalized
+            ||
+            "-"
+        )
+    );
+
+}
+
+
+function getSelectedIncidentAssignmentStatusName(
+    assignmentStatus
+) {
+
+    const names = {
+
+        assigned:
+            "Asignat",
+
+        in_progress:
+            "În deplasare",
+
+        arrived:
+            "Ajuns",
+
+        released:
+            "Eliberat",
+
+        cancelled:
+            "Anulat"
+
+    };
+
+
+    const normalized =
+        String(
+            assignmentStatus
+            ||
+            ""
+        ).toLowerCase();
+
+
+    return (
+        names[
+            normalized
+        ]
+        ||
+        getReadableStatus(
+            normalized
+            ||
+            "-"
+        )
+    );
+
+}
+
+
+/* =====================================
+   LOCAȚIE INCIDENT
+===================================== */
+
+function buildSelectedIncidentLocationText(
+    incident
+) {
+
+    if (
+        incident.latitude ===
+            null
+        ||
+        incident.latitude ===
+            undefined
+        ||
+        incident.longitude ===
+            null
+        ||
+        incident.longitude ===
+            undefined
+    ) {
+
+        return (
+            "Locația nu este disponibilă."
+        );
+
+    }
+
+
+    const latitude =
+        Number(
+            incident.latitude
+        );
+
+
+    const longitude =
+        Number(
+            incident.longitude
+        );
+
+
+    if (
+        !Number.isFinite(
+            latitude
+        )
+        ||
+        !Number.isFinite(
+            longitude
+        )
+    ) {
+
+        return (
+            "Locația nu este disponibilă."
+        );
+
+    }
+
+
+    return (
+        `Latitudine ${latitude.toFixed(6)}, `
+        +
+        `longitudine ${longitude.toFixed(6)}`
+    );
+
+}
+
+
+/* =====================================
+   PRIMA DATĂ DIN LISTĂ
+===================================== */
+
+function getEarliestIncidentDateValue(
+    values
+) {
+
+    if (
+        !Array.isArray(
+            values
+        )
+        ||
+        values.length ===
+            0
+    ) {
+
+        return null;
+
+    }
+
+
+    let earliestValue =
+        null;
+
+
+    let earliestTimestamp =
+        null;
+
+
+    values.forEach(
+        function (
+            value
+        ) {
+
+            const parsed =
+                parseIncidentDateValue(
+                    value
+                );
+
+
+            if (!parsed) {
+
+                return;
+
+            }
+
+
+            const timestamp =
+                parsed.getTime();
+
+
+            if (
+                earliestTimestamp ===
+                    null
+                ||
+                timestamp <
+                    earliestTimestamp
+            ) {
+
+                earliestTimestamp =
+                    timestamp;
+
+                earliestValue =
+                    value;
+
+            }
+
+        }
+    );
+
+
+    return earliestValue;
+
+}
+
+
+/* =====================================
+   CALCUL DURATĂ ÎNTRE DATE
+===================================== */
+
+function calculateIncidentDateDuration(
+    startValue,
+    endValue
+) {
+
+    if (
+        !startValue
+        ||
+        !endValue
+    ) {
+
+        return "-";
+
+    }
+
+
+    const startDate =
+        parseIncidentDateValue(
+            startValue
+        );
+
+
+    const endDate =
+        parseIncidentDateValue(
+            endValue
+        );
+
+
+    if (
+        !startDate
+        ||
+        !endDate
+    ) {
+
+        return "-";
+
+    }
+
+
+    const seconds =
+        Math.max(
+            Math.round(
+                (
+                    endDate.getTime()
+                    -
+                    startDate.getTime()
+                )
+                /
+                1000
+            ),
+            0
+        );
+
+
+    return formatIncidentDurationSeconds(
+        seconds
+    );
+
+}
+
+
+/* =====================================
+   PARSARE DATĂ
+===================================== */
+
+function parseIncidentDateValue(
+    value
+) {
+
+    if (!value) {
+
+        return null;
+
+    }
+
+
+    const normalizedValue =
+        typeof value ===
+            "string"
+            ?
+            value.replace(
+                " ",
+                "T"
+            )
+            :
+            value;
+
+
+    const date =
+        new Date(
+            normalizedValue
+        );
+
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+
+        return null;
+
+    }
+
+
+    return date;
+
+}
+
+
+/* =====================================
+   FORMAT DURATĂ
+===================================== */
+
+function formatIncidentDurationSeconds(
+    secondsValue
+) {
+
+    if (
+        secondsValue ===
+            null
+        ||
+        secondsValue ===
+            undefined
+        ||
+        secondsValue ===
+            ""
+    ) {
+
+        return "-";
+
+    }
+
+
+    const totalSeconds =
+        Number(
+            secondsValue
+        );
+
+
+    if (
+        !Number.isFinite(
+            totalSeconds
+        )
+        ||
+        totalSeconds <
+            0
+    ) {
+
+        return "-";
+
+    }
+
+
+    const totalMinutes =
+        Math.floor(
+            totalSeconds
+            /
+            60
+        );
+
+
+    const hours =
+        Math.floor(
+            totalMinutes
+            /
+            60
+        );
+
+
+    const minutes =
+        totalMinutes %
+        60;
+
+
+    if (
+        hours >
+        0
+    ) {
+
+        return (
+            `${hours} h ${minutes} min`
+        );
+
+    }
+
+
+    if (
+        totalMinutes >
+        0
+    ) {
+
+        return (
+            `${totalMinutes} min`
+        );
+
+    }
+
+
+    return (
+        `${Math.round(
+            totalSeconds
+        )} sec`
+    );
+
+}
+
+
+/* =====================================
+   INCIDENT SELECTAT - EROARE
+===================================== */
+
+function displaySelectedIncidentError(
+    incident,
+    error
+) {
+
+    const panel =
+        document.getElementById(
+            "incident-details-panel"
+        );
+
+
+    const title =
+        document.getElementById(
+            "selected-incident-title"
+        );
+
+
+    const status =
+        document.getElementById(
+            "selected-incident-status"
+        );
+
+
+    const container =
+        document.getElementById(
+            "selected-incident-details"
+        );
+
+
+    if (
+        !panel
+        ||
+        !container
+    ) {
+
+        return;
+
+    }
+
+
+    panel.hidden =
+        false;
+
+
+    if (title) {
+
+        title.textContent =
+            incident?.incident_code
+            ||
+            "Detalii incident";
+
+    }
+
+
+    if (status) {
+
+        status.textContent =
+            "Eroare";
+
+
+        status.className =
+            (
+                "selected-incident-status "
+                +
+                "selected-incident-status-error"
+            );
+
+    }
+
+
+    container.innerHTML = `
+        <p class="empty-message">
+            ${escapeHtml(
+                error?.message
+                ||
+                "Detaliile incidentului nu au putut fi încărcate."
+            )}
+        </p>
+    `;
+
+}
+
+
+/* =====================================
+   ASCUNDE INCIDENT SELECTAT
+===================================== */
+
+function hideSelectedIncidentDetailsPanel() {
+
+    const panel =
+        document.getElementById(
+            "incident-details-panel"
+        );
+
+
+    if (panel) {
+
+        panel.hidden =
+            true;
+
+    }
+
+}
+
+
 /* =====================================
    SHOW INCIDENT LOCATION ON MAP
 ===================================== */
@@ -1012,12 +3054,14 @@ function showIncidentOnMap(
 ) {
 
     if (
-        sidebarMode !== "routes"
+        sidebarMode !==
+        "routes"
     ) {
 
         return;
 
     }
+
 
     if (
         !incidentHasLocation(
@@ -1033,16 +3077,21 @@ function showIncidentOnMap(
 
     }
 
+
     activeRouteId =
         null;
+
 
     activeIncidentId =
         incident.id;
 
+
     activeIncidentCode =
         incident.incident_code;
 
+
     activeIncidentLocation = {
+
         latitude:
             Number(
                 incident.latitude
@@ -1052,20 +3101,29 @@ function showIncidentOnMap(
             Number(
                 incident.longitude
             )
+
     };
+
 
     selectedVehicleId =
         null;
 
+
     clearIncidentRoute();
 
-    updateVisibleMarkers([]);
+
+    updateVisibleMarkers(
+        []
+    );
+
 
     resetVehicleDetails();
+
 
     displayIncidentLocationMarker(
         incident
     );
+
 
     displayIncidents();
 
@@ -1081,12 +3139,14 @@ async function openActiveRoute(
 ) {
 
     if (
-        sidebarMode !== "routes"
+        sidebarMode !==
+        "routes"
     ) {
 
         return;
 
     }
+
 
     if (
         !isIncidentActive(
@@ -1098,16 +3158,21 @@ async function openActiveRoute(
 
     }
 
+
     activeRouteId =
         incident.id;
+
 
     activeIncidentId =
         incident.id;
 
+
     activeIncidentCode =
         incident.incident_code;
 
+
     activeIncidentLocation = {
+
         latitude:
             Number(
                 incident.latitude
@@ -1117,21 +3182,29 @@ async function openActiveRoute(
             Number(
                 incident.longitude
             )
+
     };
+
 
     selectedVehicleId =
         null;
+
 
     /*
      * Nu mai afișăm manual primul vehicul.
      * displayIncidentRoutes() va afișa toate
      * vehiculele din răspunsul backend-ului.
      */
-    updateVisibleMarkers([]);
+    updateVisibleMarkers(
+        []
+    );
+
 
     resetVehicleDetails();
 
+
     displayIncidents();
+
 
     try {
 
@@ -1140,8 +3213,10 @@ async function openActiveRoute(
                 incident.id
             );
 
+
         if (
-            sidebarMode !== "routes"
+            sidebarMode !==
+                "routes"
             ||
             Number(
                 activeRouteId
@@ -1156,6 +3231,7 @@ async function openActiveRoute(
 
         }
 
+
         displayIncidentRoutes(
             routeData
         );
@@ -1169,15 +3245,18 @@ async function openActiveRoute(
             error
         );
 
+
         alert(
             error.message
         );
+
 
         await loadIncidents();
 
     }
 
 }
+
 
 /* =====================================
    REFRESH OPEN ACTIVE ROUTE
@@ -1186,9 +3265,11 @@ async function openActiveRoute(
 async function refreshOpenedActiveRoute() {
 
     if (
-        sidebarMode !== "routes"
+        sidebarMode !==
+            "routes"
         ||
-        activeRouteId === null
+        activeRouteId ===
+            null
         ||
         activeRouteRefreshRunning
     ) {
@@ -1197,13 +3278,16 @@ async function refreshOpenedActiveRoute() {
 
     }
 
+
     activeRouteRefreshRunning =
         true;
+
 
     try {
 
         const routeId =
             activeRouteId;
+
 
         const activeIncident =
             activeRoutes.find(
@@ -1224,6 +3308,7 @@ async function refreshOpenedActiveRoute() {
                 }
             );
 
+
         if (!activeIncident) {
 
             closeActiveRouteView();
@@ -1232,13 +3317,16 @@ async function refreshOpenedActiveRoute() {
 
         }
 
+
         const routeData =
             await window.getIncidentRoute(
                 routeId
             );
 
+
         if (
-            sidebarMode !== "routes"
+            sidebarMode !==
+                "routes"
             ||
             Number(
                 activeRouteId
@@ -1253,10 +3341,7 @@ async function refreshOpenedActiveRoute() {
 
         }
 
-        /*
-         * Răspunsul conține poziția actuală
-         * și ruta fiecărui vehicul asignat.
-         */
+
         displayIncidentRoutes(
             routeData
         );
@@ -1269,6 +3354,7 @@ async function refreshOpenedActiveRoute() {
             "Rutele active nu au putut fi actualizate:",
             error
         );
+
 
         await loadIncidents();
 
@@ -1293,28 +3379,41 @@ function closeActiveRouteView() {
     activeRouteId =
         null;
 
+
     activeIncidentId =
         null;
+
 
     activeIncidentCode =
         null;
 
+
     activeIncidentLocation =
         null;
+
 
     selectedVehicleId =
         null;
 
+
     clearIncidentRoute();
+
 
     removeIncidentMarker();
 
+
     resetVehicleDetails();
+
+
+    hideSelectedIncidentDetailsPanel();
+
 
     displayIncidents();
 
+
     if (
-        sidebarMode === "vehicles"
+        sidebarMode ===
+        "vehicles"
     ) {
 
         refreshVehicleView();
@@ -1323,7 +3422,9 @@ function closeActiveRouteView() {
 
     else {
 
-        updateVisibleMarkers([]);
+        updateVisibleMarkers(
+            []
+        );
 
     }
 

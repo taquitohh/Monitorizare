@@ -242,6 +242,7 @@ window.assignVehicleToIncident =
 
     };
 
+
 /* =====================================
    GET INCIDENT ROUTE
 ===================================== */
@@ -278,6 +279,252 @@ window.getIncidentRoute =
             );
 
         }
+
+        return data;
+
+    };
+
+
+/* =====================================
+   GET INCIDENT DETAILS
+===================================== */
+
+window.getIncidentDetails =
+    async function (
+        incidentId
+    ) {
+
+        const normalizedIncidentId =
+            Number(
+                incidentId
+            );
+
+        if (
+            !Number.isInteger(
+                normalizedIncidentId
+            )
+            ||
+            normalizedIncidentId < 1
+        ) {
+
+            throw new Error(
+                "Incidentul selectat nu are un identificator valid."
+            );
+
+        }
+
+        const response = await fetch(
+            `/api/incidents/${normalizedIncidentId}/details`,
+            {
+                method:
+                    "GET",
+
+                headers:
+                    window
+                        .getAuthorizationHeaders()
+            }
+        );
+
+
+        /*
+         * Compatibilitate temporară.
+         *
+         * Dacă endpointul /details nu există încă
+         * în backend, folosim datele pe care
+         * /api/incidents le trimite deja.
+         *
+         * După ce endpointul complet este instalat,
+         * codul va începe automat să folosească
+         * răspunsul complet.
+         */
+
+        if (
+            response.status ===
+            404
+        ) {
+
+            const incidents =
+                await window.getIncidents();
+
+
+            const incident =
+                Array.isArray(
+                    incidents
+                )
+                    ?
+                    incidents.find(
+                        function (
+                            item
+                        ) {
+
+                            return (
+                                Number(
+                                    item.id
+                                )
+                                ===
+                                normalizedIncidentId
+                            );
+
+                        }
+                    )
+                    :
+                    null;
+
+
+            if (!incident) {
+
+                throw new Error(
+                    "Incidentul selectat nu a fost găsit."
+                );
+
+            }
+
+
+            const fallbackIncidentTypes =
+                Array.isArray(
+                    incident.incident_types
+                )
+                    ?
+                    incident.incident_types
+                    :
+                    (
+                        incident.incident_type
+                            ?
+                            [
+                                incident.incident_type
+                            ]
+                            :
+                            []
+                    );
+
+
+            const fallbackRequiredResources =
+                Array.isArray(
+                    incident.required_resources
+                )
+                    ?
+                    incident.required_resources
+                    :
+                    (
+                        incident.required_vehicle_type
+                            ?
+                            [
+                                {
+                                    vehicle_type:
+                                        incident.required_vehicle_type,
+
+                                    quantity:
+                                        1
+                                }
+                            ]
+                            :
+                            []
+                    );
+
+
+            const fallbackAssignments =
+                Array.isArray(
+                    incident.assigned_vehicles
+                )
+                    ?
+                    incident.assigned_vehicles
+                    :
+                    [];
+
+
+            return {
+
+                status:
+                    "fallback",
+
+
+                incident:
+                    incident,
+
+
+                incident_types:
+                    fallbackIncidentTypes,
+
+
+                required_resources:
+                    fallbackRequiredResources,
+
+
+                assignments:
+                    fallbackAssignments,
+
+
+                vehicle_summary:
+                    {},
+
+
+                specialist_reports:
+                    [],
+
+
+                specialist_progress:
+                    null,
+
+
+                reinforcement_requests:
+                    [],
+
+
+                events:
+                    [],
+
+
+                operational_times: {
+
+                    created_at:
+                        incident.created_at
+                        ||
+                        null,
+
+
+                    dispatched_at:
+                        incident.dispatched_at
+                        ||
+                        null,
+
+
+                    resolved_at:
+                        incident.resolved_at
+                        ||
+                        null
+
+                },
+
+
+                summary: {
+
+                    assigned_vehicle_count:
+                        fallbackAssignments.length
+
+                }
+
+            };
+
+        }
+
+
+        const data =
+            await readJsonResponse(
+                response,
+                "API-ul detaliilor incidentului a returnat un răspuns invalid."
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.message
+                ||
+                "Detaliile incidentului nu au putut fi încărcate."
+            );
+
+        }
+
 
         return data;
 
@@ -349,6 +596,7 @@ async function readJsonResponse(
 
 }
 
+
 /* =====================================
    CERERI DE ÎNTĂRIRI
 ===================================== */
@@ -407,7 +655,8 @@ window.getReinforcementRequests =
 
     };
 
-    /* =====================================
+
+/* =====================================
    ACCEPTARE CERERE DE ÎNTĂRIRI
 ===================================== */
 
@@ -438,6 +687,7 @@ window.acceptReinforcementRequest =
         }
 
         const normalizedResources = {
+
             police:
                 Number(
                     resources?.police
@@ -458,7 +708,9 @@ window.acceptReinforcementRequest =
                     ||
                     0
                 )
+
         };
+
 
         const response = await fetch(
             (
@@ -479,6 +731,7 @@ window.acceptReinforcementRequest =
 
                 body:
                     JSON.stringify({
+
                         resources:
                             normalizedResources,
 
@@ -490,11 +743,14 @@ window.acceptReinforcementRequest =
                             ).trim()
                             ||
                             null
+
                     })
             }
         );
 
+
         let data;
+
 
         try {
 
@@ -511,6 +767,7 @@ window.acceptReinforcementRequest =
 
         }
 
+
         if (!response.ok) {
 
             throw new Error(
@@ -520,6 +777,7 @@ window.acceptReinforcementRequest =
             );
 
         }
+
 
         return data;
 
@@ -541,6 +799,7 @@ window.rejectReinforcementRequest =
                 requestId
             );
 
+
         if (
             !Number.isInteger(
                 normalizedRequestId
@@ -554,6 +813,7 @@ window.rejectReinforcementRequest =
             );
 
         }
+
 
         const response = await fetch(
             (
@@ -574,6 +834,7 @@ window.rejectReinforcementRequest =
 
                 body:
                     JSON.stringify({
+
                         message:
                             String(
                                 message
@@ -582,11 +843,14 @@ window.rejectReinforcementRequest =
                             ).trim()
                             ||
                             null
+
                     })
             }
         );
 
+
         let data;
+
 
         try {
 
@@ -603,6 +867,7 @@ window.rejectReinforcementRequest =
 
         }
 
+
         if (!response.ok) {
 
             throw new Error(
@@ -612,6 +877,7 @@ window.rejectReinforcementRequest =
             );
 
         }
+
 
         return data;
 
